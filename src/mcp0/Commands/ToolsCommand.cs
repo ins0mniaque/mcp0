@@ -1,10 +1,11 @@
 using System.CommandLine;
+using ModelContextProtocol.Client;
 
-internal sealed class RunCommand : Command
+internal sealed class ToolsCommand : Command
 {
-    public RunCommand() : base("run", "Run one or more contexts as an MCP server")
+    public ToolsCommand() : base("tools", "List tools for one or more contexts")
     {
-        var contextsArgument = new Argument<string[]>("contexts", "A list of context names and/or context files to run");
+        var contextsArgument = new Argument<string[]>("contexts", "A list of context names and/or context files to list tools from");
 
         AddArgument(contextsArgument);
 
@@ -27,6 +28,13 @@ internal sealed class RunCommand : Command
         var server = new Server("mcp0", "1.0.0", loggerFactory);
 
         await server.Initialize(client.Clients, cancellationToken);
-        await server.Serve(cancellationToken);
+
+        foreach (var entry in server.Tools)
+        {
+            var tool = entry.Value.Tool;
+
+            Console.WriteLine($"{tool.Name}: ${tool.Description}");
+            Console.WriteLine($"  Input Schema: {tool.ProtocolTool.InputSchema}");
+        }
     }
 }

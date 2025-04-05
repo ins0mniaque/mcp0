@@ -6,17 +6,21 @@ using ModelContextProtocol.Server;
 
 internal sealed class Server
 {
-    private readonly Dictionary<string, (IMcpClient Client, McpClientTool Tool)> tools = new();
+    private readonly Dictionary<string, (IMcpClient Client, McpClientTool Tool)> tools;
     private readonly string name;
     private readonly string version;
     private readonly ILoggerFactory loggerFactory;
 
     public Server(string name, string version, ILoggerFactory loggerFactory)
     {
+        Tools = tools = new();
+
         this.name = name;
         this.version = version;
         this.loggerFactory = loggerFactory;
     }
+
+    public IReadOnlyDictionary<string, (IMcpClient Client, McpClientTool Tool)> Tools { get; }
 
     // TODO: Handle tool changed event (see IMcpClient.AddNotificationHandler)
     public async Task Initialize(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
