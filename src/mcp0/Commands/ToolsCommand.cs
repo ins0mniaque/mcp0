@@ -1,5 +1,4 @@
 using System.CommandLine;
-using ModelContextProtocol.Client;
 
 internal sealed class ToolsCommand : Command
 {
