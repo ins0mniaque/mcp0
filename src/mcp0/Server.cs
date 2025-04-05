@@ -180,7 +180,6 @@ internal sealed class Server
                 },
                 Tools = new()
                 {
-                    // TODO: Support ListTools pagination (see ListToolsRequestParams.Cursor).
                     ListToolsHandler = (request, cancellationToken) => listToolsResultTask,
                     CallToolHandler = async (request, cancellationToken) =>
                     {
@@ -191,10 +190,29 @@ internal sealed class Server
                     }
                 }
             },
-            GetCompletionHandler = (request, cancellationToken) =>
+            GetCompletionHandler = async (request, cancellationToken) =>
             {
-                // TODO: Implement completion handler
-                return Task.FromResult(new CompleteResult());
+                IMcpClient client;
+                if (request.Params?.Ref.Uri is { } uri)
+                {
+                    if (resources.TryGetValue(uri, out var resourceEntry))
+                        client = resourceEntry.Client;
+                    else if (resourceTemplates.TryGetValue(uri, out var resourceTemplateEntry))
+                        client = resourceTemplateEntry.Client;
+                    else
+                        throw new McpServerException($"Unknown resource or resource template: '{uri}'");
+                }
+                else if (request.Params?.Ref.Name is { } name)
+                {
+                    if (prompts.TryGetValue(name, out var promptEntry))
+                        client = promptEntry.Client;
+                    else
+                        throw new McpServerException($"Unknown prompt: '{name}'");
+                }
+                else
+                    throw new McpServerException($"Missing completion request parameters");
+
+                return await client.GetCompletionAsync(request.Params.Ref, request.Params.Argument.Name, request.Params.Argument.Value, cancellationToken);
             }
         };
 
