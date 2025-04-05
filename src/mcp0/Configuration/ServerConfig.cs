@@ -49,14 +49,18 @@ internal sealed class ServerConfig
         if (Url is not null || Headers is not null || ConnectionTimeout is not null || MaxReconnectAttempts is not null || ReconnectDelay is not null)
             throw new InvalidOperationException("Server with command does not support URL, Headers, ConnectionTimeout, MaxReconnectAttempts, or ReconnectDelay");
 
+        if (string.IsNullOrWhiteSpace(Command))
+            throw new InvalidOperationException("command is empty");
+
         var config = new McpServerConfig
         {
             Id = serverName,
             Name = serverName,
+            Location = Command,
             TransportType = TransportTypes.StdIo,
             TransportOptions = new()
             {
-                ["command"] = Command ?? throw new InvalidOperationException("command is empty"),
+                ["command"] = Command,
                 ["arguments"] = string.Join(' ', Arguments ?? [])
             }
         };
@@ -87,10 +91,11 @@ internal sealed class ServerConfig
         {
             Id = serverName,
             Name = serverName,
+            Location = Url?.ToString() ?? throw new InvalidOperationException("url is empty"),
             TransportType = TransportTypes.Sse,
             TransportOptions = new()
             {
-                ["url"] = Url?.ToString() ?? throw new InvalidOperationException("url is empty")
+                ["url"] = Url.ToString()
             }
         };
 

@@ -15,6 +15,7 @@
 
   <PropertyGroup>
     <NoWarn>$(NoWarn),CA1515</NoWarn> <!-- Disable making public types internal warning -->
+    <NoWarn>$(NoWarn),CA2007</NoWarn> <!-- Disable ConfigureAwait warning -->
   </PropertyGroup>
 
   <ItemGroup>
