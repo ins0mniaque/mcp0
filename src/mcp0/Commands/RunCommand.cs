@@ -25,7 +25,7 @@ internal sealed class RunCommand : Command
         {
             ContextConfig? contextConfig;
             using (var stream = new FileStream(context, FileMode.Open, FileAccess.Read))
-                contextConfig = await JsonSerializer.DeserializeAsync<ContextConfig>(stream, (JsonSerializerOptions?)null, cancellationToken);
+                contextConfig = await JsonSerializer.DeserializeAsync(stream, SerializerContext.Default.ContextConfig, cancellationToken);
 
             if (contextConfig is null)
                 throw new InvalidOperationException("context is empty");

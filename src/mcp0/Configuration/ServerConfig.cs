@@ -2,9 +2,6 @@ using System.Text.Json.Serialization;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Transport;
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "<Pending>")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "<Pending>")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "<Pending>")]
 internal sealed class ServerConfig
 {
     [JsonPropertyName("command")]

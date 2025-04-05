@@ -1,7 +1,5 @@
 using System.Text.Json.Serialization;
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "<Pending>")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "<Pending>")]
 internal sealed class ContextConfig
 {
     [JsonPropertyName("servers")]
