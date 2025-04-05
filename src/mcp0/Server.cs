@@ -1,11 +1,22 @@
+using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
-internal sealed class Server(string Name, string Version)
+internal sealed class Server
 {
     private readonly Dictionary<string, (IMcpClient Client, McpClientTool Tool)> tools = new();
+    private readonly string name;
+    private readonly string version;
+    private readonly ILoggerFactory loggerFactory;
+
+    public Server(string name, string version, ILoggerFactory loggerFactory)
+    {
+        this.name = name;
+        this.version = version;
+        this.loggerFactory = loggerFactory;
+    }
 
     // TODO: Handle tool changed event (see IMcpClient.AddNotificationHandler)
     public async Task Initialize(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
@@ -35,7 +46,7 @@ internal sealed class Server(string Name, string Version)
 
         var options = new McpServerOptions
         {
-            ServerInfo = new() { Name = Name, Version = Version },
+            ServerInfo = new() { Name = name, Version = version },
             Capabilities = new()
             {
                 Tools = new()
@@ -58,8 +69,8 @@ internal sealed class Server(string Name, string Version)
             },
         };
 
-        await using var transport = new StdioServerTransport(Name);
-        await using IMcpServer server = McpServerFactory.Create(transport, options);
+        await using var transport = new StdioServerTransport(name, loggerFactory);
+        await using IMcpServer server = McpServerFactory.Create(transport, options, loggerFactory);
 
         await server.RunAsync(cancellationToken);
     }

@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Client;
 
 internal sealed class RunCommand : Command
@@ -35,18 +36,26 @@ internal sealed class RunCommand : Command
         if (config.Servers is null)
             throw new InvalidOperationException("missing context servers configuration");
 
+        using var loggerFactory = LoggerFactory.Create(ConfigureLogging);
+
         var clientTasks = new List<Task<IMcpClient>>();
         foreach (var entry in config.Servers)
         {
             clientTasks.Add(McpClientFactory.CreateAsync(
                 entry.Value.ToMcp(entry.Key),
+                loggerFactory: loggerFactory,
                 cancellationToken: cancellationToken));
         }
 
         var clients = await Task.WhenAll(clientTasks);
-        var server = new Server("mcp0", "1.0.0");
+        var server = new Server("mcp0", "1.0.0", loggerFactory);
 
         await server.Initialize(clients, cancellationToken);
         await server.Serve(cancellationToken);
+    }
+
+    private static void ConfigureLogging(ILoggingBuilder logging)
+    {
+        logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
     }
 }
