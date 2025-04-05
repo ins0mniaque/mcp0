@@ -20,11 +20,13 @@ internal sealed class ToolsCommand : Command
         using var loggerFactory = Logging.CreateLoggerFactory();
 
         var client = new Client(loggerFactory);
-        var clientServers = config.Servers?.Select(entry => entry.Value.ToMcp(entry.Key));
+        var clientServers = config.Servers?.Select(entry => entry.Value.ToMcp(entry.Key)).ToList() ?? [];
 
-        await client.Initialize(clientServers ?? [], cancellationToken);
+        await client.Initialize(clientServers, cancellationToken);
 
-        var server = new Server("mcp0", "1.0.0", loggerFactory);
+        var name = string.Join('/', clientServers.Select(entry => entry.Name).DefaultIfEmpty("mcp0"));
+        var version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "unknown";
+        var server = new Server(name, version, loggerFactory);
 
         await server.Initialize(client.Clients, cancellationToken);
 
