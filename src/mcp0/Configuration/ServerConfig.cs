@@ -33,7 +33,7 @@ internal sealed class ServerConfig
 
     private McpServerConfig ToMcpStdIo(string serverName)
     {
-        if(Url is not null || Headers is not null)
+        if (Url is not null || Headers is not null)
             throw new InvalidOperationException("Server with command does not support URL or Headers");
 
         var config = new McpServerConfig
@@ -57,7 +57,7 @@ internal sealed class ServerConfig
 
     private McpServerConfig ToMcpSse(string serverName)
     {
-        if(Command is not null || Arguments is not null || Environment is not null || EnvironmentFile is not null)
+        if (Command is not null || Arguments is not null || Environment is not null || EnvironmentFile is not null)
             throw new InvalidOperationException("Server with URL does not support Command, Arguments, Environment or EnvironmentFile");
 
         var config = new McpServerConfig

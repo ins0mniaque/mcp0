@@ -9,7 +9,7 @@ internal sealed class ContextConfig
 
     public void Merge(ContextConfig config)
     {
-        if (config.Servers is {} servers)
+        if (config.Servers is { } servers)
         {
             Servers ??= new(servers.Count);
             foreach (var entry in servers)
