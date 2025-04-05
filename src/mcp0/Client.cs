@@ -31,9 +31,4 @@ internal sealed class Client
 
         clients.AddRange(await Task.WhenAll(clientTasks));
     }
-
-    private static void ConfigureLogging(ILoggingBuilder logging)
-    {
-        logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
-    }
 }
