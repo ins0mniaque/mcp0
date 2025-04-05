@@ -25,7 +25,7 @@ internal sealed class ServerConfig
     public McpServerConfig ToMcp(string serverName) => Url switch
     {
         null => ToMcpStdIo(serverName),
-        _ => ToMcpStdIo(serverName)
+        _ => ToMcpSse(serverName)
     };
 
     private McpServerConfig ToMcpStdIo(string serverName)

@@ -1,14 +1,11 @@
 using System.CommandLine;
-using System.Text.Json;
-using Microsoft.Extensions.Logging;
-using ModelContextProtocol.Client;
 
 internal sealed class RunCommand : Command
 {
-    public RunCommand() : base("run", "Run one or more contexts as MCP server")
+    public RunCommand() : base("run", "Run one or more contexts as an MCP server")
     {
         var filesArgument = new Argument<string[]>
-            ("contexts", "A list of context names and/or files to run");
+            ("contexts", "A list of context names and/or context files to run");
 
         AddArgument(filesArgument);
 
@@ -19,43 +16,18 @@ internal sealed class RunCommand : Command
 
     public static async Task Execute(string[] contexts, CancellationToken cancellationToken)
     {
-        var config = new ContextConfig();
+        var config = await Context.Load(contexts, cancellationToken);
 
-        foreach (var context in contexts)
-        {
-            ContextConfig? contextConfig;
-            using (var stream = new FileStream(context, FileMode.Open, FileAccess.Read))
-                contextConfig = await JsonSerializer.DeserializeAsync(stream, SerializerContext.Default.ContextConfig, cancellationToken);
+        using var loggerFactory = Logging.CreateLoggerFactory();
 
-            if (contextConfig is null)
-                throw new InvalidOperationException("context is empty");
+        var client = new Client(loggerFactory);
+        var clientServers = config.Servers?.Select(entry => entry.Value.ToMcp(entry.Key));
 
-            config.Merge(contextConfig);
-        }
+        await client.Initialize(clientServers ?? [], cancellationToken);
 
-        if (config.Servers is null)
-            throw new InvalidOperationException("missing context servers configuration");
-
-        using var loggerFactory = LoggerFactory.Create(ConfigureLogging);
-
-        var clientTasks = new List<Task<IMcpClient>>();
-        foreach (var entry in config.Servers)
-        {
-            clientTasks.Add(McpClientFactory.CreateAsync(
-                entry.Value.ToMcp(entry.Key),
-                loggerFactory: loggerFactory,
-                cancellationToken: cancellationToken));
-        }
-
-        var clients = await Task.WhenAll(clientTasks);
         var server = new Server("mcp0", "1.0.0", loggerFactory);
 
-        await server.Initialize(clients, cancellationToken);
+        await server.Initialize(client.Clients, cancellationToken);
         await server.Serve(cancellationToken);
-    }
-
-    private static void ConfigureLogging(ILoggingBuilder logging)
-    {
-        logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
     }
 }
