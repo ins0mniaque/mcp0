@@ -27,14 +27,17 @@ internal sealed class Server
         this.loggerFactory = loggerFactory;
     }
 
+    public IReadOnlyList<IMcpClient> Clients { get; private set; } = [];
     public IReadOnlyDictionary<string, (IMcpClient Client, McpClientPrompt Prompt)> Prompts { get; }
     public IReadOnlyDictionary<string, (IMcpClient Client, Resource Resource)> Resources { get; }
     public IReadOnlyDictionary<string, (IMcpClient Client, ResourceTemplate ResourceTemplate)> ResourceTemplates { get; }
     public IReadOnlyDictionary<string, (IMcpClient Client, McpClientTool Tool)> Tools { get; }
 
-    // TODO: Handle tool changed event (see IMcpClient.AddNotificationHandler/XXXCapability.ListChanged)
+    // TODO: Handle changed events (see IMcpClient.AddNotificationHandler/XXXCapability.ListChanged)
     public async Task Initialize(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
     {
+        Clients = clients;
+
         prompts.Clear();
         resources.Clear();
         resourceTemplates.Clear();
@@ -134,10 +137,25 @@ internal sealed class Server
             {
                 Logging = new()
                 {
-                    SetLoggingLevelHandler = (request, cancellationToken) =>
+                    SetLoggingLevelHandler = async (request, cancellationToken) =>
                     {
+                        if (request.Params?.Level is not { } level)
+                            throw new McpServerException("Missing logging level parameter");
+
                         // TODO: Set minimum log level based on request.Params?.Level
-                        return Task.FromResult(new EmptyResult());
+
+                        var setLoggingLevelTasks = new List<Task>(Clients.Count);
+                        foreach (var client in Clients)
+                        {
+                            if (client.ServerCapabilities?.Logging is not null)
+                                setLoggingLevelTasks.Add(client.SetLoggingLevel(level, cancellationToken));
+                            else
+                                setLoggingLevelTasks.Add(Task.CompletedTask);
+                        }
+
+                        await Task.WhenAll(setLoggingLevelTasks);
+
+                        return new();
                     }
                 },
                 Prompts = new()
