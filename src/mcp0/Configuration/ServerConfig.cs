@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Transport;
@@ -10,17 +11,32 @@ internal sealed class ServerConfig
     [JsonPropertyName("args")]
     public List<string>? Arguments { get; set; }
 
+    [JsonPropertyName("workDir")]
+    public string? WorkingDirectory { get; set; }
+
     [JsonPropertyName("env")]
     public Dictionary<string, string>? Environment { get; set; }
 
     [JsonPropertyName("envFile")]
-    public Dictionary<string, string>? EnvironmentFile { get; set; }
+    public string? EnvironmentFile { get; set; }
+
+    [JsonPropertyName("shutdownTimeout")]
+    public int? ShutdownTimeout { get; set; }
 
     [JsonPropertyName("url")]
     public Uri? Url { get; set; }
 
     [JsonPropertyName("headers")]
     public Dictionary<string, string>? Headers { get; set; }
+
+    [JsonPropertyName("connectionTimeout")]
+    public int? ConnectionTimeout { get; set; }
+
+    [JsonPropertyName("maxReconnectAttempts")]
+    public int? MaxReconnectAttempts { get; set; }
+
+    [JsonPropertyName("reconnectDelay")]
+    public int? ReconnectDelay { get; set; }
 
     public McpServerConfig ToMcp(string serverName) => Url switch
     {
@@ -30,8 +46,8 @@ internal sealed class ServerConfig
 
     private McpServerConfig ToMcpStdIo(string serverName)
     {
-        if (Url is not null || Headers is not null)
-            throw new InvalidOperationException("Server with command does not support URL or Headers");
+        if (Url is not null || Headers is not null || ConnectionTimeout is not null || MaxReconnectAttempts is not null || ReconnectDelay is not null)
+            throw new InvalidOperationException("Server with command does not support URL, Headers, ConnectionTimeout, MaxReconnectAttempts, or ReconnectDelay");
 
         var config = new McpServerConfig
         {
@@ -45,17 +61,27 @@ internal sealed class ServerConfig
             }
         };
 
+        if (WorkingDirectory is { } workingDirectory)
+            config.TransportOptions["workingDirectory"] = workingDirectory;
+
         if (Environment is { } environment)
             foreach (var variable in environment)
                 config.TransportOptions["env:" + variable.Key] = variable.Value;
+
+        if (EnvironmentFile is { } environmentFile)
+            foreach (var variable in EnvironmentFileFormat.Read(environmentFile))
+                config.TransportOptions["env:" + variable.Key] = variable.Value;
+
+        if (ShutdownTimeout is { } shutdownTimeout)
+            config.TransportOptions["shutdownTimeout"] = TimeSpan.FromSeconds(shutdownTimeout).ToString();
 
         return config;
     }
 
     private McpServerConfig ToMcpSse(string serverName)
     {
-        if (Command is not null || Arguments is not null || Environment is not null || EnvironmentFile is not null)
-            throw new InvalidOperationException("Server with URL does not support Command, Arguments, Environment or EnvironmentFile");
+        if (Command is not null || Arguments is not null || WorkingDirectory is not null || Environment is not null || EnvironmentFile is not null || ShutdownTimeout is not null)
+            throw new InvalidOperationException("Server with URL does not support Command, Arguments, WorkingDirectory, Environment, EnvironmentFile or ShutdownTimeout");
 
         var config = new McpServerConfig
         {
@@ -70,7 +96,16 @@ internal sealed class ServerConfig
 
         if (Headers is { } headers)
             foreach (var header in headers)
-                config.TransportOptions["header:" + header.Key] = header.Value;
+                config.TransportOptions["header." + header.Key] = header.Value;
+
+        if (ConnectionTimeout is { } connectionTimeout)
+            config.TransportOptions["connectionTimeout"] = connectionTimeout.ToString(CultureInfo.InvariantCulture);
+
+        if (MaxReconnectAttempts is { } maxReconnectAttempts)
+            config.TransportOptions["maxReconnectAttempts"] = maxReconnectAttempts.ToString(CultureInfo.InvariantCulture);
+
+        if (ReconnectDelay is { } reconnectDelay)
+            config.TransportOptions["reconnectDelay"] = reconnectDelay.ToString(CultureInfo.InvariantCulture);
 
         return config;
     }
