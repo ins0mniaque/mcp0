@@ -10,7 +10,7 @@ var rootCommand = new RootCommand()
     new RunCommand()
 };
 
-var logLevelOption = new Option<LogLevel>("loglevel", () => LogLevel.Warning);
+var logLevelOption = new Option<LogLevel>("--loglevel", () => LogLevel.Warning);
 
 rootCommand.AddGlobalOption(logLevelOption);
 
