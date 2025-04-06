@@ -4,7 +4,10 @@ internal sealed class RunCommand : Command
 {
     public RunCommand() : base("run", "Run one or more contexts as an MCP server")
     {
-        var contextsArgument = new Argument<string[]>("contexts", "A list of context names and/or context files to run");
+        var contextsArgument = new Argument<string[]>("contexts", "A list of context names and/or context files to run")
+        {
+            Arity = ArgumentArity.OneOrMore
+        };
 
         AddArgument(contextsArgument);
 

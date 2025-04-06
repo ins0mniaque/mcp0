@@ -16,4 +16,4 @@ var parsed = rootCommand.Parse(args);
 
 Log.MinimumLevel = parsed.GetValueForOption(logLevelOption);
 
-await parsed.InvokeAsync();
+return await rootCommand.InvokeAsync(args);

@@ -4,7 +4,10 @@ internal sealed class InspectCommand : Command
 {
     public InspectCommand() : base("inspect", "Inspect the MCP server for one or more contexts")
     {
-        var contextsArgument = new Argument<string[]>("contexts", "A list of context names and/or context files to list tools from");
+        var contextsArgument = new Argument<string[]>("contexts", "A list of context names and/or context files to list tools from")
+        {
+            Arity = ArgumentArity.OneOrMore
+        };
 
         AddArgument(contextsArgument);
         AddAlias("i");
