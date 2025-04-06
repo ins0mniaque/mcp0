@@ -8,8 +8,8 @@ using ModelContextProtocol.Server;
 
 internal sealed class Server
 {
-    public static string Name { get; } = typeof(Program).Assembly.GetName()?.Name ?? "mcp0";
-    public static string Version { get; } = typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.0.0";
+    public static string Name { get; } = typeof(Server).Assembly.GetName()?.Name ?? "mcp0";
+    public static string Version { get; } = typeof(Server).Assembly.GetName().Version?.ToString() ?? "0.0.0";
 
     public static string NameFrom(IEnumerable<string> names) => string.Join('/', names.DefaultIfEmpty(Name));
 
