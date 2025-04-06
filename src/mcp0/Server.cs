@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Client;
@@ -130,6 +131,8 @@ internal sealed class Server
             Tools = tools.Select(entry => entry.Value.Tool.ProtocolTool).ToList()
         });
 
+        var disabledCompletionClients = new ConcurrentDictionary<IMcpClient, byte>();
+
         var options = new McpServerOptions
         {
             ServerInfo = new() { Name = name, Version = version },
@@ -230,7 +233,23 @@ internal sealed class Server
                 else
                     throw new McpServerException($"Missing completion request parameters");
 
-                return await client.GetCompletionAsync(request.Params.Ref, request.Params.Argument.Name, request.Params.Argument.Value, cancellationToken);
+                if (disabledCompletionClients.ContainsKey(client))
+                    return new();
+
+                const int MethodNotFoundErrorCode = -32601;
+
+                try
+                {
+                    return await client.GetCompletionAsync(request.Params.Ref, request.Params.Argument.Name, request.Params.Argument.Value, cancellationToken);
+                }
+                catch (McpClientException exception) when (exception.ErrorCode is MethodNotFoundErrorCode)
+                {
+                    loggerFactory.CreateLogger<Server>().ClientMethodNotFound(LogLevel.Warning, "completion/complete");
+
+                    disabledCompletionClients.AddOrUpdate(client, default(byte), (a, b) => default);
+
+                    return new();
+                }
             }
         };
 

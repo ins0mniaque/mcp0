@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-internal static class Logging
+internal static partial class Log
 {
     public static LogLevel MinimumLevel { get; set; } = LogLevel.Warning;
 
@@ -14,4 +14,10 @@ internal static class Logging
             logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
         });
     }
+
+    [LoggerMessage(EventId = 1, Message = "Client does not support {Method} requests")]
+    public static partial void ClientMethodNotFound(
+        this ILogger logger,
+        LogLevel logLevel,
+        string method);
 }

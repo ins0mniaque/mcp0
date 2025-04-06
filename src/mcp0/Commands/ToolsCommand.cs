@@ -17,7 +17,7 @@ internal sealed class ToolsCommand : Command
     {
         var config = await Context.Load(contexts, cancellationToken);
 
-        using var loggerFactory = Logging.CreateLoggerFactory();
+        using var loggerFactory = Log.CreateLoggerFactory();
 
         var client = new Client(loggerFactory);
         var clientServers = config.Servers?.Select(entry => entry.Value.ToMcp(entry.Key)).ToList() ?? [];
