@@ -8,6 +8,11 @@ using ModelContextProtocol.Server;
 
 internal sealed class Server
 {
+    public static string Name { get; } = typeof(Program).Assembly.GetName()?.Name ?? "mcp0";
+    public static string Version { get; } = typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.0.0";
+
+    public static string NameFrom(IEnumerable<string> names) => string.Join('/', names.DefaultIfEmpty(Name));
+
     private readonly Dictionary<string, (IMcpClient Client, McpClientPrompt Prompt)> prompts;
     private readonly Dictionary<string, (IMcpClient Client, Resource Resource)> resources;
     private readonly Dictionary<string, (IMcpClient Client, ResourceTemplate ResourceTemplate)> resourceTemplates;
@@ -98,6 +103,7 @@ internal sealed class Server
         });
 
         var disabledCompletionClients = new ConcurrentDictionary<IMcpClient, byte>();
+        var emptyCompleteResult = new CompleteResult();
 
         var options = new McpServerOptions
         {
@@ -195,13 +201,13 @@ internal sealed class Server
                     throw new McpServerException($"Missing completion request parameters");
 
                 if (disabledCompletionClients.ContainsKey(client))
-                    return new();
+                    return emptyCompleteResult;
 
                 return await client.GetCompletionAsync(request.Params.Ref, request.Params.Argument.Name, request.Params.Argument.Value, cancellationToken).CatchMethodNotFound(exception =>
                 {
-                    disabledCompletionClients.AddOrUpdate(client, default(byte), (a, b) => default);
+                    disabledCompletionClients.AddOrUpdate(client, default(byte), (_, _) => default);
 
-                    return new();
+                    return emptyCompleteResult;
                 });
             }
         };

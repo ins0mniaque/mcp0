@@ -19,16 +19,14 @@ internal sealed class InspectCommand : Command
 
     public static async Task Execute(string[] contexts, CancellationToken cancellationToken)
     {
-        var config = await ContextConfig.Read(contexts, cancellationToken);
-
         using var loggerFactory = Log.CreateLoggerFactory();
 
-        var clientServers = config.Servers?.Select(entry => entry.Value.ToMcpServerConfig(entry.Key)).ToList() ?? [];
-        var clients = await clientServers.CreateMcpClientsAsync(loggerFactory, cancellationToken);
+        var config = await ContextConfig.Read(contexts, cancellationToken);
 
-        var name = string.Join('/', clientServers.Select(entry => entry.Name).DefaultIfEmpty("mcp0"));
-        var version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "unknown";
-        var server = new Server(name, version, loggerFactory);
+        var servers = config.Servers?.Select(entry => entry.Value.ToMcpServerConfig(entry.Key)).ToList() ?? [];
+        var clients = await servers.CreateMcpClientsAsync(loggerFactory, cancellationToken);
+
+        var server = new Server(Server.NameFrom(servers.Select(server => server.Name)), Server.Version, loggerFactory);
 
         await server.Initialize(clients, cancellationToken);
 
