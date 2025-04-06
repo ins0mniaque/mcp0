@@ -10,7 +10,7 @@ var rootCommand = new RootCommand()
     new RunCommand()
 };
 
-var logLevelOption = new Option<LogLevel>("--loglevel", () => LogLevel.Warning);
+var logLevelOption = new Option<LogLevel>("--loglevel", static () => LogLevel.Warning);
 
 rootCommand.AddGlobalOption(logLevelOption);
 
@@ -20,8 +20,8 @@ var parser = new CommandLineBuilder(rootCommand)
     {
         const string title = "mcp0 - Secure MCP (Model Context Protocol) servers configurator/inspector";
 
-        ctx.HelpBuilder.CustomizeLayout(_ =>
-            HelpBuilder.Default.GetLayout().Skip(1).Prepend(_ => Console.WriteLine(title)));
+        ctx.HelpBuilder.CustomizeLayout(static _ =>
+            HelpBuilder.Default.GetLayout().Skip(1).Prepend(static _ => Console.WriteLine(title)));
         ctx.HelpBuilder.CustomizeSymbol(logLevelOption,
             firstColumnText: "--loglevel <level>",
             secondColumnText: "Minimum severity logging level: <Trace|Debug|Information|Warning|Error|Critical>");

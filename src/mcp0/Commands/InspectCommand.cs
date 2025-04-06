@@ -23,10 +23,10 @@ internal sealed class InspectCommand : Command
 
         var config = await ContextConfig.Read(contexts, cancellationToken);
 
-        var servers = config.Servers?.Select(entry => entry.Value.ToMcpServerConfig(entry.Key)).ToList() ?? [];
+        var servers = config.Servers?.Select(static entry => entry.Value.ToMcpServerConfig(entry.Key)).ToList() ?? [];
         var clients = await servers.CreateMcpClientsAsync(loggerFactory, cancellationToken);
 
-        var server = new Server(Server.NameFrom(servers.Select(server => server.Name)), Server.Version, loggerFactory);
+        var server = new Server(Server.NameFrom(servers.Select(static server => server.Name)), Server.Version, loggerFactory);
 
         await server.Initialize(clients, cancellationToken);
 

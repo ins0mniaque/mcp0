@@ -6,12 +6,12 @@ internal static partial class Log
 
     public static ILoggerFactory CreateLoggerFactory()
     {
-        return LoggerFactory.Create(logging =>
+        return LoggerFactory.Create(static logging =>
         {
             logging.SetMinimumLevel(MinimumLevel);
 
             // Send all logs to standard error because MCP uses standard output
-            logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
+            logging.AddConsole(static options => options.LogToStandardErrorThreshold = LogLevel.Trace);
         });
     }
 }

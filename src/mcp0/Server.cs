@@ -62,10 +62,10 @@ internal sealed class Server
             listToolsTasks.Add(client.SafeListToolsAsync(null, cancellationToken));
         }
 
-        await Register(prompts, listPromptsTasks, prompt => prompt.Name);
-        await Register(resources, listResourcesTasks, resource => resource.Uri);
-        await Register(resourceTemplates, listResourceTemplatesTasks, resourceTemplate => resourceTemplate.UriTemplate);
-        await Register(tools, listToolsTasks, tool => tool.Name);
+        await Register(prompts, listPromptsTasks, static prompt => prompt.Name);
+        await Register(resources, listResourcesTasks, static resource => resource.Uri);
+        await Register(resourceTemplates, listResourceTemplatesTasks, static resourceTemplate => resourceTemplate.UriTemplate);
+        await Register(tools, listToolsTasks, static tool => tool.Name);
 
         async Task Register<T>(Dictionary<string, (IMcpClient, T)> dictionary, List<Task<IList<T>>> tasks, Func<T, string> keySelector)
         {
@@ -84,22 +84,22 @@ internal sealed class Server
     {
         var listPromptsResultTask = Task.FromResult(new ListPromptsResult
         {
-            Prompts = prompts.Select(entry => entry.Value.Prompt.ProtocolPrompt).ToList()
+            Prompts = prompts.Select(static entry => entry.Value.Prompt.ProtocolPrompt).ToList()
         });
 
         var listResourcesResultTask = Task.FromResult(new ListResourcesResult
         {
-            Resources = resources.Select(entry => entry.Value.Resource).ToList()
+            Resources = resources.Select(static entry => entry.Value.Resource).ToList()
         });
 
         var listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult
         {
-            ResourceTemplates = resourceTemplates.Select(entry => entry.Value.ResourceTemplate).ToList()
+            ResourceTemplates = resourceTemplates.Select(static entry => entry.Value.ResourceTemplate).ToList()
         });
 
         var listToolsResultTask = Task.FromResult(new ListToolsResult
         {
-            Tools = tools.Select(entry => entry.Value.Tool.ProtocolTool).ToList()
+            Tools = tools.Select(static entry => entry.Value.Tool.ProtocolTool).ToList()
         });
 
         var disabledCompletionClients = new ConcurrentDictionary<IMcpClient, byte>();
@@ -205,7 +205,7 @@ internal sealed class Server
 
                 return await client.GetCompletionAsync(request.Params.Ref, request.Params.Argument.Name, request.Params.Argument.Value, cancellationToken).CatchMethodNotFound(exception =>
                 {
-                    disabledCompletionClients.AddOrUpdate(client, default(byte), (_, _) => default);
+                    disabledCompletionClients.AddOrUpdate(client, default(byte), static (_, _) => default);
 
                     return emptyCompleteResult;
                 });
@@ -231,11 +231,11 @@ internal sealed class Server
 
     private static Dictionary<string, object?>? Convert(Dictionary<string, JsonElement>? arguments)
     {
-        return arguments?.ToDictionary(entry => entry.Key, entry => (object?)entry.Value);
+        return arguments?.ToDictionary(static entry => entry.Key, static entry => (object?)entry.Value);
     }
 
     private static Dictionary<string, object?>? Convert(Dictionary<string, object>? arguments)
     {
-        return arguments?.ToDictionary(entry => entry.Key, entry => (object?)entry.Value);
+        return arguments?.ToDictionary(static entry => entry.Key, static entry => (object?)entry.Value);
     }
 }
