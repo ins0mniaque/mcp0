@@ -1,12 +1,13 @@
 using System.CommandLine;
 
-internal sealed class ToolsCommand : Command
+internal sealed class InspectCommand : Command
 {
-    public ToolsCommand() : base("tools", "List tools for one or more contexts")
+    public InspectCommand() : base("inspect", "Inspect the MCP server for one or more contexts")
     {
         var contextsArgument = new Argument<string[]>("contexts", "A list of context names and/or context files to list tools from");
 
         AddArgument(contextsArgument);
+        AddAlias("i");
 
         this.SetHandler(Execute, contextsArgument);
     }
@@ -30,12 +31,43 @@ internal sealed class ToolsCommand : Command
 
         await server.Initialize(client.Clients, cancellationToken);
 
+        Console.WriteLine("Prompts:");
+
+        foreach (var entry in server.Prompts)
+        {
+            var prompt = entry.Value.Prompt;
+
+            Console.WriteLine($"  {prompt.Name}: ${prompt.Description}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Resources:");
+
+        foreach (var entry in server.Resources)
+        {
+            var resource = entry.Value.Resource;
+
+            Console.WriteLine($"  {resource.Name}: ${resource.Description}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Resource Templates:");
+
+        foreach (var entry in server.ResourceTemplates)
+        {
+            var resourceTemplate = entry.Value.ResourceTemplate;
+
+            Console.WriteLine($"  {resourceTemplate.Name}: ${resourceTemplate.Description}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Tools:");
+
         foreach (var entry in server.Tools)
         {
             var tool = entry.Value.Tool;
 
-            Console.WriteLine($"{tool.Name}: ${tool.Description}");
-            Console.WriteLine($"  Input Schema: {tool.ProtocolTool.InputSchema}");
+            Console.WriteLine($"  {tool.Name}({McpToolInputSchema.GetSignature(tool.ProtocolTool.InputSchema)}): ${tool.Description}");
         }
     }
 }

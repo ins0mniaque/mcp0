@@ -6,8 +6,8 @@ var logLevelOption = new Option<LogLevel>("--loglevel", () => LogLevel.Warning, 
 
 var rootCommand = new RootCommand("mcp0 - Secure MCP (Model Context Protocol) servers configurator/inspector")
 {
-    new RunCommand(),
-    new ToolsCommand()
+    new InspectCommand(),
+    new RunCommand()
 };
 
 rootCommand.AddGlobalOption(logLevelOption);
