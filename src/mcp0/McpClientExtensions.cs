@@ -1,0 +1,62 @@
+using System.Text.Json;
+using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol.Types;
+
+internal static class McpClientExtensions
+{
+    public static Task<IList<McpClientPrompt>> SafeListPromptsAsync(
+        this IMcpClient client, CancellationToken cancellationToken = default)
+    {
+        if (client.ServerCapabilities?.Prompts is null)
+            return Task.FromResult<IList<McpClientPrompt>>(new List<McpClientPrompt>());
+
+        return client.ListPromptsAsync(cancellationToken)
+            .CatchMethodNotFound(_ => new List<McpClientPrompt>());
+    }
+
+    public static Task<IList<Resource>> SafeListResourcesAsync(
+        this IMcpClient client, CancellationToken cancellationToken = default)
+    {
+        if (client.ServerCapabilities?.Resources is null)
+            return Task.FromResult<IList<Resource>>(new List<Resource>());
+
+        return client.ListResourcesAsync(cancellationToken)
+            .CatchMethodNotFound(_ => new List<Resource>());
+    }
+
+    public static Task<IList<ResourceTemplate>> SafeListResourceTemplatesAsync(
+        this IMcpClient client, CancellationToken cancellationToken = default)
+    {
+        if (client.ServerCapabilities?.Resources is null)
+            return Task.FromResult<IList<ResourceTemplate>>(new List<ResourceTemplate>());
+
+        return client.ListResourceTemplatesAsync(cancellationToken)
+            .CatchMethodNotFound(_ => new List<ResourceTemplate>());
+    }
+
+    public static Task<IList<McpClientTool>> SafeListToolsAsync(
+        this IMcpClient client,
+        JsonSerializerOptions? serializerOptions = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (client.ServerCapabilities?.Tools is null)
+            return Task.FromResult<IList<McpClientTool>>(new List<McpClientTool>());
+
+        return client.ListToolsAsync(serializerOptions, cancellationToken)
+            .CatchMethodNotFound(_ => new List<McpClientTool>());
+    }
+
+    public static async Task<T> CatchMethodNotFound<T>(this Task<T> task, Func<McpClientException, T> fallback)
+    {
+        const int MethodNotFoundErrorCode = -32601;
+
+        try
+        {
+            return await task;
+        }
+        catch (McpClientException exception) when (exception.ErrorCode is MethodNotFoundErrorCode)
+        {
+            return fallback(exception);
+        }
+    }
+}

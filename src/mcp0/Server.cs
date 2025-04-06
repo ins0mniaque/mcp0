@@ -51,61 +51,27 @@ internal sealed class Server
 
         foreach (var client in clients)
         {
-            if (client.ServerCapabilities?.Prompts is not null)
-                listPromptsTasks.Add(client.ListPromptsAsync(cancellationToken));
-            else
-                listPromptsTasks.Add(Task.FromResult<IList<McpClientPrompt>>(new List<McpClientPrompt>()));
-
-            if (client.ServerCapabilities?.Resources is not null)
-                listResourcesTasks.Add(client.ListResourcesAsync(cancellationToken));
-            else
-                listResourcesTasks.Add(Task.FromResult<IList<Resource>>(new List<Resource>()));
-
-            if (client.ServerCapabilities?.Resources is not null)
-                listResourceTemplatesTasks.Add(client.ListResourceTemplatesAsync(cancellationToken));
-            else
-                listResourceTemplatesTasks.Add(Task.FromResult<IList<ResourceTemplate>>(new List<ResourceTemplate>()));
-
-            if (client.ServerCapabilities?.Tools is not null)
-                listToolsTasks.Add(client.ListToolsAsync(null, cancellationToken));
-            else
-                listToolsTasks.Add(Task.FromResult<IList<McpClientTool>>(new List<McpClientTool>()));
+            listPromptsTasks.Add(client.SafeListPromptsAsync(cancellationToken));
+            listResourcesTasks.Add(client.SafeListResourcesAsync(cancellationToken));
+            listResourceTemplatesTasks.Add(client.SafeListResourceTemplatesAsync(cancellationToken));
+            listToolsTasks.Add(client.SafeListToolsAsync(null, cancellationToken));
         }
 
-        var clientsPrompts = await Task.WhenAll(listPromptsTasks);
-        for (var index = 0; index < clientsPrompts.Length; index++)
-        {
-            var client = clients[index];
-            var clientPrompts = clientsPrompts[index];
-            foreach (var clientPrompt in clientPrompts)
-                prompts[clientPrompt.Name] = (client, clientPrompt);
-        }
+        await Register(prompts, listPromptsTasks, prompt => prompt.Name);
+        await Register(resources, listResourcesTasks, resource => resource.Uri);
+        await Register(resourceTemplates, listResourceTemplatesTasks, resourceTemplate => resourceTemplate.UriTemplate);
+        await Register(tools, listToolsTasks, tool => tool.Name);
 
-        var clientsResources = await Task.WhenAll(listResourcesTasks);
-        for (var index = 0; index < clientsResources.Length; index++)
+        async Task Register<T>(Dictionary<string, (IMcpClient, T)> dictionary, List<Task<IList<T>>> tasks, Func<T, string> keySelector)
         {
-            var client = clients[index];
-            var clientResources = clientsResources[index];
-            foreach (var clientResource in clientResources)
-                resources[clientResource.Uri] = (client, clientResource);
-        }
-
-        var clientsResourceTemplates = await Task.WhenAll(listResourceTemplatesTasks);
-        for (var index = 0; index < clientsResourceTemplates.Length; index++)
-        {
-            var client = clients[index];
-            var clientResourceTemplates = clientsResourceTemplates[index];
-            foreach (var clientResourceTemplate in clientResourceTemplates)
-                resourceTemplates[clientResourceTemplate.UriTemplate] = (client, clientResourceTemplate);
-        }
-
-        var clientsTools = await Task.WhenAll(listToolsTasks);
-        for (var index = 0; index < clientsTools.Length; index++)
-        {
-            var client = clients[index];
-            var clientTools = clientsTools[index];
-            foreach (var clientTool in clientTools)
-                tools[clientTool.Name] = (client, clientTool);
+            var clientsItems = await Task.WhenAll(tasks);
+            for (var index = 0; index < clientsItems.Length; index++)
+            {
+                var client = clients[index];
+                var clientItems = clientsItems[index];
+                foreach (var clientItem in clientItems)
+                    dictionary[keySelector(clientItem)] = (client, clientItem);
+            }
         }
     }
 
@@ -236,20 +202,12 @@ internal sealed class Server
                 if (disabledCompletionClients.ContainsKey(client))
                     return new();
 
-                const int MethodNotFoundErrorCode = -32601;
-
-                try
+                return await client.GetCompletionAsync(request.Params.Ref, request.Params.Argument.Name, request.Params.Argument.Value, cancellationToken).CatchMethodNotFound(exception =>
                 {
-                    return await client.GetCompletionAsync(request.Params.Ref, request.Params.Argument.Name, request.Params.Argument.Value, cancellationToken);
-                }
-                catch (McpClientException exception) when (exception.ErrorCode is MethodNotFoundErrorCode)
-                {
-                    loggerFactory.CreateLogger<Server>().ClientMethodNotFound(LogLevel.Warning, "completion/complete");
-
                     disabledCompletionClients.AddOrUpdate(client, default(byte), (a, b) => default);
 
                     return new();
-                }
+                });
             }
         };
 

@@ -14,10 +14,4 @@ internal static partial class Log
             logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
         });
     }
-
-    [LoggerMessage(EventId = 1, Message = "Client does not support {Method} requests")]
-    public static partial void ClientMethodNotFound(
-        this ILogger logger,
-        LogLevel logLevel,
-        string method);
 }
