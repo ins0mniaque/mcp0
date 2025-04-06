@@ -2,13 +2,13 @@ using System.Text.Json;
 
 internal static class Context
 {
-    public static async Task<ContextConfig> Load(string[] paths, CancellationToken cancellationToken)
+    public static async Task<ContextConfig> Read(string[] paths, CancellationToken cancellationToken)
     {
         var merged = new ContextConfig();
 
         var tasks = new Task<ContextConfig>[paths.Length];
         for (var index = 0; index < paths.Length; index++)
-            tasks[index] = Load(paths[index], cancellationToken);
+            tasks[index] = Read(paths[index], cancellationToken);
 
         var configs = await Task.WhenAll(tasks);
         foreach (var config in configs)
@@ -20,7 +20,7 @@ internal static class Context
         return merged;
     }
 
-    public static async Task<ContextConfig> Load(string path, CancellationToken cancellationToken)
+    public static async Task<ContextConfig> Read(string path, CancellationToken cancellationToken)
     {
         ContextConfig? contextConfig;
         using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))

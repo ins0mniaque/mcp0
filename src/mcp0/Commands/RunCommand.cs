@@ -18,7 +18,7 @@ internal sealed class RunCommand : Command
 
     public static async Task Execute(string[] contexts, CancellationToken cancellationToken)
     {
-        var config = await Context.Load(contexts, cancellationToken);
+        var config = await Context.Read(contexts, cancellationToken);
 
         using var loggerFactory = Log.CreateLoggerFactory();
 

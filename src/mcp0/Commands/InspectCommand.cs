@@ -19,7 +19,7 @@ internal sealed class InspectCommand : Command
 
     public static async Task Execute(string[] contexts, CancellationToken cancellationToken)
     {
-        var config = await Context.Load(contexts, cancellationToken);
+        var config = await Context.Read(contexts, cancellationToken);
 
         using var loggerFactory = Log.CreateLoggerFactory();
 
@@ -34,43 +34,90 @@ internal sealed class InspectCommand : Command
 
         await server.Initialize(client.Clients, cancellationToken);
 
-        Console.WriteLine("Prompts:");
+        const ConsoleColor SectionColor = ConsoleColor.Magenta;
+        const ConsoleColor HeaderColor = ConsoleColor.Green;
+        const ConsoleColor ArgumentColor = ConsoleColor.Cyan;
+        const ConsoleColor ErrorColor = ConsoleColor.Red;
+        const string Indentation = "  ";
 
-        foreach (var entry in server.Prompts)
+        foreach (var mcpClient in client.Clients)
         {
-            var prompt = entry.Value.Prompt;
+            if (mcpClient.ServerInfo is not { } info)
+            {
+                Terminal.Write("server", ErrorColor);
+                Terminal.WriteLine(" (no information)");
+                continue;
+            }
 
-            Console.WriteLine($"  {prompt.Name}: ${prompt.Description}");
+            Terminal.Write(mcpClient.ServerInfo.Name, HeaderColor);
+            Terminal.Write(" ");
+            Terminal.WriteLine(mcpClient.ServerInfo.Version);
         }
 
-        Console.WriteLine();
-        Console.WriteLine("Resources:");
-
-        foreach (var entry in server.Resources)
+        if (server.Prompts.Count is not 0)
         {
-            var resource = entry.Value.Resource;
+            Terminal.WriteLine();
+            Terminal.WriteLine("Prompts", SectionColor);
 
-            Console.WriteLine($"  {resource.Name}: ${resource.Description}");
+            foreach (var entry in server.Prompts)
+            {
+                var prompt = entry.Value.Prompt;
+
+                Terminal.Write(Indentation);
+                Terminal.Write(prompt.Name, HeaderColor);
+                Terminal.Write(": ");
+                Terminal.WriteLine(prompt.Description);
+            }
         }
 
-        Console.WriteLine();
-        Console.WriteLine("Resource Templates:");
-
-        foreach (var entry in server.ResourceTemplates)
+        if (server.Resources.Count is not 0)
         {
-            var resourceTemplate = entry.Value.ResourceTemplate;
+            Terminal.WriteLine();
+            Terminal.WriteLine("Resources", SectionColor);
 
-            Console.WriteLine($"  {resourceTemplate.Name}: ${resourceTemplate.Description}");
+            foreach (var entry in server.Resources)
+            {
+                var resource = entry.Value.Resource;
+
+                Terminal.Write(Indentation);
+                Terminal.Write(resource.Name, HeaderColor);
+                Terminal.Write(": ");
+                Terminal.WriteLine(resource.Description);
+            }
         }
 
-        Console.WriteLine();
-        Console.WriteLine("Tools:");
-
-        foreach (var entry in server.Tools)
+        if (server.ResourceTemplates.Count is not 0)
         {
-            var tool = entry.Value.Tool;
+            Terminal.WriteLine();
+            Terminal.WriteLine("Resource Templates", SectionColor);
 
-            Console.WriteLine($"  {tool.Name}({McpToolInputSchema.GetSignature(tool.ProtocolTool.InputSchema)}): ${tool.Description}");
+            foreach (var entry in server.ResourceTemplates)
+            {
+                var resourceTemplate = entry.Value.ResourceTemplate;
+
+                Terminal.Write(Indentation);
+                Terminal.Write(resourceTemplate.Name, HeaderColor);
+                Terminal.Write(": ");
+                Terminal.WriteLine(resourceTemplate.Description);
+            }
+        }
+
+        if (server.Tools.Count is not 0)
+        {
+            Terminal.WriteLine();
+            Terminal.WriteLine("Tools", SectionColor);
+
+            foreach (var entry in server.Tools)
+            {
+                var tool = entry.Value.Tool;
+
+                Terminal.Write(Indentation);
+                Terminal.Write(tool.Name, HeaderColor);
+                Terminal.Write("(");
+                Terminal.Write(McpToolInputSchema.GetSignature(tool.ProtocolTool.InputSchema), ArgumentColor);
+                Terminal.Write("): ");
+                Terminal.WriteLine(tool.Description);
+            }
         }
     }
 }
