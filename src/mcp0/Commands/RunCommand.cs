@@ -18,20 +18,18 @@ internal sealed class RunCommand : Command
 
     public static async Task Execute(string[] contexts, CancellationToken cancellationToken)
     {
-        var config = await Context.Read(contexts, cancellationToken);
+        var config = await ContextConfig.Read(contexts, cancellationToken);
 
         using var loggerFactory = Log.CreateLoggerFactory();
 
-        var client = new Client(loggerFactory);
-        var clientServers = config.Servers?.Select(entry => entry.Value.ToMcp(entry.Key)).ToList() ?? [];
-
-        await client.Initialize(clientServers, cancellationToken);
+        var clientServers = config.Servers?.Select(entry => entry.Value.ToMcpServerConfig(entry.Key)).ToList() ?? [];
+        var clients = await clientServers.CreateMcpClientsAsync(loggerFactory, cancellationToken);
 
         var name = string.Join('/', clientServers.Select(entry => entry.Name).DefaultIfEmpty("mcp0"));
         var version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "unknown";
         var server = new Server(name, version, loggerFactory);
 
-        await server.Initialize(client.Clients, cancellationToken);
+        await server.Initialize(clients, cancellationToken);
         await server.Serve(cancellationToken);
     }
 }

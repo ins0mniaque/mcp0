@@ -21,7 +21,7 @@ public sealed class ServerConfigTests
             ShutdownTimeout = 60
         };
 
-        var mcpServerConfig = config.ToMcp("mcp0");
+        var mcpServerConfig = config.ToMcpServerConfig("mcp0");
         var transport = CreateTransport(mcpServerConfig);
 
         Assert.IsInstanceOfType<StdioClientTransport>(transport);
@@ -53,7 +53,7 @@ public sealed class ServerConfigTests
             ReconnectDelay = 60
         };
 
-        var mcpServerConfig = config.ToMcp("mcp0");
+        var mcpServerConfig = config.ToMcpServerConfig("mcp0");
         var transport = CreateTransport(mcpServerConfig);
 
         Assert.IsInstanceOfType<SseClientTransport>(transport);
@@ -77,7 +77,7 @@ public sealed class ServerConfigTests
     {
         var config = new ServerConfig { Command = "" };
 
-        Assert.ThrowsException<InvalidOperationException>(() => config.ToMcp("mcp0"));
+        Assert.ThrowsException<InvalidOperationException>(() => config.ToMcpServerConfig("mcp0"));
     }
 
     [TestMethod]
@@ -85,7 +85,7 @@ public sealed class ServerConfigTests
     {
         var config = new ServerConfig { ConnectionTimeout = 60 };
 
-        Assert.ThrowsException<InvalidOperationException>(() => config.ToMcp("mcp0"));
+        Assert.ThrowsException<InvalidOperationException>(() => config.ToMcpServerConfig("mcp0"));
     }
 
     [TestMethod]
@@ -97,7 +97,7 @@ public sealed class ServerConfigTests
             Url = new Uri("http://localhost:8080/mcp-server-fetch")
         };
 
-        Assert.ThrowsException<InvalidOperationException>(() => config.ToMcp("mcp0"));
+        Assert.ThrowsException<InvalidOperationException>(() => config.ToMcpServerConfig("mcp0"));
     }
 
     private static void AreEqual(StdioClientTransportOptions expected, StdioClientTransportOptions actual)

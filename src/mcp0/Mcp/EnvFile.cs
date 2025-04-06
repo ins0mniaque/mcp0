@@ -1,4 +1,4 @@
-internal static class EnvironmentFileFormat
+internal static class EnvFile
 {
     public static Dictionary<string, string> Read(string path)
     {

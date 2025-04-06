@@ -38,13 +38,13 @@ internal sealed class ServerConfig
     [JsonPropertyName("reconnectDelay")]
     public int? ReconnectDelay { get; set; }
 
-    public McpServerConfig ToMcp(string serverName) => Url switch
+    public McpServerConfig ToMcpServerConfig(string serverName) => Url switch
     {
-        null => ToMcpStdIo(serverName),
-        _ => ToMcpSse(serverName)
+        null => ToMcpStdIoServerConfig(serverName),
+        _ => ToMcpSseServerConfig(serverName)
     };
 
-    private McpServerConfig ToMcpStdIo(string serverName)
+    private McpServerConfig ToMcpStdIoServerConfig(string serverName)
     {
         if (Url is not null || Headers is not null || ConnectionTimeout is not null || MaxReconnectAttempts is not null || ReconnectDelay is not null)
             throw new InvalidOperationException("Server with command does not support URL, Headers, ConnectionTimeout, MaxReconnectAttempts, or ReconnectDelay");
@@ -73,7 +73,7 @@ internal sealed class ServerConfig
                 config.TransportOptions["env:" + variable.Key] = variable.Value;
 
         if (EnvironmentFile is { } environmentFile)
-            foreach (var variable in EnvironmentFileFormat.Read(environmentFile))
+            foreach (var variable in EnvFile.Read(environmentFile))
                 config.TransportOptions["env:" + variable.Key] = variable.Value;
 
         if (ShutdownTimeout is { } shutdownTimeout)
@@ -82,7 +82,7 @@ internal sealed class ServerConfig
         return config;
     }
 
-    private McpServerConfig ToMcpSse(string serverName)
+    private McpServerConfig ToMcpSseServerConfig(string serverName)
     {
         if (Command is not null || Arguments is not null || WorkingDirectory is not null || Environment is not null || EnvironmentFile is not null || ShutdownTimeout is not null)
             throw new InvalidOperationException("Server with URL does not support Command, Arguments, WorkingDirectory, Environment, EnvironmentFile or ShutdownTimeout");
