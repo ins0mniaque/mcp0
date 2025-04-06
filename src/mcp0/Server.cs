@@ -115,12 +115,7 @@ internal sealed class Server
 
                         var setLoggingLevelTasks = new List<Task>(Clients.Count);
                         foreach (var client in Clients)
-                        {
-                            if (client.ServerCapabilities?.Logging is not null)
-                                setLoggingLevelTasks.Add(client.SetLoggingLevel(level, cancellationToken));
-                            else
-                                setLoggingLevelTasks.Add(Task.CompletedTask);
-                        }
+                            setLoggingLevelTasks.Add(client.SafeSetLoggingLevel(level, cancellationToken));
 
                         await Task.WhenAll(setLoggingLevelTasks);
 
