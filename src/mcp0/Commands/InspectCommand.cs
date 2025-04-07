@@ -35,7 +35,7 @@ internal sealed class InspectCommand : Command
         const ConsoleColor ErrorColor = ConsoleColor.Red;
         const string Indentation = "  ";
 
-        var width = Console.WindowWidth;
+        var width = Terminal.Width;
 
         foreach (var client in clients)
         {

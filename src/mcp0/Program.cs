@@ -21,7 +21,7 @@ var parser = new CommandLineBuilder(rootCommand)
         const string title = "mcp0 - Secure MCP (Model Context Protocol) servers configurator/inspector";
 
         ctx.HelpBuilder.CustomizeLayout(static _ =>
-            HelpBuilder.Default.GetLayout().Skip(1).Prepend(static _ => Console.WriteLine(title)));
+            HelpBuilder.Default.GetLayout().Skip(1).Prepend(static _ => Terminal.WriteLine(title)));
         ctx.HelpBuilder.CustomizeSymbol(logLevelOption,
             firstColumnText: "--loglevel <level>",
             secondColumnText: "Minimum severity logging level: <Trace|Debug|Information|Warning|Error|Critical>");

@@ -2,6 +2,9 @@ using System.Text;
 
 internal static class Terminal
 {
+    public static int Width => Console.WindowWidth;
+    public static int Height => Console.WindowHeight;
+
     public static void Write(string? text) => Console.Write(text);
     public static void WriteLine(string? text) => Console.WriteLine(text);
     public static void WriteLine() => Console.WriteLine();
