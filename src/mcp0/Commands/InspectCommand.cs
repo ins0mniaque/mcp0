@@ -35,6 +35,8 @@ internal sealed class InspectCommand : Command
         const ConsoleColor ErrorColor = ConsoleColor.Red;
         const string Indentation = "  ";
 
+        var width = Console.WindowWidth;
+
         foreach (var client in clients)
         {
             if (client.ServerInfo is not { } info)
@@ -61,7 +63,7 @@ internal sealed class InspectCommand : Command
                 Terminal.Write(Indentation);
                 Terminal.Write(prompt.Name, HeaderColor);
                 Terminal.Write(": ");
-                Terminal.WriteLine(prompt.Description);
+                WriteDescription(prompt.Description, width);
             }
         }
 
@@ -77,7 +79,7 @@ internal sealed class InspectCommand : Command
                 Terminal.Write(Indentation);
                 Terminal.Write(resource.Name, HeaderColor);
                 Terminal.Write(": ");
-                Terminal.WriteLine(resource.Description);
+                WriteDescription(resource.Description, width);
             }
         }
 
@@ -93,7 +95,7 @@ internal sealed class InspectCommand : Command
                 Terminal.Write(Indentation);
                 Terminal.Write(resourceTemplate.Name, HeaderColor);
                 Terminal.Write(": ");
-                Terminal.WriteLine(resourceTemplate.Description);
+                WriteDescription(resourceTemplate.Description, width);
             }
         }
 
@@ -111,9 +113,20 @@ internal sealed class InspectCommand : Command
                 Terminal.Write("(");
                 WriteJsonSchema(JsonSchema.Parse(tool.ProtocolTool.InputSchema), asArguments: true);
                 Terminal.Write("): ");
-                Terminal.WriteLine(tool.Description);
+                WriteDescription(tool.Description, width);
             }
         }
+    }
+
+    private static void WriteDescription(string? description, int width)
+    {
+        if (width > 16 && description?.Length > width / 2)
+        {
+            Terminal.WriteLine();
+            Terminal.WriteLine(Terminal.Wrap(description, width - 4, 4));
+        }
+        else
+            Terminal.WriteLine(description);
     }
 
     private static void WriteJsonSchema(JsonSchemaNode node, bool asArguments = false)
