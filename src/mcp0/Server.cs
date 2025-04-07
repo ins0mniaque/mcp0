@@ -117,7 +117,18 @@ internal sealed class Server
                         if (request.Params?.Level is not { } level)
                             throw new McpServerException("Missing logging level parameter");
 
-                        // TODO: Set minimum log level based on request.Params?.Level
+                        Log.SetMinimumLevel(level switch
+                        {
+                            LoggingLevel.Debug => LogLevel.Debug,
+                            LoggingLevel.Info => LogLevel.Information,
+                            LoggingLevel.Notice => LogLevel.Information,
+                            LoggingLevel.Warning => LogLevel.Warning,
+                            LoggingLevel.Error => LogLevel.Error,
+                            LoggingLevel.Critical => LogLevel.Critical,
+                            LoggingLevel.Alert => LogLevel.Critical,
+                            LoggingLevel.Emergency => LogLevel.Critical,
+                            _ => LogLevel.Warning
+                        });
 
                         var setLoggingLevelTasks = new List<Task>(Clients.Count);
                         foreach (var client in Clients)

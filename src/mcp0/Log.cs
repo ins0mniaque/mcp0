@@ -2,7 +2,13 @@ using Microsoft.Extensions.Logging;
 
 internal static partial class Log
 {
-    public static LogLevel MinimumLevel { get; set; } = LogLevel.Warning;
+    public static LogLevel MinimumLevel { get; private set; } = LogLevel.Warning;
+
+    public static void SetMinimumLevel(LogLevel level)
+    {
+        // TODO: Implement minimum level change at runtime through IConfigurationRoot.Reload
+        MinimumLevel = level;
+    }
 
     public static ILoggerFactory CreateLoggerFactory()
     {

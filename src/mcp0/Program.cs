@@ -30,6 +30,6 @@ var parser = new CommandLineBuilder(rootCommand)
 
 var parsed = parser.Parse(args);
 
-Log.MinimumLevel = parsed.GetValueForOption(logLevelOption);
+Log.SetMinimumLevel(parsed.GetValueForOption(logLevelOption));
 
 return await parsed.InvokeAsync();
