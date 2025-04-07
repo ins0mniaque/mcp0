@@ -1,22 +1,28 @@
 internal static class EnvFile
 {
-    public static Dictionary<string, string> Read(string path)
+    public static Dictionary<string, string> Parse(ReadOnlySpan<char> envFile)
     {
         var environment = new Dictionary<string, string>();
 
-        foreach (var line in File.ReadAllLines(path))
+        foreach (var lineRange in envFile.Split('\n'))
         {
-            if (string.IsNullOrWhiteSpace(line) || line[0] == '#')
+            var line = envFile[lineRange];
+            if (line.Length is 0 || line[0] is '#' || line.IsWhiteSpace())
                 continue;
 
-            var parts = line.Split('=', 2);
-            if (parts.Length != 2)
-                continue;
+            var index = 0;
+            var key = string.Empty;
+            var value = string.Empty;
+            foreach (var keyOrValueRange in line.Split('='))
+            {
+                if (index is 0) key = line[keyOrValueRange].Trim().ToString();
+                else if (index is 1) value = line[keyOrValueRange].Trim().ToString();
+                else break;
 
-            var key = parts[0].Trim();
-            var value = parts[1].Trim();
+                index++;
+            }
 
-            if (string.IsNullOrWhiteSpace(key) || key[0] == '#')
+            if (index is not 1 || key.Length is 0 || key[0] is '#')
                 continue;
 
             environment[key] = value;

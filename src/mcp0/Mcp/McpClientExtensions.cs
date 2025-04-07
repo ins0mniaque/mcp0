@@ -6,7 +6,10 @@ using ModelContextProtocol.Protocol.Types;
 
 internal static class McpClientExtensions
 {
-    public static async Task<IMcpClient[]> CreateMcpClientsAsync(this IEnumerable<McpServerConfig> servers, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
+    public static async Task<IMcpClient[]> CreateMcpClientsAsync(
+        this IEnumerable<McpServerConfig> servers,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
     {
         var clientTasks = new List<Task<IMcpClient>>();
         foreach (var server in servers)
@@ -62,7 +65,10 @@ internal static class McpClientExtensions
             .CatchMethodNotFound(static _ => new List<McpClientTool>());
     }
 
-    public static Task SafeSetLoggingLevel(this IMcpClient client, LoggingLevel level, CancellationToken cancellationToken = default)
+    public static Task SafeSetLoggingLevel(
+        this IMcpClient client,
+        LoggingLevel level,
+        CancellationToken cancellationToken = default)
     {
         if (client.ServerCapabilities?.Logging is null)
             return Task.CompletedTask;
