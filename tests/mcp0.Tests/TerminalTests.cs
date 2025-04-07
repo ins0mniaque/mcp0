@@ -6,7 +6,7 @@ public sealed class TerminalTests
     [TestMethod]
     public void WrapsCorrectly()
     {
-        var paragraph = "One very long line with a bigwordthatshouldwrap and a verybigwordthatsalittlebitlongerthanthewidthusedtowrap that wraps correctly.";
+        var paragraph = "One very long line with a bigwordthatshouldwrap and a verybigwordthatsalittlebitlongerthanthewidthusedtowrap that wraps correctly.\n\nMagic!";
         var actual = Terminal.Wrap(paragraph, 40, 4);
         var expected =
         """
@@ -14,6 +14,8 @@ public sealed class TerminalTests
             bigwordthatshouldwrap and a verybigword\
             thatsalittlebitlongerthanthewidthusedto\
             wrap that wraps correctly.
+            
+            Magic!
         """;
 
         Assert.AreEqual(expected, actual);

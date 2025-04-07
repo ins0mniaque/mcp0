@@ -2,45 +2,45 @@ using System.Text;
 
 internal static class Terminal
 {
-    public static void Write(string? value) => Console.Write(value);
-    public static void WriteLine(string? value) => Console.WriteLine(value);
+    public static void Write(string? text) => Console.Write(text);
+    public static void WriteLine(string? text) => Console.WriteLine(text);
     public static void WriteLine() => Console.WriteLine();
 
-    public static void Write(string? value, ConsoleColor foreground)
+    public static void Write(string? text, ConsoleColor foreground)
     {
         var defaultForeground = Console.ForegroundColor;
         Console.ForegroundColor = foreground;
-        Console.Write(value);
+        Console.Write(text);
         Console.ForegroundColor = defaultForeground;
     }
 
-    public static void WriteLine(string? value, ConsoleColor foreground)
+    public static void WriteLine(string? text, ConsoleColor foreground)
     {
         var defaultForeground = Console.ForegroundColor;
         Console.ForegroundColor = foreground;
-        Console.WriteLine(value);
+        Console.WriteLine(text);
         Console.ForegroundColor = defaultForeground;
     }
 
-    public static string Wrap(ReadOnlySpan<char> value, int width, int leftPad = 0)
+    public static string Wrap(ReadOnlySpan<char> text, int width, int leftPad = 0)
     {
-        var buffer = new StringBuilder(value.Length + (leftPad + 1) * value.Length / width + 1);
+        var buffer = new StringBuilder(text.Length + (leftPad + 1) * text.Length / width + 1);
         if (leftPad > 0)
             buffer.Append(' ', leftPad);
 
         var lineStart = buffer.Length;
-        foreach (var lineRange in value.Split('\n'))
+        foreach (var lineRange in text.Split('\n'))
         {
             if (buffer.Length > leftPad)
                 AppendLine(buffer, ref lineStart, leftPad);
 
-            var line = value[lineRange];
+            var line = text[lineRange];
             foreach (var range in line.Split(' '))
             {
                 if (buffer.Length > lineStart)
                     buffer.Append(' ');
 
-                var word = value[range];
+                var word = line[range];
 
                 if (word.Length > width)
                 {
