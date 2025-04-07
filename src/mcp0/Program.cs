@@ -4,6 +4,9 @@ using System.CommandLine.Help;
 using System.CommandLine.Parsing;
 using Microsoft.Extensions.Logging;
 
+using mcp0;
+using mcp0.Commands;
+
 var rootCommand = new RootCommand()
 {
     new InspectCommand(),

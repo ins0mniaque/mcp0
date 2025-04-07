@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
 
+namespace mcp0;
+
 internal static class Log
 {
     public static LogLevel MinimumLevel { get; private set; } = LogLevel.Warning;

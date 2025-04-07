@@ -1,5 +1,10 @@
 using System.CommandLine;
 
+using mcp0.Configuration;
+using mcp0.Core;
+
+namespace mcp0.Commands;
+
 internal sealed class RunCommand : Command
 {
     public RunCommand() : base("run", "Run one or more contexts as an MCP server")

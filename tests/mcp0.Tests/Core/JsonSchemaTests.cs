@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace mcp0.Tests;
+namespace mcp0.Core;
 
 [TestClass]
 public sealed class JsonSchemaTests

@@ -4,7 +4,7 @@ using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Transport;
 
-namespace mcp0.Tests;
+namespace mcp0.Configuration;
 
 [TestClass]
 public sealed class ServerConfigTests

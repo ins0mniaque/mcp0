@@ -1,7 +1,10 @@
 using System.Globalization;
 using System.Text.Json.Serialization;
+using mcp0.Core;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Transport;
+
+namespace mcp0.Configuration;
 
 internal sealed class ServerConfig
 {

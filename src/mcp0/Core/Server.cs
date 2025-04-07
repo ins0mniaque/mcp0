@@ -6,6 +6,8 @@ using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
+namespace mcp0.Core;
+
 internal sealed class Server
 {
     public static string Name { get; } = typeof(Server).Assembly.GetName().Name ?? "mcp0";

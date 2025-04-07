@@ -4,6 +4,8 @@ using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Types;
 
+namespace mcp0.Core;
+
 internal static class McpClientExtensions
 {
     public static async Task<IMcpClient[]> CreateMcpClientsAsync(

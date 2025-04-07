@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+namespace mcp0.Configuration;
+
 internal sealed class ContextConfig
 {
     [JsonPropertyName("servers")]

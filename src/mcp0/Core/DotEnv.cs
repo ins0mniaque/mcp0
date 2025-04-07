@@ -1,5 +1,7 @@
 using System.Buffers;
 
+namespace mcp0.Core;
+
 internal static class DotEnv
 {
     private static readonly SearchValues<char> validKeyChars = SearchValues.Create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");

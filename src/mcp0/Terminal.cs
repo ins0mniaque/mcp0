@@ -1,5 +1,7 @@
 using System.Text;
 
+namespace mcp0;
+
 internal static class Terminal
 {
     public static int Width => Console.WindowWidth;

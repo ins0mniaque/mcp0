@@ -1,5 +1,10 @@
 using System.CommandLine;
 
+using mcp0.Configuration;
+using mcp0.Core;
+
+namespace mcp0.Commands;
+
 internal sealed class InspectCommand : Command
 {
     public InspectCommand() : base("inspect", "Inspect the MCP server for one or more contexts")

@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+namespace mcp0.Core;
+
 internal static class JsonSchema
 {
     public static JsonSchemaNode Unknown { get; } = new JsonSchemaSymbol("unknown");
