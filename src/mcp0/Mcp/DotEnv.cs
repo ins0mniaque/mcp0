@@ -2,7 +2,7 @@ using System.Buffers;
 
 internal static class DotEnv
 {
-    private static readonly SearchValues<char> validVariableNameChars = SearchValues.Create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
+    private static readonly SearchValues<char> validKeyChars = SearchValues.Create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
 
     public static Dictionary<string, string> Parse(ReadOnlySpan<char> envFile)
     {
@@ -18,14 +18,11 @@ internal static class DotEnv
             if (line.Split(keyValueRanges, '=', StringSplitOptions.TrimEntries) is not 2)
                 continue;
 
-            var keySpan = line[keyValueRanges[0]];
-            if (keySpan.Length is 0 || keySpan.ContainsAnyExcept(validVariableNameChars))
+            var key = line[keyValueRanges[0]];
+            if (key.Length is 0 || key.ContainsAnyExcept(validKeyChars))
                 continue;
 
-            var key = keySpan.ToString();
-            var value = line[keyValueRanges[1]].ToString();
-
-            environment[key] = value;
+            environment[key.ToString()] = line[keyValueRanges[1]].ToString();
         }
 
         return environment;
