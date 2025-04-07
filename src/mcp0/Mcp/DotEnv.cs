@@ -1,4 +1,4 @@
-internal static class EnvFile
+internal static class DotEnv
 {
     public static Dictionary<string, string> Parse(ReadOnlySpan<char> envFile)
     {

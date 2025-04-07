@@ -73,7 +73,7 @@ internal sealed class ServerConfig
                 config.TransportOptions["env:" + variable.Key] = variable.Value;
 
         if (EnvironmentFile is { } environmentFile)
-            foreach (var variable in EnvFile.Parse(File.ReadAllText(environmentFile)))
+            foreach (var variable in DotEnv.Parse(File.ReadAllText(environmentFile)))
                 config.TransportOptions["env:" + variable.Key] = variable.Value;
 
         if (ShutdownTimeout is { } shutdownTimeout)
