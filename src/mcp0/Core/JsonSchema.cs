@@ -11,7 +11,7 @@ internal static class JsonSchema
         if (element.ValueKind is JsonValueKind.Null)
             return new JsonSchemaSymbol("null");
 
-        if (element.ValueKind is JsonValueKind.String && element.GetString() is { } type)
+        if (element.TryGetString(out var type))
             return type switch
             {
                 "boolean" or
@@ -24,12 +24,12 @@ internal static class JsonSchema
         if (element.ValueKind is not JsonValueKind.Object)
             return Unknown;
 
-        if (element.TryGetProperty("type", out JsonElement typeElement))
+        if (element.TryGetProperty("type", out var typeElement))
         {
             if (typeElement.ValueKind is JsonValueKind.Array)
                 return new JsonSchemaUnionType(typeElement.EnumerateArray().Select(Parse).ToArray(), isRequired);
 
-            if (typeElement.ValueKind is JsonValueKind.String && typeElement.GetString() is { } complexType)
+            if (typeElement.TryGetString(out var complexType))
                 return complexType switch
                 {
                     "array" => ParseArray(element, isRequired),
@@ -38,13 +38,13 @@ internal static class JsonSchema
                 };
         }
 
-        if (element.TryGetProperty("enum", out JsonElement enumElement) && enumElement.ValueKind is JsonValueKind.Array)
+        if (element.TryGetProperty("enum", JsonValueKind.Array, out var enumElement))
             return new JsonSchemaUnionType(enumElement.EnumerateArray().Select(Parse).ToArray(), isRequired);
 
-        if (element.TryGetProperty("const", out JsonElement constElement))
+        if (element.TryGetProperty("const", out var constElement))
             return new JsonSchemaUnionType([Parse(constElement)], isRequired);
 
-        if (element.TryGetProperty("anyOf", out JsonElement anyOfElement) && anyOfElement.ValueKind is JsonValueKind.Array)
+        if (element.TryGetProperty("anyOf", JsonValueKind.Array, out var anyOfElement))
             return new JsonSchemaUnionType(anyOfElement.EnumerateArray().Select(Parse).ToArray(), isRequired);
 
         return Unknown;
@@ -52,7 +52,7 @@ internal static class JsonSchema
 
     private static JsonSchemaArrayType ParseArray(JsonElement element, bool isRequired)
     {
-        if (!element.TryGetProperty("items", out JsonElement itemsElement))
+        if (!element.TryGetProperty("items", out var itemsElement))
             return new JsonSchemaArrayType(Unknown, isRequired);
 
         return new(Parse(itemsElement), isRequired);
@@ -60,13 +60,13 @@ internal static class JsonSchema
 
     private static JsonSchemaObjectType ParseObject(JsonElement element, bool isRequired)
     {
-        if (!element.TryGetProperty("properties", out JsonElement propertiesElement) || propertiesElement.ValueKind is not JsonValueKind.Object)
+        if (!element.TryGetProperty("properties", JsonValueKind.Object, out var propertiesElement))
             return new(Array.Empty<JsonSchemaProperty>(), isRequired);
 
         var required = new HashSet<string>();
-        if (element.TryGetProperty("required", out var requiredElement) && requiredElement.ValueKind == JsonValueKind.Array)
+        if (element.TryGetProperty("required", JsonValueKind.Array, out var requiredElement))
             foreach (var propertyElement in requiredElement.EnumerateArray())
-                if (propertyElement.ValueKind is JsonValueKind.String && propertyElement.GetString() is { } property)
+                if (propertyElement.TryGetString(out var property))
                     required.Add(property);
 
         var properties = propertiesElement.EnumerateObject().Select(ParseProperty).ToArray();
@@ -77,6 +77,23 @@ internal static class JsonSchema
         {
             return new(property.Name, Parse(property.Value, required.Contains(property.Name)));
         }
+    }
+
+    private static bool TryGetProperty(this JsonElement element, string propertyName, JsonValueKind kind, out JsonElement value)
+    {
+        return element.TryGetProperty(propertyName, out value) && value.ValueKind == kind;
+    }
+
+    private static bool TryGetString(this JsonElement element, out string value)
+    {
+        if (element.ValueKind is JsonValueKind.String && element.GetString() is { } text)
+        {
+            value = text;
+            return true;
+        }
+
+        value = string.Empty;
+        return false;
     }
 }
 
