@@ -8,7 +8,7 @@ using ModelContextProtocol.Server;
 
 internal sealed class Server
 {
-    public static string Name { get; } = typeof(Server).Assembly.GetName()?.Name ?? "mcp0";
+    public static string Name { get; } = typeof(Server).Assembly.GetName().Name ?? "mcp0";
     public static string Version { get; } = typeof(Server).Assembly.GetName().Version?.ToString() ?? "0.0.0";
 
     public static string NameFrom(IEnumerable<string> names) => string.Join('/', names.DefaultIfEmpty(Name));
@@ -82,6 +82,16 @@ internal sealed class Server
 
     public async Task Serve(CancellationToken cancellationToken)
     {
+        var options = GetOptions();
+
+        await using var transport = new StdioServerTransport(name, loggerFactory);
+        await using var server = McpServerFactory.Create(transport, options, loggerFactory);
+
+        await server.RunAsync(cancellationToken);
+    }
+
+    private McpServerOptions GetOptions()
+    {
         var listPromptsResultTask = Task.FromResult(new ListPromptsResult
         {
             Prompts = prompts.Select(static entry => entry.Value.Prompt.ProtocolPrompt).ToList()
@@ -105,7 +115,7 @@ internal sealed class Server
         var disabledCompletionClients = new ConcurrentDictionary<IMcpClient, byte>();
         var emptyCompleteResult = new CompleteResult();
 
-        var options = new McpServerOptions
+        return new McpServerOptions
         {
             ServerInfo = new() { Name = name, Version = version },
             Capabilities = new()
@@ -141,10 +151,10 @@ internal sealed class Server
                 },
                 Prompts = new()
                 {
-                    ListPromptsHandler = (request, cancellationToken) => listPromptsResultTask,
+                    ListPromptsHandler = (_, _) => listPromptsResultTask,
                     GetPromptHandler = async (request, cancellationToken) =>
                     {
-                        var (client, prompt) = Find(prompts, "prompt", request.Params?.Name);
+                        var (_, prompt) = Find(prompts, "prompt", request.Params?.Name);
                         var arguments = Convert(request.Params?.Arguments);
 
                         return await prompt.GetAsync(arguments, null, cancellationToken);
@@ -152,8 +162,8 @@ internal sealed class Server
                 },
                 Resources = new()
                 {
-                    ListResourcesHandler = (request, cancellationToken) => listResourcesResultTask,
-                    ListResourceTemplatesHandler = (request, cancellationToken) => listResourceTemplatesResultTask,
+                    ListResourcesHandler = (_, _) => listResourcesResultTask,
+                    ListResourceTemplatesHandler = (_, _) => listResourceTemplatesResultTask,
                     ReadResourceHandler = async (request, cancellationToken) =>
                     {
                         var (client, resource) = Find(resources, "resource", request.Params?.Uri);
@@ -179,7 +189,7 @@ internal sealed class Server
                 },
                 Tools = new()
                 {
-                    ListToolsHandler = (request, cancellationToken) => listToolsResultTask,
+                    ListToolsHandler = (_, _) => listToolsResultTask,
                     CallToolHandler = async (request, cancellationToken) =>
                     {
                         var (client, tool) = Find(tools, "tool", request.Params?.Name);
@@ -192,21 +202,21 @@ internal sealed class Server
             GetCompletionHandler = async (request, cancellationToken) =>
             {
                 IMcpClient client;
-                if (request.Params?.Ref.Uri is { } uri)
+                if (request.Params?.Ref.Uri is { } resourceUri)
                 {
-                    if (resources.TryGetValue(uri, out var resourceEntry))
+                    if (resources.TryGetValue(resourceUri, out var resourceEntry))
                         client = resourceEntry.Client;
-                    else if (resourceTemplates.TryGetValue(uri, out var resourceTemplateEntry))
+                    else if (resourceTemplates.TryGetValue(resourceUri, out var resourceTemplateEntry))
                         client = resourceTemplateEntry.Client;
                     else
-                        throw new McpServerException($"Unknown resource or resource template: '{uri}'");
+                        throw new McpServerException($"Unknown resource or resource template: '{resourceUri}'");
                 }
-                else if (request.Params?.Ref.Name is { } name)
+                else if (request.Params?.Ref.Name is { } promptName)
                 {
-                    if (prompts.TryGetValue(name, out var promptEntry))
+                    if (prompts.TryGetValue(promptName, out var promptEntry))
                         client = promptEntry.Client;
                     else
-                        throw new McpServerException($"Unknown prompt: '{name}'");
+                        throw new McpServerException($"Unknown prompt: '{promptName}'");
                 }
                 else
                     throw new McpServerException($"Missing completion request parameters");
@@ -214,19 +224,14 @@ internal sealed class Server
                 if (disabledCompletionClients.ContainsKey(client))
                     return emptyCompleteResult;
 
-                return await client.GetCompletionAsync(request.Params.Ref, request.Params.Argument.Name, request.Params.Argument.Value, cancellationToken).CatchMethodNotFound(exception =>
+                return await client.GetCompletionAsync(request.Params.Ref, request.Params.Argument.Name, request.Params.Argument.Value, cancellationToken).CatchMethodNotFound(_ =>
                 {
-                    disabledCompletionClients.AddOrUpdate(client, default(byte), static (_, _) => default);
+                    disabledCompletionClients.AddOrUpdate(client, 0, static (_, _) => 0);
 
                     return emptyCompleteResult;
                 });
             }
         };
-
-        await using var transport = new StdioServerTransport(name, loggerFactory);
-        await using IMcpServer server = McpServerFactory.Create(transport, options, loggerFactory);
-
-        await server.RunAsync(cancellationToken);
     }
 
     private static (IMcpClient Client, T) Find<T>(Dictionary<string, (IMcpClient, T)> registry, string type, string? name)

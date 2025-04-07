@@ -61,7 +61,7 @@ internal static class JsonSchema
     private static JsonSchemaObjectType ParseObject(JsonElement element, bool isRequired)
     {
         if (!element.TryGetProperty("properties", JsonValueKind.Object, out var propertiesElement))
-            return new(Array.Empty<JsonSchemaProperty>(), isRequired);
+            return new([], isRequired);
 
         var required = new HashSet<string>();
         if (element.TryGetProperty("required", JsonValueKind.Array, out var requiredElement))

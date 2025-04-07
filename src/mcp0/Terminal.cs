@@ -39,7 +39,7 @@ internal static class Terminal
         foreach (var lineRange in text.Split('\n'))
         {
             if (buffer.Length > leftPad)
-                buffer.AppendLine(ref lineStart, leftPad);
+                buffer.AppendLine(out lineStart, leftPad);
 
             var line = text[lineRange];
             foreach (var range in line.Split(' '))
@@ -56,7 +56,7 @@ internal static class Terminal
                     word = word[cut..];
 
                     buffer.Append('\\');
-                    buffer.AppendLine(ref lineStart, leftPad);
+                    buffer.AppendLine(out lineStart, leftPad);
 
                     while (word.Length > width)
                     {
@@ -65,7 +65,7 @@ internal static class Terminal
                         word = word[cut..];
 
                         buffer.Append('\\');
-                        buffer.AppendLine(ref lineStart, leftPad);
+                        buffer.AppendLine(out lineStart, leftPad);
                     }
                 }
 
@@ -75,7 +75,7 @@ internal static class Terminal
                 {
                     buffer.Length -= word.Length + 1;
 
-                    buffer.AppendLine(ref lineStart, leftPad);
+                    buffer.AppendLine(out lineStart, leftPad);
                     buffer.Append(word);
                 }
             }
@@ -84,7 +84,7 @@ internal static class Terminal
         return buffer.ToString();
     }
 
-    private static void AppendLine(this StringBuilder buffer, ref int lineStart, int leftPad)
+    private static void AppendLine(this StringBuilder buffer, out int lineStart, int leftPad)
     {
         buffer.Append('\n');
         if (leftPad > 0)

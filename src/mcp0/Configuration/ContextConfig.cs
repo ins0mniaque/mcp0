@@ -37,7 +37,7 @@ internal sealed class ContextConfig
     public static async Task<ContextConfig> Read(string path, CancellationToken cancellationToken)
     {
         ContextConfig? contextConfig;
-        using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+        await using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
             contextConfig = await JsonSerializer.DeserializeAsync(stream, SerializerContext.Default.ContextConfig, cancellationToken);
 
         if (contextConfig is null)

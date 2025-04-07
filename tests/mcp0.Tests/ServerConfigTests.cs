@@ -148,8 +148,8 @@ public sealed class ServerConfigTests
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_options")]
-    private extern static ref StdioClientTransportOptions GetTransportOptions(StdioClientTransport transport);
+    private static extern ref StdioClientTransportOptions GetTransportOptions(StdioClientTransport transport);
 
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_options")]
-    private extern static ref SseClientTransportOptions GetTransportOptions(SseClientTransport transport);
+    private static extern ref SseClientTransportOptions GetTransportOptions(SseClientTransport transport);
 }

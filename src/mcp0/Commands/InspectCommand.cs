@@ -46,9 +46,9 @@ internal sealed class InspectCommand : Command
                 continue;
             }
 
-            Terminal.Write(client.ServerInfo.Name, HeaderColor);
+            Terminal.Write(info.Name, HeaderColor);
             Terminal.Write(" ");
-            Terminal.WriteLine(client.ServerInfo.Version);
+            Terminal.WriteLine(info.Version);
         }
 
         if (server.Prompts.Count is not 0)
@@ -176,7 +176,7 @@ internal sealed class InspectCommand : Command
         else
             throw new ArgumentException($"Unknown JSON schema node: {node.GetType().Name}", nameof(node));
 
-        if (node is JsonSchemaType type && !type.IsRequired)
+        if (node is JsonSchemaType { IsRequired: false })
             Terminal.Write("?", DecoratorColor);
     }
 }

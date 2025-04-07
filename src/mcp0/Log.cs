@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-internal static partial class Log
+internal static class Log
 {
     public static LogLevel MinimumLevel { get; private set; } = LogLevel.Warning;
 
