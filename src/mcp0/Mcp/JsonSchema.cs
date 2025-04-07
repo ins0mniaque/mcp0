@@ -8,6 +8,9 @@ internal static class JsonSchema
 
     private static JsonSchemaNode Parse(JsonElement element, bool isRequired)
     {
+        if (element.ValueKind is JsonValueKind.Null)
+            return new JsonSchemaSymbol("null");
+
         if (element.ValueKind is JsonValueKind.String && element.GetString() is { } type)
             return type switch
             {
@@ -17,6 +20,9 @@ internal static class JsonSchema
                 "integer" => new JsonSchemaPrimitiveType(type, isRequired),
                 _ => new JsonSchemaSymbol(type)
             };
+
+        if (element.ValueKind is not JsonValueKind.Object)
+            return Unknown;
 
         if (element.TryGetProperty("type", out JsonElement typeElement))
         {
@@ -38,14 +44,8 @@ internal static class JsonSchema
         if (element.TryGetProperty("const", out JsonElement constElement))
             return new JsonSchemaUnionType([Parse(constElement)], isRequired);
 
-        if (element.TryGetProperty("anyOf", out JsonElement anyOfElement))
-        {
-            if (anyOfElement.ValueKind is JsonValueKind.Array)
-                return new JsonSchemaUnionType(anyOfElement.EnumerateArray().Select(Parse).ToArray(), isRequired);
-
-            if (anyOfElement.ValueKind is JsonValueKind.Object)
-                return new JsonSchemaUnionType(anyOfElement.EnumerateObject().Select(static obj => Parse(obj.Value)).ToArray(), isRequired);
-        }
+        if (element.TryGetProperty("anyOf", out JsonElement anyOfElement) && anyOfElement.ValueKind is JsonValueKind.Array)
+            return new JsonSchemaUnionType(anyOfElement.EnumerateArray().Select(Parse).ToArray(), isRequired);
 
         return Unknown;
     }
