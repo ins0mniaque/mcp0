@@ -1,14 +1,5 @@
 using System.Text.Json;
 
-internal abstract record JsonSchemaNode;
-internal abstract record JsonSchemaType(bool IsRequired) : JsonSchemaNode;
-internal sealed record JsonSchemaProperty(string Name, JsonSchemaNode Type);
-internal sealed record JsonSchemaObjectType(JsonSchemaProperty[] Properties, bool IsRequired) : JsonSchemaType(IsRequired);
-internal sealed record JsonSchemaArrayType(JsonSchemaNode ElementType, bool IsRequired) : JsonSchemaType(IsRequired);
-internal sealed record JsonSchemaUnionType(JsonSchemaNode[] UnionTypes, bool IsRequired) : JsonSchemaType(IsRequired);
-internal sealed record JsonSchemaPrimitiveType(string Name, bool IsRequired) : JsonSchemaType(IsRequired);
-internal sealed record JsonSchemaSymbol(string Name) : JsonSchemaNode;
-
 internal static class JsonSchema
 {
     public static JsonSchemaNode Unknown { get; } = new JsonSchemaSymbol("unknown");
@@ -86,5 +77,56 @@ internal static class JsonSchema
         {
             return new(property.Name, Parse(property.Value, required.Contains(property.Name)));
         }
+    }
+}
+
+internal abstract record JsonSchemaNode;
+internal abstract record JsonSchemaType(bool IsRequired) : JsonSchemaNode;
+internal sealed record JsonSchemaSymbol(string Name) : JsonSchemaNode;
+internal sealed record JsonSchemaPrimitiveType(string Name, bool IsRequired) : JsonSchemaType(IsRequired);
+internal sealed record JsonSchemaArrayType(JsonSchemaNode ElementType, bool IsRequired) : JsonSchemaType(IsRequired);
+
+internal sealed record JsonSchemaProperty(string Name, JsonSchemaNode Type);
+internal sealed record JsonSchemaObjectType(JsonSchemaProperty[] Properties, bool IsRequired) : JsonSchemaType(IsRequired)
+{
+    public bool Equals(JsonSchemaObjectType? other)
+    {
+        return other is not null
+            && EqualityContract == other.EqualityContract
+            && EqualityComparer<bool>.Default.Equals(IsRequired, other.IsRequired)
+            && Properties.SequenceEqual(other.Properties, EqualityComparer<JsonSchemaProperty>.Default);
+    }
+
+    public override int GetHashCode()
+    {
+        var hashCode = new HashCode();
+
+        hashCode.Add(IsRequired);
+        foreach (var property in Properties)
+            hashCode.Add(property);
+
+        return hashCode.ToHashCode();
+    }
+}
+
+internal sealed record JsonSchemaUnionType(JsonSchemaNode[] UnionTypes, bool IsRequired) : JsonSchemaType(IsRequired)
+{
+    public bool Equals(JsonSchemaUnionType? other)
+    {
+        return other is not null
+            && EqualityContract == other.EqualityContract
+            && EqualityComparer<bool>.Default.Equals(IsRequired, other.IsRequired)
+            && UnionTypes.SequenceEqual(other.UnionTypes, EqualityComparer<JsonSchemaNode>.Default);
+    }
+
+    public override int GetHashCode()
+    {
+        var hashCode = new HashCode();
+
+        hashCode.Add(IsRequired);
+        foreach (var unionType in UnionTypes)
+            hashCode.Add(unionType);
+
+        return hashCode.ToHashCode();
     }
 }
