@@ -40,10 +40,16 @@ internal static class Terminal
         var lineStart = buffer.Length;
         foreach (var lineRange in text.Split('\n'))
         {
+            var line = text[lineRange];
+            if (line.Length is 0)
+            {
+                buffer.Append('\n');
+                continue;
+            }
+
             if (buffer.Length > leftPad)
                 buffer.AppendLine(out lineStart, leftPad);
 
-            var line = text[lineRange];
             foreach (var range in line.Split(' '))
             {
                 if (buffer.Length > lineStart)

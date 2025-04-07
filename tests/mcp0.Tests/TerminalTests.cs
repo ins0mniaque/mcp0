@@ -14,7 +14,7 @@ public sealed class TerminalTests
             bigwordthatshouldwrap and a verybigword\
             thatsalittlebitlongerthanthewidthusedto\
             wrap that wraps correctly.
-            
+
             Magic!
         """;
 
