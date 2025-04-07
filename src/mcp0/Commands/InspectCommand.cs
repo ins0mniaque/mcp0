@@ -32,7 +32,6 @@ internal sealed class InspectCommand : Command
 
         const ConsoleColor SectionColor = ConsoleColor.Magenta;
         const ConsoleColor HeaderColor = ConsoleColor.Green;
-        const ConsoleColor ArgumentColor = ConsoleColor.Cyan;
         const ConsoleColor ErrorColor = ConsoleColor.Red;
         const string Indentation = "  ";
 
@@ -110,10 +109,61 @@ internal sealed class InspectCommand : Command
                 Terminal.Write(Indentation);
                 Terminal.Write(tool.Name, HeaderColor);
                 Terminal.Write("(");
-                Terminal.Write(McpToolInputSchema.GetSignature(tool.ProtocolTool.InputSchema), ArgumentColor);
+                WriteJsonSchema(JsonSchema.Parse(tool.ProtocolTool.InputSchema), asArguments: true);
                 Terminal.Write("): ");
                 Terminal.WriteLine(tool.Description);
             }
         }
+    }
+
+    private static void WriteJsonSchema(JsonSchemaNode node, bool asArguments = false)
+    {
+        const ConsoleColor PropertyNameColor = ConsoleColor.Blue;
+        const ConsoleColor PrimitiveTypeColor = ConsoleColor.Magenta;
+        const ConsoleColor SymbolColor = ConsoleColor.Cyan;
+        const ConsoleColor DecoratorColor = ConsoleColor.DarkYellow;
+
+        if (node is JsonSchemaObjectType objectType)
+        {
+            Terminal.Write(asArguments ? string.Empty : "{", DecoratorColor);
+
+            var separator = string.Empty;
+            foreach (var property in objectType.Properties)
+            {
+                Terminal.Write(separator);
+                separator = ", ";
+
+                Terminal.Write(property.Name, PropertyNameColor);
+                Terminal.Write(":");
+                WriteJsonSchema(property.Type);
+            }
+
+            Terminal.Write(asArguments ? string.Empty : "}", DecoratorColor);
+        }
+        else if (node is JsonSchemaArrayType arrayType)
+        {
+            WriteJsonSchema(arrayType.ElementType);
+            Terminal.Write("[]", DecoratorColor);
+        }
+        else if (node is JsonSchemaUnionType union)
+        {
+            var separator = string.Empty;
+            foreach (var unionType in union.UnionTypes)
+            {
+                Terminal.Write(separator, DecoratorColor);
+                separator = "|";
+
+                WriteJsonSchema(unionType);
+            }
+        }
+        else if (node is JsonSchemaPrimitiveType primitiveType)
+            Terminal.Write(primitiveType.Name, PrimitiveTypeColor);
+        else if (node is JsonSchemaSymbol symbol)
+            Terminal.Write(symbol.Name, SymbolColor);
+        else
+            throw new ArgumentException($"Unknown JSON schema node: {node.GetType().Name}", nameof(node));
+
+        if (node is JsonSchemaType type && !type.IsRequired)
+            Terminal.Write("?", DecoratorColor);
     }
 }
