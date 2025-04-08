@@ -3,6 +3,7 @@ using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
 
+using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
@@ -132,7 +133,7 @@ internal sealed class Server
                     SetLoggingLevelHandler = async (request, cancellationToken) =>
                     {
                         if (request.Params?.Level is not { } level)
-                            throw new McpServerException("Missing logging level parameter");
+                            throw new McpException("Missing logging level parameter");
 
                         Log.SetMinimumLevel(level switch
                         {
@@ -216,17 +217,17 @@ internal sealed class Server
                     else if (resourceTemplates.TryGetValue(resourceUri, out var resourceTemplateEntry))
                         client = resourceTemplateEntry.Client;
                     else
-                        throw new McpServerException($"Unknown resource or resource template: '{resourceUri}'");
+                        throw new McpException($"Unknown resource or resource template: '{resourceUri}'");
                 }
                 else if (request.Params?.Ref.Name is { } promptName)
                 {
                     if (prompts.TryGetValue(promptName, out var promptEntry))
                         client = promptEntry.Client;
                     else
-                        throw new McpServerException($"Unknown prompt: '{promptName}'");
+                        throw new McpException($"Unknown prompt: '{promptName}'");
                 }
                 else
-                    throw new McpServerException($"Missing completion request parameters");
+                    throw new McpException($"Missing completion request parameters");
 
                 if (disabledCompletionClients.ContainsKey(client))
                     return emptyCompleteResult;
@@ -250,10 +251,10 @@ internal sealed class Server
     private static (IMcpClient Client, T) Find<T>(Dictionary<string, (IMcpClient, T)> registry, string type, string? name)
     {
         if (name is null)
-            throw new McpServerException($"Missing {type} name");
+            throw new McpException($"Missing {type} name");
 
         if (!registry.TryGetValue(name, out var item))
-            throw new McpServerException($"Unknown {type}: '{name}'");
+            throw new McpException($"Unknown {type}: '{name}'");
 
         return item;
     }
