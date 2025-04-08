@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace mcp0;
 
-internal static class Log
+internal static partial class Log
 {
     public static LogLevel MinimumLevel { get; private set; } = LogLevel.Warning;
 
@@ -22,4 +22,13 @@ internal static class Log
             logging.AddConsole(static options => options.LogToStandardErrorThreshold = LogLevel.Trace);
         });
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Reloading contexts: {Contexts}")]
+    public static partial void ContextReloading(this ILogger logger, string[] contexts);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Reloaded contexts: {Contexts}")]
+    public static partial void ContextReloaded(this ILogger logger, string[] contexts);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to reload contexts: {Contexts}")]
+    public static partial void ContextReloadFailed(this ILogger logger, Exception exception, string[] contexts);
 }

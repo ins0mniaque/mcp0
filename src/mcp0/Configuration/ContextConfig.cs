@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using ModelContextProtocol;
+
 namespace mcp0.Configuration;
 
 internal sealed class ContextConfig
@@ -46,5 +48,10 @@ internal sealed class ContextConfig
             throw new InvalidOperationException("context is empty");
 
         return contextConfig;
+    }
+
+    public McpServerConfig[] ToMcpServerConfigs()
+    {
+        return Servers?.Select(static entry => entry.Value.ToMcpServerConfig(entry.Key)).ToArray() ?? [];
     }
 }

@@ -22,9 +22,15 @@ internal sealed class Server
     private readonly Dictionary<string, (IMcpClient Client, Resource Resource)> resources;
     private readonly Dictionary<string, (IMcpClient Client, ResourceTemplate ResourceTemplate)> resourceTemplates;
     private readonly Dictionary<string, (IMcpClient Client, McpClientTool Tool)> tools;
+    private readonly ConcurrentDictionary<IMcpClient, byte> disabledCompletionClients = new();
     private readonly string name;
     private readonly string version;
     private readonly ILoggerFactory loggerFactory;
+    private IMcpServer? runningServer;
+    private Task<ListPromptsResult> listPromptsResultTask = Task.FromResult(new ListPromptsResult());
+    private Task<ListResourcesResult> listResourcesResultTask = Task.FromResult(new ListResourcesResult());
+    private Task<ListResourceTemplatesResult> listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult());
+    private Task<ListToolsResult> listToolsResultTask = Task.FromResult(new ListToolsResult());
 
     public Server(string name, string version, ILoggerFactory loggerFactory)
     {
@@ -48,6 +54,7 @@ internal sealed class Server
     public async Task Initialize(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
     {
         Clients = clients;
+        disabledCompletionClients.Clear();
 
         prompts.Clear();
         resources.Clear();
@@ -72,55 +79,45 @@ internal sealed class Server
         await Register(resourceTemplates, resourceTemplatesTasks, static resourceTemplate => resourceTemplate.UriTemplate);
         await Register(tools, toolsTasks, static tool => tool.Name);
 
-        async Task Register<T>(
-            Dictionary<string, (IMcpClient, T)> dictionary,
-            List<Task<IList<T>>> tasks,
-            Func<T, string> keySelector)
-        {
-            var clientsItems = await Task.WhenAll(tasks);
-            for (var index = 0; index < clientsItems.Length; index++)
-            {
-                var client = clients[index];
-                var clientItems = clientsItems[index];
-                foreach (var clientItem in clientItems)
-                    dictionary[keySelector(clientItem)] = (client, clientItem);
-            }
-        }
+        GenerateListTasks();
+
+        await NotifyListsChanged(cancellationToken);
     }
 
-    public async Task Serve(CancellationToken cancellationToken)
+    public async Task Run(CancellationToken cancellationToken)
     {
+        if (runningServer is not null)
+            throw new InvalidOperationException("Server is already running");
+
         var options = GetOptions();
 
         await using var transport = new StdioServerTransport(name, loggerFactory);
         await using var server = McpServerFactory.Create(transport, options, loggerFactory);
 
-        await server.RunAsync(cancellationToken);
+        try
+        {
+            runningServer = server;
+
+            await server.RunAsync(cancellationToken);
+        }
+        finally
+        {
+            runningServer = null;
+        }
+    }
+
+    private async Task NotifyListsChanged(CancellationToken cancellationToken)
+    {
+        if (runningServer is not { } server)
+            return;
+
+        await server.SendNotificationAsync("notifications/prompts/list_changed", cancellationToken);
+        await server.SendNotificationAsync("notifications/resources/list_changed", cancellationToken);
+        await server.SendNotificationAsync("notifications/tools/list_changed", cancellationToken);
     }
 
     private McpServerOptions GetOptions()
     {
-        var listPromptsResultTask = Task.FromResult(new ListPromptsResult
-        {
-            Prompts = prompts.Select(static entry => entry.Value.Prompt.ProtocolPrompt).ToList()
-        });
-
-        var listResourcesResultTask = Task.FromResult(new ListResourcesResult
-        {
-            Resources = resources.Select(static entry => entry.Value.Resource).ToList()
-        });
-
-        var listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult
-        {
-            ResourceTemplates = resourceTemplates.Select(static entry => entry.Value.ResourceTemplate).ToList()
-        });
-
-        var listToolsResultTask = Task.FromResult(new ListToolsResult
-        {
-            Tools = tools.Select(static entry => entry.Value.Tool.ProtocolTool).ToList()
-        });
-
-        var disabledCompletionClients = new ConcurrentDictionary<IMcpClient, byte>();
         var emptyCompleteResult = new CompleteResult();
 
         return new McpServerOptions
@@ -246,6 +243,44 @@ internal sealed class Server
                 });
             }
         };
+    }
+
+    private void GenerateListTasks()
+    {
+        listPromptsResultTask = Task.FromResult(new ListPromptsResult
+        {
+            Prompts = prompts.Select(static entry => entry.Value.Prompt.ProtocolPrompt).ToList()
+        });
+
+        listResourcesResultTask = Task.FromResult(new ListResourcesResult
+        {
+            Resources = resources.Select(static entry => entry.Value.Resource).ToList()
+        });
+
+        listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult
+        {
+            ResourceTemplates = resourceTemplates.Select(static entry => entry.Value.ResourceTemplate).ToList()
+        });
+
+        listToolsResultTask = Task.FromResult(new ListToolsResult
+        {
+            Tools = tools.Select(static entry => entry.Value.Tool.ProtocolTool).ToList()
+        });
+    }
+
+    private async Task Register<T>(
+        Dictionary<string, (IMcpClient, T)> registry,
+        List<Task<IList<T>>> tasks,
+        Func<T, string> keySelector)
+    {
+        var clientsItems = await Task.WhenAll(tasks);
+        for (var index = 0; index < clientsItems.Length; index++)
+        {
+            var client = Clients[index];
+            var clientItems = clientsItems[index];
+            foreach (var clientItem in clientItems)
+                registry[keySelector(clientItem)] = (client, clientItem);
+        }
     }
 
     private static (IMcpClient Client, T) Find<T>(Dictionary<string, (IMcpClient, T)> registry, string type, string? name)
