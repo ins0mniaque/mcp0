@@ -111,4 +111,15 @@ public sealed class JsonSchemaTests
 
         Assert.AreEqual(expected, actual);
     }
+
+    [TestMethod]
+    public void ParsesUnknownTypeCorrectly()
+    {
+        var json = """{ "$ref": "/schemas/type" }""";
+
+        var actual = JsonSchema.Parse(JsonDocument.Parse(json).RootElement);
+        var expected = JsonSchema.Unknown;
+
+        Assert.AreEqual(expected, actual);
+    }
 }
