@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+
 using Microsoft.Extensions.Logging;
+
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;

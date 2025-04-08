@@ -1,5 +1,7 @@
 using System.Text.Json;
+
 using Microsoft.Extensions.Logging;
+
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Types;
