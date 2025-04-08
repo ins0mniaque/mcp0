@@ -11,6 +11,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mcp0.Tests", "tests\mcp0.Tests\mcp0.Tests.csproj", "{657EDB9E-B53C-41C7-A134-F309F06B8891}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "∕", "∕", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,5 +63,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{A6A39E5D-5373-4036-9E6A-A0923C723862} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{657EDB9E-B53C-41C7-A134-F309F06B8891} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EA42D1C4-8441-4862-AAA8-F080EDBC697B}
 	EndGlobalSection
 EndGlobal
