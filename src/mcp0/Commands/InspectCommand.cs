@@ -17,8 +17,8 @@ internal sealed class InspectCommand : Command
             Arity = ArgumentArity.OneOrMore
         };
 
-        AddArgument(contextsArgument);
         AddAlias("i");
+        AddArgument(contextsArgument);
 
         this.SetHandler(Execute, contextsArgument);
     }
@@ -30,7 +30,6 @@ internal sealed class InspectCommand : Command
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var config = await ContextConfig.Read(contexts, cancellationToken);
-
         var servers = config.ToMcpServerConfigs();
         var clients = await servers.CreateMcpClientsAsync(loggerFactory, cancellationToken);
 
