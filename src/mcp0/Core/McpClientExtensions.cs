@@ -30,7 +30,7 @@ internal static class McpClientExtensions
     public static Task<IList<McpClientPrompt>> SafeListPromptsAsync(
         this IMcpClient client, CancellationToken cancellationToken = default)
     {
-        if (client.ServerCapabilities?.Prompts is null)
+        if (client.ServerCapabilities.Prompts is null)
             return Task.FromResult<IList<McpClientPrompt>>(new List<McpClientPrompt>());
 
         return client.ListPromptsAsync(cancellationToken)
@@ -40,7 +40,7 @@ internal static class McpClientExtensions
     public static Task<IList<Resource>> SafeListResourcesAsync(
         this IMcpClient client, CancellationToken cancellationToken = default)
     {
-        if (client.ServerCapabilities?.Resources is null)
+        if (client.ServerCapabilities.Resources is null)
             return Task.FromResult<IList<Resource>>(new List<Resource>());
 
         return client.ListResourcesAsync(cancellationToken)
@@ -50,7 +50,7 @@ internal static class McpClientExtensions
     public static Task<IList<ResourceTemplate>> SafeListResourceTemplatesAsync(
         this IMcpClient client, CancellationToken cancellationToken = default)
     {
-        if (client.ServerCapabilities?.Resources is null)
+        if (client.ServerCapabilities.Resources is null)
             return Task.FromResult<IList<ResourceTemplate>>(new List<ResourceTemplate>());
 
         return client.ListResourceTemplatesAsync(cancellationToken)
@@ -62,7 +62,7 @@ internal static class McpClientExtensions
         JsonSerializerOptions? serializerOptions = null,
         CancellationToken cancellationToken = default)
     {
-        if (client.ServerCapabilities?.Tools is null)
+        if (client.ServerCapabilities.Tools is null)
             return Task.FromResult<IList<McpClientTool>>(new List<McpClientTool>());
 
         return client.ListToolsAsync(serializerOptions, cancellationToken)
@@ -74,7 +74,7 @@ internal static class McpClientExtensions
         LoggingLevel level,
         CancellationToken cancellationToken = default)
     {
-        if (client.ServerCapabilities?.Logging is null)
+        if (client.ServerCapabilities.Logging is null)
             return Task.CompletedTask;
 
         return client.SetLoggingLevel(level, cancellationToken)

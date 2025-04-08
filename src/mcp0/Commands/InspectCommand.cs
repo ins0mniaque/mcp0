@@ -25,7 +25,7 @@ internal sealed class InspectCommand : Command
 
     private static Task Execute(string[] contexts) => Execute(contexts, CancellationToken.None);
 
-    public static async Task Execute(string[] contexts, CancellationToken cancellationToken)
+    private static async Task Execute(string[] contexts, CancellationToken cancellationToken)
     {
         using var loggerFactory = Log.CreateLoggerFactory();
 
