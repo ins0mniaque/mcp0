@@ -14,31 +14,32 @@ internal sealed class RunCommand : Command
 {
     public RunCommand() : base("run", "Run one or more contexts as an MCP server")
     {
+        var noReloadOption = new Option<bool>("--no-reload", "Do not reload the context files when they change");
         var contextsArgument = new Argument<string[]>("contexts", "A list of context names and/or context files to run")
         {
             Arity = ArgumentArity.OneOrMore
         };
 
+        AddOption(noReloadOption);
         AddArgument(contextsArgument);
 
-        this.SetHandler(Execute, contextsArgument);
+        this.SetHandler(Execute, contextsArgument, noReloadOption);
     }
 
-    private static Task Execute(string[] contexts) => Execute(contexts, CancellationToken.None);
+    private static Task Execute(string[] contexts, bool noReload) => Execute(contexts, noReload, CancellationToken.None);
 
-    private static async Task Execute(string[] contexts, CancellationToken cancellationToken)
+    private static async Task Execute(string[] contexts, bool noReload, CancellationToken cancellationToken)
     {
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var config = await ContextConfig.Read(contexts, cancellationToken);
-
         var servers = config.ToMcpServerConfigs();
         var clients = await servers.CreateMcpClientsAsync(loggerFactory, cancellationToken);
 
         var name = Server.NameFrom(servers.Select(static server => server.Name));
         var server = new Server(name, Server.Version, loggerFactory);
 
-        using var watchers = new CompositeDisposable<FileSystemWatcher>(contexts.Select(CreateWatcher));
+        using var watchers = new CompositeDisposable<FileSystemWatcher>(noReload ? [] : contexts.Select(CreateWatcher));
         foreach (var watcher in watchers)
         {
             // ReSharper disable once AccessToDisposedClosure
@@ -66,7 +67,6 @@ internal sealed class RunCommand : Command
             logger.ContextReloading(contexts);
 
             var config = await ContextConfig.Read(contexts, cancellationToken);
-
             var servers = config.ToMcpServerConfigs();
             var clients = await servers.CreateMcpClientsAsync(loggerFactory, cancellationToken);
 
