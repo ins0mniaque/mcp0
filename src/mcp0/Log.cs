@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
 
+using ModelContextProtocol.Protocol.Types;
+
 namespace mcp0;
 
 internal static partial class Log
@@ -11,6 +13,19 @@ internal static partial class Log
         // TODO: Implement minimum level change at runtime through IConfigurationRoot.Reload
         MinimumLevel = level;
     }
+
+    public static void SetMinimumLevel(LoggingLevel level) => SetMinimumLevel(level switch
+    {
+        LoggingLevel.Debug => LogLevel.Debug,
+        LoggingLevel.Info => LogLevel.Information,
+        LoggingLevel.Notice => LogLevel.Information,
+        LoggingLevel.Warning => LogLevel.Warning,
+        LoggingLevel.Error => LogLevel.Error,
+        LoggingLevel.Critical => LogLevel.Critical,
+        LoggingLevel.Alert => LogLevel.Critical,
+        LoggingLevel.Emergency => LogLevel.Critical,
+        _ => MinimumLevel
+    });
 
     public static ILoggerFactory CreateLoggerFactory()
     {
