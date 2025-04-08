@@ -4,14 +4,15 @@ namespace mcp0.Core;
 
 internal static class JsonSchema
 {
-    public static IJsonSchemaNode Unknown { get; } = new JsonSchemaSymbol("unknown");
+    public static JsonSchemaSymbol Null { get; } = new JsonSchemaSymbol("null");
+    public static JsonSchemaSymbol Unknown { get; } = new JsonSchemaSymbol("unknown");
 
     public static IJsonSchemaNode Parse(JsonElement element) => Parse(element, true);
 
     private static IJsonSchemaNode Parse(JsonElement element, bool isRequired)
     {
         if (element.ValueKind is JsonValueKind.Null)
-            return new JsonSchemaSymbol("null");
+            return Null;
 
         if (element.TryGetString(out var type))
             return type switch
