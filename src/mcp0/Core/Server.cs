@@ -53,25 +53,28 @@ internal sealed class Server
         resourceTemplates.Clear();
         tools.Clear();
 
-        var listPromptsTasks = new List<Task<IList<McpClientPrompt>>>(clients.Count);
-        var listResourcesTasks = new List<Task<IList<Resource>>>(clients.Count);
-        var listResourceTemplatesTasks = new List<Task<IList<ResourceTemplate>>>(clients.Count);
-        var listToolsTasks = new List<Task<IList<McpClientTool>>>(clients.Count);
+        var promptsTasks = new List<Task<IList<McpClientPrompt>>>(clients.Count);
+        var resourcesTasks = new List<Task<IList<Resource>>>(clients.Count);
+        var resourceTemplatesTasks = new List<Task<IList<ResourceTemplate>>>(clients.Count);
+        var toolsTasks = new List<Task<IList<McpClientTool>>>(clients.Count);
 
         foreach (var client in clients)
         {
-            listPromptsTasks.Add(client.SafeListPromptsAsync(cancellationToken));
-            listResourcesTasks.Add(client.SafeListResourcesAsync(cancellationToken));
-            listResourceTemplatesTasks.Add(client.SafeListResourceTemplatesAsync(cancellationToken));
-            listToolsTasks.Add(client.SafeListToolsAsync(null, cancellationToken));
+            promptsTasks.Add(client.SafeListPromptsAsync(cancellationToken));
+            resourcesTasks.Add(client.SafeListResourcesAsync(cancellationToken));
+            resourceTemplatesTasks.Add(client.SafeListResourceTemplatesAsync(cancellationToken));
+            toolsTasks.Add(client.SafeListToolsAsync(null, cancellationToken));
         }
 
-        await Register(prompts, listPromptsTasks, static prompt => prompt.Name);
-        await Register(resources, listResourcesTasks, static resource => resource.Uri);
-        await Register(resourceTemplates, listResourceTemplatesTasks, static resourceTemplate => resourceTemplate.UriTemplate);
-        await Register(tools, listToolsTasks, static tool => tool.Name);
+        await Register(prompts, promptsTasks, static prompt => prompt.Name);
+        await Register(resources, resourcesTasks, static resource => resource.Uri);
+        await Register(resourceTemplates, resourceTemplatesTasks, static resourceTemplate => resourceTemplate.UriTemplate);
+        await Register(tools, toolsTasks, static tool => tool.Name);
 
-        async Task Register<T>(Dictionary<string, (IMcpClient, T)> dictionary, List<Task<IList<T>>> tasks, Func<T, string> keySelector)
+        async Task Register<T>(
+            Dictionary<string, (IMcpClient, T)> dictionary,
+            List<Task<IList<T>>> tasks,
+            Func<T, string> keySelector)
         {
             var clientsItems = await Task.WhenAll(tasks);
             for (var index = 0; index < clientsItems.Length; index++)
@@ -228,7 +231,13 @@ internal sealed class Server
                 if (disabledCompletionClients.ContainsKey(client))
                     return emptyCompleteResult;
 
-                return await client.GetCompletionAsync(request.Params.Ref, request.Params.Argument.Name, request.Params.Argument.Value, cancellationToken).CatchMethodNotFound(_ =>
+                var completionTask = client.GetCompletionAsync(
+                    request.Params.Ref,
+                    request.Params.Argument.Name,
+                    request.Params.Argument.Value,
+                    cancellationToken);
+
+                return await completionTask.CatchMethodNotFound(_ =>
                 {
                     disabledCompletionClients.AddOrUpdate(client, 0, static (_, _) => 0);
 
@@ -251,11 +260,17 @@ internal sealed class Server
 
     private static Dictionary<string, object?>? Convert(Dictionary<string, JsonElement>? arguments)
     {
-        return arguments?.ToDictionary(static entry => entry.Key, static entry => (object?)entry.Value, StringComparer.Ordinal);
+        return arguments?.ToDictionary(
+            static entry => entry.Key,
+            static entry => (object?)entry.Value,
+            StringComparer.Ordinal);
     }
 
     private static Dictionary<string, object?>? Convert(Dictionary<string, object>? arguments)
     {
-        return arguments?.ToDictionary(static entry => entry.Key, static entry => (object?)entry.Value, StringComparer.Ordinal);
+        return arguments?.ToDictionary(
+            static entry => entry.Key,
+            static entry => (object?)entry.Value,
+            StringComparer.Ordinal);
     }
 }
