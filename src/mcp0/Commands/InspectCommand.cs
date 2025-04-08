@@ -3,6 +3,9 @@ using System.CommandLine;
 using mcp0.Configuration;
 using mcp0.Core;
 
+using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol.Types;
+
 namespace mcp0.Commands;
 
 internal sealed class InspectCommand : Command
@@ -73,6 +76,7 @@ internal sealed class InspectCommand : Command
 
                 Terminal.Write(Indentation);
                 Terminal.Write(prompt.Name, HeaderColor);
+                WritePromptArguments(prompt);
                 Terminal.Write(": ");
                 WriteDescription(prompt.Description, width);
             }
@@ -126,6 +130,24 @@ internal sealed class InspectCommand : Command
                 Terminal.Write("): ");
                 WriteDescription(tool.Description, width);
             }
+        }
+    }
+
+    private static void WritePromptArguments(McpClientPrompt prompt)
+    {
+        if (prompt.ProtocolPrompt.Arguments is not { } arguments)
+            return;
+
+        var properties = arguments.Select(ToJsonSchema).ToArray();
+        var objectType = new JsonSchemaObjectType(properties, true);
+
+        Terminal.Write("(");
+        WriteJsonSchema(objectType, asArguments: true);
+        Terminal.Write(")");
+
+        static JsonSchemaProperty ToJsonSchema(PromptArgument argument)
+        {
+            return new(argument.Name, new JsonSchemaPrimitiveType("string", argument.Required is true));
         }
     }
 
