@@ -63,7 +63,7 @@ internal sealed class ServerConfig
             Name = serverName,
             Location = Command,
             TransportType = TransportTypes.StdIo,
-            TransportOptions = new()
+            TransportOptions = new(StringComparer.Ordinal)
             {
                 ["command"] = Command,
                 ["arguments"] = string.Join(' ', Arguments ?? [])
@@ -98,7 +98,7 @@ internal sealed class ServerConfig
             Name = serverName,
             Location = Url?.ToString() ?? throw new InvalidOperationException("url is empty"),
             TransportType = TransportTypes.Sse,
-            TransportOptions = new()
+            TransportOptions = new(StringComparer.Ordinal)
             {
                 ["url"] = Url.ToString()
             }

@@ -8,7 +8,7 @@ internal static class DotEnv
 
     public static Dictionary<string, string> Parse(ReadOnlySpan<char> envFile)
     {
-        var environment = new Dictionary<string, string>();
+        var environment = new Dictionary<string, string>(StringComparer.Ordinal);
         var keyValueRanges = (Span<Range>)stackalloc Range[2];
 
         foreach (var lineRange in envFile.Split('\n'))

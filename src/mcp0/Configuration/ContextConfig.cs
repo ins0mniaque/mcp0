@@ -12,7 +12,7 @@ internal sealed class ContextConfig
     {
         if (config.Servers is { } servers)
         {
-            Servers ??= new(servers.Count);
+            Servers ??= new(servers.Count, StringComparer.Ordinal);
             foreach (var entry in servers)
                 Servers[entry.Key] = entry.Value;
         }

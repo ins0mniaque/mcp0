@@ -4,11 +4,11 @@ namespace mcp0.Core;
 
 internal static class JsonSchema
 {
-    public static JsonSchemaNode Unknown { get; } = new JsonSchemaSymbol("unknown");
+    public static IJsonSchemaNode Unknown { get; } = new JsonSchemaSymbol("unknown");
 
-    public static JsonSchemaNode Parse(JsonElement element) => Parse(element, true);
+    public static IJsonSchemaNode Parse(JsonElement element) => Parse(element, true);
 
-    private static JsonSchemaNode Parse(JsonElement element, bool isRequired)
+    private static IJsonSchemaNode Parse(JsonElement element, bool isRequired)
     {
         if (element.ValueKind is JsonValueKind.Null)
             return new JsonSchemaSymbol("null");
@@ -65,7 +65,7 @@ internal static class JsonSchema
         if (!element.TryGetProperty("properties", JsonValueKind.Object, out var propertiesElement))
             return new([], isRequired);
 
-        var required = new HashSet<string>();
+        var required = new HashSet<string>(StringComparer.Ordinal);
         if (element.TryGetProperty("required", JsonValueKind.Array, out var requiredElement))
             foreach (var propertyElement in requiredElement.EnumerateArray())
                 if (propertyElement.TryGetString(out var property))
@@ -99,13 +99,13 @@ internal static class JsonSchema
     }
 }
 
-internal abstract record JsonSchemaNode;
-internal abstract record JsonSchemaType(bool IsRequired) : JsonSchemaNode;
-internal sealed record JsonSchemaSymbol(string Name) : JsonSchemaNode;
+internal interface IJsonSchemaNode { }
+internal abstract record JsonSchemaType(bool IsRequired) : IJsonSchemaNode;
+internal sealed record JsonSchemaSymbol(string Name) : IJsonSchemaNode;
 internal sealed record JsonSchemaPrimitiveType(string Name, bool IsRequired) : JsonSchemaType(IsRequired);
-internal sealed record JsonSchemaArrayType(JsonSchemaNode ElementType, bool IsRequired) : JsonSchemaType(IsRequired);
+internal sealed record JsonSchemaArrayType(IJsonSchemaNode ElementType, bool IsRequired) : JsonSchemaType(IsRequired);
 
-internal sealed record JsonSchemaProperty(string Name, JsonSchemaNode Type);
+internal sealed record JsonSchemaProperty(string Name, IJsonSchemaNode Type);
 internal sealed record JsonSchemaObjectType(JsonSchemaProperty[] Properties, bool IsRequired) : JsonSchemaType(IsRequired)
 {
     public bool Equals(JsonSchemaObjectType? other)
@@ -128,14 +128,14 @@ internal sealed record JsonSchemaObjectType(JsonSchemaProperty[] Properties, boo
     }
 }
 
-internal sealed record JsonSchemaUnionType(JsonSchemaNode[] UnionTypes, bool IsRequired) : JsonSchemaType(IsRequired)
+internal sealed record JsonSchemaUnionType(IJsonSchemaNode[] UnionTypes, bool IsRequired) : JsonSchemaType(IsRequired)
 {
     public bool Equals(JsonSchemaUnionType? other)
     {
         return other is not null
             && EqualityContract == other.EqualityContract
             && EqualityComparer<bool>.Default.Equals(IsRequired, other.IsRequired)
-            && UnionTypes.SequenceEqual(other.UnionTypes, EqualityComparer<JsonSchemaNode>.Default);
+            && UnionTypes.SequenceEqual(other.UnionTypes, EqualityComparer<IJsonSchemaNode>.Default);
     }
 
     public override int GetHashCode()

@@ -31,10 +31,16 @@ internal sealed class InspectCommand : Command
         var servers = config.Servers?.Select(static entry => entry.Value.ToMcpServerConfig(entry.Key)).ToList() ?? [];
         var clients = await servers.CreateMcpClientsAsync(loggerFactory, cancellationToken);
 
-        var server = new Server(Server.NameFrom(servers.Select(static server => server.Name)), Server.Version, loggerFactory);
+        var name = Server.NameFrom(servers.Select(static server => server.Name));
+        var server = new Server(name, Server.Version, loggerFactory);
 
         await server.Initialize(clients, cancellationToken);
 
+        Inspect(server);
+    }
+
+    private static void Inspect(Server server)
+    {
         const ConsoleColor SectionColor = ConsoleColor.Magenta;
         const ConsoleColor HeaderColor = ConsoleColor.Green;
         const ConsoleColor ErrorColor = ConsoleColor.Red;
@@ -42,7 +48,7 @@ internal sealed class InspectCommand : Command
 
         var width = Terminal.Width;
 
-        foreach (var client in clients)
+        foreach (var client in server.Clients)
         {
             if (client.ServerInfo is not { } info)
             {
@@ -134,7 +140,7 @@ internal sealed class InspectCommand : Command
             Terminal.WriteLine(description);
     }
 
-    private static void WriteJsonSchema(JsonSchemaNode node, bool asArguments = false)
+    private static void WriteJsonSchema(IJsonSchemaNode node, bool asArguments = false)
     {
         const ConsoleColor PropertyNameColor = ConsoleColor.Blue;
         const ConsoleColor PrimitiveTypeColor = ConsoleColor.Magenta;

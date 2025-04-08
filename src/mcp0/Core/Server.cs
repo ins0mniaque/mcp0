@@ -27,10 +27,10 @@ internal sealed class Server
 
     public Server(string name, string version, ILoggerFactory loggerFactory)
     {
-        Prompts = prompts = new();
-        Resources = resources = new();
-        ResourceTemplates = resourceTemplates = new();
-        Tools = tools = new();
+        Prompts = prompts = new(StringComparer.Ordinal);
+        Resources = resources = new(StringComparer.Ordinal);
+        ResourceTemplates = resourceTemplates = new(StringComparer.Ordinal);
+        Tools = tools = new(StringComparer.Ordinal);
 
         this.name = name;
         this.version = version;
@@ -251,11 +251,11 @@ internal sealed class Server
 
     private static Dictionary<string, object?>? Convert(Dictionary<string, JsonElement>? arguments)
     {
-        return arguments?.ToDictionary(static entry => entry.Key, static entry => (object?)entry.Value);
+        return arguments?.ToDictionary(static entry => entry.Key, static entry => (object?)entry.Value, StringComparer.Ordinal);
     }
 
     private static Dictionary<string, object?>? Convert(Dictionary<string, object>? arguments)
     {
-        return arguments?.ToDictionary(static entry => entry.Key, static entry => (object?)entry.Value);
+        return arguments?.ToDictionary(static entry => entry.Key, static entry => (object?)entry.Value, StringComparer.Ordinal);
     }
 }

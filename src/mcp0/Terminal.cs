@@ -8,9 +8,6 @@ internal static class Terminal
     public static int Height => Console.WindowHeight;
 
     public static void Write(string? text) => Console.Write(text);
-    public static void WriteLine(string? text) => Console.WriteLine(text);
-    public static void WriteLine() => Console.WriteLine();
-
     public static void Write(string? text, ConsoleColor foreground)
     {
         var defaultForeground = Console.ForegroundColor;
@@ -19,6 +16,8 @@ internal static class Terminal
         Console.ForegroundColor = defaultForeground;
     }
 
+    public static void WriteLine() => Console.WriteLine();
+    public static void WriteLine(string? text) => Console.WriteLine(text);
     public static void WriteLine(string? text, ConsoleColor foreground)
     {
         var defaultForeground = Console.ForegroundColor;
