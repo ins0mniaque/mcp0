@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol.Messages;
 using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
@@ -26,6 +27,7 @@ internal sealed class Server
     private readonly string name;
     private readonly string version;
     private readonly ILoggerFactory loggerFactory;
+
     private IMcpServer? runningServer;
     private Task<ListPromptsResult> listPromptsResultTask = Task.FromResult(new ListPromptsResult());
     private Task<ListResourcesResult> listResourcesResultTask = Task.FromResult(new ListResourcesResult());
@@ -50,38 +52,14 @@ internal sealed class Server
     public IReadOnlyDictionary<string, (IMcpClient Client, ResourceTemplate ResourceTemplate)> ResourceTemplates { get; }
     public IReadOnlyDictionary<string, (IMcpClient Client, McpClientTool Tool)> Tools { get; }
 
-    // TODO: Handle changed events (see IMcpClient.AddNotificationHandler/XXXCapability.ListChanged)
     public async Task Initialize(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
     {
         Clients = clients;
         disabledCompletionClients.Clear();
 
-        prompts.Clear();
-        resources.Clear();
-        resourceTemplates.Clear();
-        tools.Clear();
-
-        var promptsTasks = new List<Task<IList<McpClientPrompt>>>(clients.Count);
-        var resourcesTasks = new List<Task<IList<Resource>>>(clients.Count);
-        var resourceTemplatesTasks = new List<Task<IList<ResourceTemplate>>>(clients.Count);
-        var toolsTasks = new List<Task<IList<McpClientTool>>>(clients.Count);
-
-        foreach (var client in clients)
-        {
-            promptsTasks.Add(client.SafeListPromptsAsync(cancellationToken));
-            resourcesTasks.Add(client.SafeListResourcesAsync(cancellationToken));
-            resourceTemplatesTasks.Add(client.SafeListResourceTemplatesAsync(cancellationToken));
-            toolsTasks.Add(client.SafeListToolsAsync(null, cancellationToken));
-        }
-
-        await Register(prompts, promptsTasks, static prompt => prompt.Name);
-        await Register(resources, resourcesTasks, static resource => resource.Uri);
-        await Register(resourceTemplates, resourceTemplatesTasks, static resourceTemplate => resourceTemplate.UriTemplate);
-        await Register(tools, toolsTasks, static tool => tool.Name);
-
-        GenerateListTasks();
-
-        await NotifyListsChanged(cancellationToken);
+        await InitializePrompts(clients, cancellationToken);
+        await InitializeResources(clients, cancellationToken);
+        await InitializeTools(clients, cancellationToken);
     }
 
     public async Task Run(CancellationToken cancellationToken)
@@ -89,10 +67,10 @@ internal sealed class Server
         if (runningServer is not null)
             throw new InvalidOperationException("Server is already running");
 
-        var options = GetOptions();
+        var serverOptions = GetServerOptions();
 
         await using var transport = new StdioServerTransport(name, loggerFactory);
-        await using var server = McpServerFactory.Create(transport, options, loggerFactory);
+        await using var server = McpServerFactory.Create(transport, serverOptions, loggerFactory);
 
         try
         {
@@ -106,17 +84,113 @@ internal sealed class Server
         }
     }
 
-    private async Task NotifyListsChanged(CancellationToken cancellationToken)
+    private async Task InitializePrompts(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
     {
-        if (runningServer is not { } server)
-            return;
+        prompts.Clear();
 
-        await server.SendNotificationAsync("notifications/prompts/list_changed", cancellationToken);
-        await server.SendNotificationAsync("notifications/resources/list_changed", cancellationToken);
-        await server.SendNotificationAsync("notifications/tools/list_changed", cancellationToken);
+        var promptsTasks = new List<Task<IList<McpClientPrompt>>>(clients.Count);
+        foreach (var client in clients)
+            promptsTasks.Add(client.SafeListPromptsAsync(cancellationToken));
+
+        await Register(prompts, promptsTasks, static prompt => prompt.Name);
+
+        listPromptsResultTask = Task.FromResult(new ListPromptsResult
+        {
+            Prompts = prompts.Select(static entry => entry.Value.Prompt.ProtocolPrompt).ToList()
+        });
+
+        if (runningServer is { } server)
+            await server.SendNotificationAsync(NotificationMethods.PromptListChangedNotification, cancellationToken);
     }
 
-    private McpServerOptions GetOptions()
+    private async Task InitializeResources(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
+    {
+        resources.Clear();
+        resourceTemplates.Clear();
+
+        var resourcesTasks = new List<Task<IList<Resource>>>(clients.Count);
+        var resourceTemplatesTasks = new List<Task<IList<ResourceTemplate>>>(clients.Count);
+        foreach (var client in clients)
+        {
+            resourcesTasks.Add(client.SafeListResourcesAsync(cancellationToken));
+            resourceTemplatesTasks.Add(client.SafeListResourceTemplatesAsync(cancellationToken));
+        }
+
+        await Register(resources, resourcesTasks, static resource => resource.Uri);
+        await Register(resourceTemplates, resourceTemplatesTasks, static resourceTemplate => resourceTemplate.UriTemplate);
+
+        listResourcesResultTask = Task.FromResult(new ListResourcesResult
+        {
+            Resources = resources.Select(static entry => entry.Value.Resource).ToList()
+        });
+
+        listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult
+        {
+            ResourceTemplates = resourceTemplates.Select(static entry => entry.Value.ResourceTemplate).ToList()
+        });
+
+        if (runningServer is { } server)
+            await server.SendNotificationAsync(NotificationMethods.ResourceListChangedNotification, cancellationToken);
+    }
+
+    private async Task InitializeTools(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
+    {
+        tools.Clear();
+
+        var toolsTasks = new List<Task<IList<McpClientTool>>>(clients.Count);
+        foreach (var client in clients)
+            toolsTasks.Add(client.SafeListToolsAsync(null, cancellationToken));
+
+        await Register(tools, toolsTasks, static tool => tool.Name);
+
+        listToolsResultTask = Task.FromResult(new ListToolsResult
+        {
+            Tools = tools.Select(static entry => entry.Value.Tool.ProtocolTool).ToList()
+        });
+
+        if (runningServer is { } server)
+            await server.SendNotificationAsync(NotificationMethods.ToolListChangedNotification, cancellationToken);
+    }
+
+    public McpClientOptions GetClientOptions() => new()
+    {
+        Capabilities = new()
+        {
+            NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, Task>>(StringComparer.Ordinal)
+            {
+                { NotificationMethods.PromptListChangedNotification, _ => InitializePrompts(Clients, CancellationToken.None) },
+                { NotificationMethods.ResourceListChangedNotification, _ => InitializeResources(Clients, CancellationToken.None) },
+                { NotificationMethods.ToolListChangedNotification, _ => InitializeTools(Clients, CancellationToken.None) }
+            },
+            Sampling = new()
+            {
+                SamplingHandler = async (request, _, cancellationToken) =>
+                {
+                    ArgumentNullException.ThrowIfNull(request);
+
+                    if (runningServer is null)
+                        throw new McpException("Server is not running");
+
+                    return await runningServer.RequestSamplingAsync(request, cancellationToken);
+                }
+            },
+            Roots = new()
+            {
+                RootsHandler = async (request, cancellationToken) =>
+                {
+                    ArgumentNullException.ThrowIfNull(request);
+
+                    if (runningServer is null)
+                        throw new McpException("Server is not running");
+
+                    return await runningServer.RequestRootsAsync(request, cancellationToken);
+                },
+                ListChanged = true
+            }
+        }
+    };
+
+    private McpServerOptions GetServerOptions()
     {
         var emptyCompleteResult = new CompleteResult();
 
@@ -125,6 +199,19 @@ internal sealed class Server
             ServerInfo = new() { Name = name, Version = version },
             Capabilities = new()
             {
+                NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, Task>>(StringComparer.Ordinal)
+                {
+                    {
+                        NotificationMethods.RootsUpdatedNotification, async _ =>
+                        {
+                            var notifyTasks = new List<Task>(Clients.Count);
+                            foreach (var client in Clients)
+                                notifyTasks.Add(client.SendNotificationAsync(NotificationMethods.RootsUpdatedNotification));
+
+                            await Task.WhenAll(notifyTasks);
+                        }
+                    }
+                },
                 Logging = new()
                 {
                     SetLoggingLevelHandler = async (request, cancellationToken) =>
@@ -243,29 +330,6 @@ internal sealed class Server
                 });
             }
         };
-    }
-
-    private void GenerateListTasks()
-    {
-        listPromptsResultTask = Task.FromResult(new ListPromptsResult
-        {
-            Prompts = prompts.Select(static entry => entry.Value.Prompt.ProtocolPrompt).ToList()
-        });
-
-        listResourcesResultTask = Task.FromResult(new ListResourcesResult
-        {
-            Resources = resources.Select(static entry => entry.Value.Resource).ToList()
-        });
-
-        listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult
-        {
-            ResourceTemplates = resourceTemplates.Select(static entry => entry.Value.ResourceTemplate).ToList()
-        });
-
-        listToolsResultTask = Task.FromResult(new ListToolsResult
-        {
-            Tools = tools.Select(static entry => entry.Value.Tool.ProtocolTool).ToList()
-        });
     }
 
     private async Task Register<T>(

@@ -34,10 +34,9 @@ internal sealed class RunCommand : Command
 
         var config = await ContextConfig.Read(contexts, cancellationToken);
         var servers = config.ToMcpServerConfigs();
-        var clients = await servers.CreateMcpClientsAsync(loggerFactory, cancellationToken);
-
-        var name = Server.NameFrom(servers.Select(static server => server.Name));
-        var server = new Server(name, Server.Version, loggerFactory);
+        var serverName = Server.NameFrom(servers.Select(static server => server.Name));
+        var server = new Server(serverName, Server.Version, loggerFactory);
+        var clients = await servers.CreateMcpClientsAsync(server.GetClientOptions(), loggerFactory, cancellationToken);
 
         using var watchers = new CompositeDisposable<FileSystemWatcher>(noReload ? [] : contexts.Select(CreateWatcher));
         foreach (var watcher in watchers)
@@ -68,7 +67,7 @@ internal sealed class RunCommand : Command
 
             var config = await ContextConfig.Read(contexts, cancellationToken);
             var servers = config.ToMcpServerConfigs();
-            var clients = await servers.CreateMcpClientsAsync(loggerFactory, cancellationToken);
+            var clients = await servers.CreateMcpClientsAsync(server.GetClientOptions(), loggerFactory, cancellationToken);
 
             await server.Initialize(clients, cancellationToken);
 
