@@ -5,15 +5,15 @@ using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Transport;
 
-namespace mcp0.Model;
+namespace mcp0.Models;
 
 [TestClass]
-public sealed class ServerTests
+public sealed class ConfiguratorTests
 {
     [TestMethod]
     public void ConfiguresStdioClientTransportCorrectly()
     {
-        var config = new Server
+        var server = new Server
         {
             Command = "uvx",
             Arguments = ["mcp-server-fetch"],
@@ -22,12 +22,12 @@ public sealed class ServerTests
             ShutdownTimeout = 60
         };
 
-        var mcpServerConfig = config.ToMcpServerConfig("mcp0");
+        var mcpServerConfig = server.ToMcpServerConfig("mcp0");
         var transport = CreateTransport(mcpServerConfig);
 
         Assert.IsInstanceOfType<StdioClientTransport>(transport);
 
-        Assert.AreEqual(config.Command, mcpServerConfig.Location);
+        Assert.AreEqual(server.Command, mcpServerConfig.Location);
 
         var actualOptions = GetTransportOptions((StdioClientTransport)transport);
         var expectedOptions = new StdioClientTransportOptions
@@ -45,7 +45,7 @@ public sealed class ServerTests
     [TestMethod]
     public void ConfiguresSseClientTransportCorrectly()
     {
-        var config = new Server
+        var server = new Server
         {
             Url = new Uri("http://localhost:8080/mcp-server-fetch"),
             Headers = new() { { "Authorization", "TOKEN" } },
@@ -54,12 +54,12 @@ public sealed class ServerTests
             ReconnectDelay = 60
         };
 
-        var mcpServerConfig = config.ToMcpServerConfig("mcp0");
+        var mcpServerConfig = server.ToMcpServerConfig("mcp0");
         var transport = CreateTransport(mcpServerConfig);
 
         Assert.IsInstanceOfType<SseClientTransport>(transport);
 
-        Assert.AreEqual(config.Url.ToString(), mcpServerConfig.Location);
+        Assert.AreEqual(server.Url.ToString(), mcpServerConfig.Location);
 
         var actualOptions = GetTransportOptions((SseClientTransport)transport);
         var expectedOptions = new SseClientTransportOptions
@@ -76,29 +76,29 @@ public sealed class ServerTests
     [TestMethod]
     public void ThrowsOnMissingCommand()
     {
-        var config = new Server { Command = "" };
+        var server = new Server { Command = "" };
 
-        Assert.ThrowsException<InvalidOperationException>(() => config.ToMcpServerConfig("mcp0"));
+        Assert.ThrowsException<InvalidOperationException>(() => server.ToMcpServerConfig("mcp0"));
     }
 
     [TestMethod]
     public void ThrowsOnMissingUrl()
     {
-        var config = new Server { ConnectionTimeout = 60 };
+        var server = new Server { ConnectionTimeout = 60 };
 
-        Assert.ThrowsException<InvalidOperationException>(() => config.ToMcpServerConfig("mcp0"));
+        Assert.ThrowsException<InvalidOperationException>(() => server.ToMcpServerConfig("mcp0"));
     }
 
     [TestMethod]
     public void ThrowsOnMixedUpConfig()
     {
-        var config = new Server
+        var server = new Server
         {
             Command = "uvx",
             Url = new Uri("http://localhost:8080/mcp-server-fetch")
         };
 
-        Assert.ThrowsException<InvalidOperationException>(() => config.ToMcpServerConfig("mcp0"));
+        Assert.ThrowsException<InvalidOperationException>(() => server.ToMcpServerConfig("mcp0"));
     }
 
     private static void AreEqual(StdioClientTransportOptions expected, StdioClientTransportOptions actual)
