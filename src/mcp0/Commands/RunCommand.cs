@@ -30,25 +30,33 @@ internal sealed class RunCommand : Command
 
     private static async Task Execute(string[] contexts, bool noReload, CancellationToken cancellationToken)
     {
+        var proxyOptions = new McpProxyOptions
+        {
+            LoggingLevel = Log.Level?.ToLoggingLevel(),
+            SetLoggingLevelCallback = static level => Log.Level = level.ToLogLevel()
+        };
+
         Log.Level ??= LogLevel.Information;
 
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var config = await ContextConfig.Read(contexts, cancellationToken);
         var servers = config.ToMcpServerConfigs();
-        var serverName = Server.NameFrom(servers.Select(static server => server.Name));
-        var server = new Server(serverName, Server.Version, loggerFactory);
-        var clients = await servers.CreateMcpClientsAsync(server.GetClientOptions(), loggerFactory, cancellationToken);
+
+        proxyOptions.ServerInfo = McpProxy.CreateServerInfo(servers);
+
+        var proxy = new McpProxy(proxyOptions, loggerFactory);
+        var clients = await servers.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
 
         using var watchers = new CompositeDisposable<FileSystemWatcher>(noReload ? [] : contexts.Select(CreateWatcher));
         foreach (var watcher in watchers)
         {
             // ReSharper disable once AccessToDisposedClosure
-            watcher.Changed += async (_, _) => await Reload(server, contexts, loggerFactory, cancellationToken);
+            watcher.Changed += async (_, _) => await Reload(proxy, contexts, loggerFactory, cancellationToken);
         }
 
-        await server.Initialize(clients, cancellationToken);
-        await server.Run(cancellationToken);
+        await proxy.Initialize(clients, cancellationToken);
+        await proxy.Run(cancellationToken);
     }
 
     private static FileSystemWatcher CreateWatcher(string context) => new()
@@ -59,7 +67,7 @@ internal sealed class RunCommand : Command
         EnableRaisingEvents = true
     };
 
-    private static async Task Reload(Server server, string[] contexts, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
+    private static async Task Reload(McpProxy proxy, string[] contexts, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger<RunCommand>();
 
@@ -69,9 +77,9 @@ internal sealed class RunCommand : Command
 
             var config = await ContextConfig.Read(contexts, cancellationToken);
             var servers = config.ToMcpServerConfigs();
-            var clients = await servers.CreateMcpClientsAsync(server.GetClientOptions(), loggerFactory, cancellationToken);
+            var clients = await servers.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
 
-            await server.Initialize(clients, cancellationToken);
+            await proxy.Initialize(clients, cancellationToken);
 
             logger.ContextReloaded(contexts);
         }

@@ -12,20 +12,23 @@ using ModelContextProtocol.Server;
 
 namespace mcp0.Core;
 
-internal sealed class Server
+internal sealed class McpProxy
 {
-    public static string Name { get; } = typeof(Server).Assembly.GetName().Name ?? "mcp0";
-    public static string Version { get; } = typeof(Server).Assembly.GetName().Version?.ToString() ?? "0.0.0";
+    public static string Name { get; } = typeof(McpProxy).Assembly.GetName().Name ?? "mcp0";
+    public static string Version { get; } = typeof(McpProxy).Assembly.GetName().Version?.ToString() ?? "0.0.0";
 
-    public static string NameFrom(IEnumerable<string> names) => string.Join('/', names.DefaultIfEmpty(Name));
+    public static Implementation CreateServerInfo(IEnumerable<McpServerConfig> servers) => new()
+    {
+        Name = string.Join('/', servers.Select(static server => server.Name).DefaultIfEmpty(Name)),
+        Version = Version
+    };
 
     private readonly Dictionary<string, (IMcpClient Client, McpClientPrompt Prompt)> prompts;
     private readonly Dictionary<string, (IMcpClient Client, Resource Resource)> resources;
     private readonly Dictionary<string, (IMcpClient Client, ResourceTemplate ResourceTemplate)> resourceTemplates;
     private readonly Dictionary<string, (IMcpClient Client, McpClientTool Tool)> tools;
     private readonly ConcurrentDictionary<IMcpClient, byte> disabledCompletionClients = new();
-    private readonly string name;
-    private readonly string version;
+    private readonly McpProxyOptions proxyOptions;
     private readonly ILoggerFactory loggerFactory;
 
     private IMcpServer? runningServer;
@@ -34,15 +37,14 @@ internal sealed class Server
     private Task<ListResourceTemplatesResult> listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult());
     private Task<ListToolsResult> listToolsResultTask = Task.FromResult(new ListToolsResult());
 
-    public Server(string name, string version, ILoggerFactory loggerFactory)
+    public McpProxy(McpProxyOptions proxyOptions, ILoggerFactory loggerFactory)
     {
         Prompts = prompts = new(StringComparer.Ordinal);
         Resources = resources = new(StringComparer.Ordinal);
         ResourceTemplates = resourceTemplates = new(StringComparer.Ordinal);
         Tools = tools = new(StringComparer.Ordinal);
 
-        this.name = name;
-        this.version = version;
+        this.proxyOptions = proxyOptions;
         this.loggerFactory = loggerFactory;
     }
 
@@ -57,8 +59,7 @@ internal sealed class Server
         Clients = clients;
         disabledCompletionClients.Clear();
 
-        var loggingLevel = Log.Level?.ToLoggingLevel() ?? LoggingLevel.Info;
-        if (loggingLevel is not LoggingLevel.Info)
+        if (proxyOptions.LoggingLevel is { } loggingLevel)
             await SetLoggingLevel(loggingLevel, cancellationToken);
 
         await InitializePrompts(clients, cancellationToken);
@@ -73,7 +74,7 @@ internal sealed class Server
 
         var serverOptions = GetServerOptions();
 
-        await using var transport = new StdioServerTransport(name, loggerFactory);
+        await using var transport = new StdioServerTransport(proxyOptions.ServerInfo?.Name ?? Name, loggerFactory);
         await using var server = McpServerFactory.Create(transport, serverOptions, loggerFactory);
 
         try
@@ -209,7 +210,7 @@ internal sealed class Server
 
         return new McpServerOptions
         {
-            ServerInfo = new() { Name = name, Version = version },
+            ServerInfo = proxyOptions.ServerInfo ?? new() { Name = Name, Version = Version },
             Capabilities = new()
             {
                 NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, Task>>(StringComparer.Ordinal)
@@ -232,7 +233,7 @@ internal sealed class Server
                         if (request.Params?.Level is not { } level)
                             throw new McpException("Missing logging level parameter");
 
-                        Log.Level = level.ToLogLevel();
+                        proxyOptions.SetLoggingLevelCallback?.Invoke(level);
 
                         await SetLoggingLevel(level, cancellationToken);
 

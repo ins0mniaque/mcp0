@@ -29,22 +29,30 @@ internal sealed class InspectCommand : Command
 
     private static async Task Execute(string[] contexts, CancellationToken cancellationToken)
     {
+        var proxyOptions = new McpProxyOptions
+        {
+            LoggingLevel = Log.Level?.ToLoggingLevel(),
+            SetLoggingLevelCallback = static level => Log.Level = level.ToLogLevel()
+        };
+
         Log.Level ??= LogLevel.Warning;
 
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var config = await ContextConfig.Read(contexts, cancellationToken);
         var servers = config.ToMcpServerConfigs();
-        var serverName = Server.NameFrom(servers.Select(static server => server.Name));
-        var server = new Server(serverName, Server.Version, loggerFactory);
-        var clients = await servers.CreateMcpClientsAsync(server.GetClientOptions(), loggerFactory, cancellationToken);
 
-        await server.Initialize(clients, cancellationToken);
+        proxyOptions.ServerInfo = McpProxy.CreateServerInfo(servers);
 
-        Inspect(server);
+        var proxy = new McpProxy(proxyOptions, loggerFactory);
+        var clients = await servers.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
+
+        await proxy.Initialize(clients, cancellationToken);
+
+        Inspect(proxy);
     }
 
-    private static void Inspect(Server server)
+    private static void Inspect(McpProxy proxy)
     {
         const ConsoleColor SectionColor = ConsoleColor.Magenta;
         const ConsoleColor HeaderColor = ConsoleColor.Green;
@@ -53,7 +61,7 @@ internal sealed class InspectCommand : Command
 
         var width = Terminal.Width;
 
-        foreach (var client in server.Clients)
+        foreach (var client in proxy.Clients)
         {
             if (client.ServerInfo is not { } info)
             {
@@ -67,12 +75,12 @@ internal sealed class InspectCommand : Command
             Terminal.WriteLine(info.Version);
         }
 
-        if (server.Prompts.Count is not 0)
+        if (proxy.Prompts.Count is not 0)
         {
             Terminal.WriteLine();
             Terminal.WriteLine("Prompts", SectionColor);
 
-            foreach (var entry in server.Prompts)
+            foreach (var entry in proxy.Prompts)
             {
                 var prompt = entry.Value.Prompt;
 
@@ -84,12 +92,12 @@ internal sealed class InspectCommand : Command
             }
         }
 
-        if (server.Resources.Count is not 0)
+        if (proxy.Resources.Count is not 0)
         {
             Terminal.WriteLine();
             Terminal.WriteLine("Resources", SectionColor);
 
-            foreach (var entry in server.Resources)
+            foreach (var entry in proxy.Resources)
             {
                 var resource = entry.Value.Resource;
 
@@ -100,12 +108,12 @@ internal sealed class InspectCommand : Command
             }
         }
 
-        if (server.ResourceTemplates.Count is not 0)
+        if (proxy.ResourceTemplates.Count is not 0)
         {
             Terminal.WriteLine();
             Terminal.WriteLine("Resource Templates", SectionColor);
 
-            foreach (var entry in server.ResourceTemplates)
+            foreach (var entry in proxy.ResourceTemplates)
             {
                 var resourceTemplate = entry.Value.ResourceTemplate;
 
@@ -116,12 +124,12 @@ internal sealed class InspectCommand : Command
             }
         }
 
-        if (server.Tools.Count is not 0)
+        if (proxy.Tools.Count is not 0)
         {
             Terminal.WriteLine();
             Terminal.WriteLine("Tools", SectionColor);
 
-            foreach (var entry in server.Tools)
+            foreach (var entry in proxy.Tools)
             {
                 var tool = entry.Value.Tool;
 
