@@ -4,7 +4,7 @@ namespace mcp0.Core;
 
 internal static class DotEnv
 {
-    private static readonly SearchValues<char> ValidKeyChars = SearchValues.Create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
+    private static readonly SearchValues<char> validKeyChars = SearchValues.Create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
 
     public static Dictionary<string, string> Parse(ReadOnlySpan<char> envFile)
     {
@@ -21,7 +21,7 @@ internal static class DotEnv
                 continue;
 
             var key = line[keyValueRanges[0]];
-            if (key.Length is 0 || key.ContainsAnyExcept(ValidKeyChars))
+            if (key.Length is 0 || key.ContainsAnyExcept(validKeyChars))
                 continue;
 
             environment[key.ToString()] = line[keyValueRanges[1]].ToString();
