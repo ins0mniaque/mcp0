@@ -5,14 +5,14 @@ using ModelContextProtocol;
 
 namespace mcp0.Model;
 
-internal sealed class Context
+internal sealed class Configuration
 {
     [JsonPropertyName("servers")]
     public Dictionary<string, Server>? Servers { get; set; }
 
-    public void Merge(Context config)
+    public void Merge(Configuration configuration)
     {
-        if (config.Servers is { } servers)
+        if (configuration.Servers is { } servers)
         {
             Servers ??= new(servers.Count, StringComparer.Ordinal);
             foreach (var entry in servers)
@@ -20,11 +20,11 @@ internal sealed class Context
         }
     }
 
-    public static async Task<Context> Read(string[] paths, CancellationToken cancellationToken)
+    public static async Task<Configuration> Read(string[] paths, CancellationToken cancellationToken)
     {
-        var merged = new Context();
+        var merged = new Configuration();
 
-        var tasks = new Task<Context>[paths.Length];
+        var tasks = new Task<Configuration>[paths.Length];
         for (var index = 0; index < paths.Length; index++)
             tasks[index] = Read(paths[index], cancellationToken);
 
@@ -33,21 +33,21 @@ internal sealed class Context
             merged.Merge(config);
 
         if (merged.Servers is null)
-            throw new InvalidOperationException("missing context servers configuration");
+            throw new InvalidOperationException("Servers configuration is empty");
 
         return merged;
     }
 
-    public static async Task<Context> Read(string path, CancellationToken cancellationToken)
+    public static async Task<Configuration> Read(string path, CancellationToken cancellationToken)
     {
-        Context? contextConfig;
+        Configuration? configuration;
         await using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-            contextConfig = await JsonSerializer.DeserializeAsync(stream, Model.Default.Context, cancellationToken);
+            configuration = await JsonSerializer.DeserializeAsync(stream, Model.Default.Configuration, cancellationToken);
 
-        if (contextConfig is null)
-            throw new InvalidOperationException("context is empty");
+        if (configuration is null)
+            throw new InvalidOperationException("Configuration is empty");
 
-        return contextConfig;
+        return configuration;
     }
 
     public McpServerConfig[] ToMcpServerConfigs()

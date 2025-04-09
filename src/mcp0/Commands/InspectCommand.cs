@@ -12,22 +12,22 @@ namespace mcp0.Commands;
 
 internal sealed class InspectCommand : Command
 {
-    public InspectCommand() : base("inspect", "Inspect the MCP server for one or more contexts")
+    public InspectCommand() : base("inspect", "Inspect the MCP server for one or more configured contexts")
     {
-        var contextsArgument = new Argument<string[]>("contexts", "A list of context names and/or context files to inspect")
+        var pathsArgument = new Argument<string[]>("files", "A list of context configuration files to inspect")
         {
             Arity = ArgumentArity.OneOrMore
         };
 
         AddAlias("i");
-        AddArgument(contextsArgument);
+        AddArgument(pathsArgument);
 
-        this.SetHandler(Execute, contextsArgument);
+        this.SetHandler(Execute, pathsArgument);
     }
 
-    private static Task Execute(string[] contexts) => Execute(contexts, CancellationToken.None);
+    private static Task Execute(string[] paths) => Execute(paths, CancellationToken.None);
 
-    private static async Task Execute(string[] contexts, CancellationToken cancellationToken)
+    private static async Task Execute(string[] paths, CancellationToken cancellationToken)
     {
         var proxyOptions = new McpProxyOptions
         {
@@ -39,8 +39,8 @@ internal sealed class InspectCommand : Command
 
         using var loggerFactory = Log.CreateLoggerFactory();
 
-        var config = await Context.Read(contexts, cancellationToken);
-        var servers = config.ToMcpServerConfigs();
+        var configuration = await Configuration.Read(paths, cancellationToken);
+        var servers = configuration.ToMcpServerConfigs();
 
         proxyOptions.ServerInfo = McpProxy.CreateServerInfo(servers);
 

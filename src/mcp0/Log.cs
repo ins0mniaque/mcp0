@@ -32,14 +32,14 @@ internal static partial class Log
         });
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Reloading contexts: {Contexts}")]
-    public static partial void ContextReloading(this ILogger logger, string[] contexts);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Reloading configuration: {Paths}")]
+    public static partial void ConfigurationReloading(this ILogger logger, string[] paths);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Reloaded contexts: {Contexts}")]
-    public static partial void ContextReloaded(this ILogger logger, string[] contexts);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Reloaded configuration: {Paths}")]
+    public static partial void ConfigurationReloaded(this ILogger logger, string[] paths);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to reload contexts: {Contexts}")]
-    public static partial void ContextReloadFailed(this ILogger logger, Exception exception, string[] contexts);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to reload configuration: {Paths}")]
+    public static partial void ConfigurationReloadFailed(this ILogger logger, Exception exception, string[] paths);
 
     private sealed class Configuration : ConfigurationProvider, IConfigurationSource
     {
