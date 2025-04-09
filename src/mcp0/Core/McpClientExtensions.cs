@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
-using ModelContextProtocol.Protocol.Messages;
 using ModelContextProtocol.Protocol.Types;
 
 namespace mcp0.Core;
