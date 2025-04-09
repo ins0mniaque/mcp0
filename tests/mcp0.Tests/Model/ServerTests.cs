@@ -5,15 +5,15 @@ using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Transport;
 
-namespace mcp0.Configuration;
+namespace mcp0.Model;
 
 [TestClass]
-public sealed class ServerConfigTests
+public sealed class ServerTests
 {
     [TestMethod]
     public void ConfiguresStdioClientTransportCorrectly()
     {
-        var config = new ServerConfig
+        var config = new Server
         {
             Command = "uvx",
             Arguments = ["mcp-server-fetch"],
@@ -45,7 +45,7 @@ public sealed class ServerConfigTests
     [TestMethod]
     public void ConfiguresSseClientTransportCorrectly()
     {
-        var config = new ServerConfig
+        var config = new Server
         {
             Url = new Uri("http://localhost:8080/mcp-server-fetch"),
             Headers = new() { { "Authorization", "TOKEN" } },
@@ -76,7 +76,7 @@ public sealed class ServerConfigTests
     [TestMethod]
     public void ThrowsOnMissingCommand()
     {
-        var config = new ServerConfig { Command = "" };
+        var config = new Server { Command = "" };
 
         Assert.ThrowsException<InvalidOperationException>(() => config.ToMcpServerConfig("mcp0"));
     }
@@ -84,7 +84,7 @@ public sealed class ServerConfigTests
     [TestMethod]
     public void ThrowsOnMissingUrl()
     {
-        var config = new ServerConfig { ConnectionTimeout = 60 };
+        var config = new Server { ConnectionTimeout = 60 };
 
         Assert.ThrowsException<InvalidOperationException>(() => config.ToMcpServerConfig("mcp0"));
     }
@@ -92,7 +92,7 @@ public sealed class ServerConfigTests
     [TestMethod]
     public void ThrowsOnMixedUpConfig()
     {
-        var config = new ServerConfig
+        var config = new Server
         {
             Command = "uvx",
             Url = new Uri("http://localhost:8080/mcp-server-fetch")

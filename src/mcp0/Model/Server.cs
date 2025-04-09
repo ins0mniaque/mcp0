@@ -6,9 +6,9 @@ using mcp0.Core;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Transport;
 
-namespace mcp0.Configuration;
+namespace mcp0.Model;
 
-internal sealed class ServerConfig
+internal sealed class Server
 {
     [JsonPropertyName("command")]
     public string? Command { get; set; }

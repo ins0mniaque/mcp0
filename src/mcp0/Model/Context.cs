@@ -3,14 +3,14 @@ using System.Text.Json.Serialization;
 
 using ModelContextProtocol;
 
-namespace mcp0.Configuration;
+namespace mcp0.Model;
 
-internal sealed class ContextConfig
+internal sealed class Context
 {
     [JsonPropertyName("servers")]
-    public Dictionary<string, ServerConfig>? Servers { get; set; }
+    public Dictionary<string, Server>? Servers { get; set; }
 
-    public void Merge(ContextConfig config)
+    public void Merge(Context config)
     {
         if (config.Servers is { } servers)
         {
@@ -20,11 +20,11 @@ internal sealed class ContextConfig
         }
     }
 
-    public static async Task<ContextConfig> Read(string[] paths, CancellationToken cancellationToken)
+    public static async Task<Context> Read(string[] paths, CancellationToken cancellationToken)
     {
-        var merged = new ContextConfig();
+        var merged = new Context();
 
-        var tasks = new Task<ContextConfig>[paths.Length];
+        var tasks = new Task<Context>[paths.Length];
         for (var index = 0; index < paths.Length; index++)
             tasks[index] = Read(paths[index], cancellationToken);
 
@@ -38,11 +38,11 @@ internal sealed class ContextConfig
         return merged;
     }
 
-    public static async Task<ContextConfig> Read(string path, CancellationToken cancellationToken)
+    public static async Task<Context> Read(string path, CancellationToken cancellationToken)
     {
-        ContextConfig? contextConfig;
+        Context? contextConfig;
         await using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-            contextConfig = await JsonSerializer.DeserializeAsync(stream, SerializerContext.Default.ContextConfig, cancellationToken);
+            contextConfig = await JsonSerializer.DeserializeAsync(stream, Model.Default.Context, cancellationToken);
 
         if (contextConfig is null)
             throw new InvalidOperationException("context is empty");

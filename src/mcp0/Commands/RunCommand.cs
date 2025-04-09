@@ -1,8 +1,8 @@
 using System.CommandLine;
 using System.Text.Json;
 
-using mcp0.Configuration;
 using mcp0.Core;
+using mcp0.Model;
 
 using Microsoft.Extensions.Logging;
 
@@ -40,7 +40,7 @@ internal sealed class RunCommand : Command
 
         using var loggerFactory = Log.CreateLoggerFactory();
 
-        var config = await ContextConfig.Read(contexts, cancellationToken);
+        var config = await Context.Read(contexts, cancellationToken);
         var servers = config.ToMcpServerConfigs();
 
         proxyOptions.ServerInfo = McpProxy.CreateServerInfo(servers);
@@ -75,7 +75,7 @@ internal sealed class RunCommand : Command
         {
             logger.ContextReloading(contexts);
 
-            var config = await ContextConfig.Read(contexts, cancellationToken);
+            var config = await Context.Read(contexts, cancellationToken);
             var servers = config.ToMcpServerConfigs();
             var clients = await servers.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
 

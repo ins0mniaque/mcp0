@@ -1,7 +1,7 @@
 using System.CommandLine;
 
-using mcp0.Configuration;
 using mcp0.Core;
+using mcp0.Model;
 
 using Microsoft.Extensions.Logging;
 
@@ -39,7 +39,7 @@ internal sealed class InspectCommand : Command
 
         using var loggerFactory = Log.CreateLoggerFactory();
 
-        var config = await ContextConfig.Read(contexts, cancellationToken);
+        var config = await Context.Read(contexts, cancellationToken);
         var servers = config.ToMcpServerConfigs();
 
         proxyOptions.ServerInfo = McpProxy.CreateServerInfo(servers);
