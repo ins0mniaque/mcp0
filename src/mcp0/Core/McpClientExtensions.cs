@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 
 namespace mcp0.Core;
@@ -11,20 +12,14 @@ namespace mcp0.Core;
 internal static class McpClientExtensions
 {
     public static async Task<IMcpClient[]> CreateMcpClientsAsync(
-        this IEnumerable<McpServerConfig> servers,
+        this IEnumerable<IClientTransport> clientTransports,
         McpClientOptions clientOptions,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var clientTasks = new List<Task<IMcpClient>>();
-        foreach (var server in servers)
-        {
-            clientTasks.Add(McpClientFactory.CreateAsync(
-                server,
-                clientOptions: clientOptions,
-                loggerFactory: loggerFactory,
-                cancellationToken: cancellationToken));
-        }
+        foreach (var clientTransport in clientTransports)
+            clientTasks.Add(McpClientFactory.CreateAsync(clientTransport, clientOptions, loggerFactory, cancellationToken));
 
         return await Task.WhenAll(clientTasks);
     }

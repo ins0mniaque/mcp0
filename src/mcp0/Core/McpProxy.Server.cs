@@ -17,14 +17,14 @@ internal sealed partial class McpProxy
             ServerInfo = proxyOptions.ServerInfo ?? new() { Name = Name, Version = Version },
             Capabilities = new()
             {
-                NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, Task>>(StringComparer.Ordinal)
+                NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, CancellationToken, Task>>(StringComparer.Ordinal)
                 {
                     {
-                        NotificationMethods.RootsUpdatedNotification, async _ =>
+                        NotificationMethods.RootsUpdatedNotification, async (_, cancellationToken) =>
                         {
                             var notifyTasks = new List<Task>(Clients.Count);
                             foreach (var client in Clients)
-                                notifyTasks.Add(client.SendNotificationAsync(NotificationMethods.RootsUpdatedNotification));
+                                notifyTasks.Add(client.SendNotificationAsync(NotificationMethods.RootsUpdatedNotification, cancellationToken));
 
                             await Task.WhenAll(notifyTasks);
                         }
@@ -98,40 +98,43 @@ internal sealed partial class McpProxy
 
                         return await client.CallToolAsync(tool.Name, arguments, null, cancellationToken);
                     }
-                }
-            },
-            GetCompletionHandler = async (request, cancellationToken) =>
-            {
-                IMcpClient client;
-                if (request.Params?.Ref.Uri is { } resourceUri)
+                },
+                Completions = new()
                 {
-                    if (resources.TryGetValue(resourceUri, out var resourceEntry))
-                        client = resourceEntry.Client;
-                    else if (resourceTemplates.TryGetValue(resourceUri, out var resourceTemplateEntry))
-                        client = resourceTemplateEntry.Client;
-                    else
-                        throw new McpException($"Unknown resource or resource template: '{resourceUri}'");
+                    CompleteHandler = async (request, cancellationToken) =>
+                    {
+                        IMcpClient client;
+                        if (request.Params?.Ref.Uri is { } resourceUri)
+                        {
+                            if (resources.TryGetValue(resourceUri, out var resourceEntry))
+                                client = resourceEntry.Client;
+                            else if (resourceTemplates.TryGetValue(resourceUri, out var resourceTemplateEntry))
+                                client = resourceTemplateEntry.Client;
+                            else
+                                throw new McpException($"Unknown resource or resource template: '{resourceUri}'");
+                        }
+                        else if (request.Params?.Ref.Name is { } promptName)
+                            client = Find(prompts, "prompt", promptName).Client;
+                        else
+                            throw new McpException($"Missing completion request parameters");
+
+                        if (disabledCompletionClients.ContainsKey(client))
+                            return emptyCompleteResult;
+
+                        var completeTask = client.CompleteAsync(
+                            request.Params.Ref,
+                            request.Params.Argument.Name,
+                            request.Params.Argument.Value,
+                            cancellationToken);
+
+                        return await completeTask.CatchMethodNotFound(_ =>
+                        {
+                            disabledCompletionClients.AddOrUpdate(client, 0, static (_, _) => 0);
+
+                            return emptyCompleteResult;
+                        });
+                    }
                 }
-                else if (request.Params?.Ref.Name is { } promptName)
-                    client = Find(prompts, "prompt", promptName).Client;
-                else
-                    throw new McpException($"Missing completion request parameters");
-
-                if (disabledCompletionClients.ContainsKey(client))
-                    return emptyCompleteResult;
-
-                var completionTask = client.GetCompletionAsync(
-                    request.Params.Ref,
-                    request.Params.Argument.Name,
-                    request.Params.Argument.Value,
-                    cancellationToken);
-
-                return await completionTask.CatchMethodNotFound(_ =>
-                {
-                    disabledCompletionClients.AddOrUpdate(client, 0, static (_, _) => 0);
-
-                    return emptyCompleteResult;
-                });
             }
         };
     }

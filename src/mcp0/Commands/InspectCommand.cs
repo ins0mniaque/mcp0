@@ -40,7 +40,7 @@ internal sealed class InspectCommand : Command
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var configuration = await Model.Load(paths, cancellationToken);
-        var servers = configuration.ToMcpServerConfigs();
+        var servers = configuration.ToClientTransports();
 
         proxyOptions.ServerInfo = McpProxy.CreateServerInfo(servers);
 

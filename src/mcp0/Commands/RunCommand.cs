@@ -41,7 +41,7 @@ internal sealed class RunCommand : Command
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var configuration = await Model.Load(paths, cancellationToken);
-        var servers = configuration.ToMcpServerConfigs();
+        var servers = configuration.ToClientTransports();
 
         proxyOptions.ServerInfo = McpProxy.CreateServerInfo(servers);
 
@@ -76,7 +76,7 @@ internal sealed class RunCommand : Command
             logger.ConfigurationReloading(paths);
 
             var configuration = await Model.Load(paths, cancellationToken);
-            var servers = configuration.ToMcpServerConfigs();
+            var servers = configuration.ToClientTransports();
             var clients = await servers.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
 
             await proxy.Initialize(clients, cancellationToken);

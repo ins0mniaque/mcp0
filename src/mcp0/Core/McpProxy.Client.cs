@@ -11,11 +11,11 @@ internal sealed partial class McpProxy
     {
         Capabilities = new()
         {
-            NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, Task>>(StringComparer.Ordinal)
+            NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, CancellationToken, Task>>(StringComparer.Ordinal)
             {
-                { NotificationMethods.PromptListChangedNotification, _ => InitializePrompts(Clients, CancellationToken.None) },
-                { NotificationMethods.ResourceListChangedNotification, _ => InitializeResources(Clients, CancellationToken.None) },
-                { NotificationMethods.ToolListChangedNotification, _ => InitializeTools(Clients, CancellationToken.None) }
+                { NotificationMethods.PromptListChangedNotification, (_, cancellationToken) => InitializePrompts(Clients, cancellationToken) },
+                { NotificationMethods.ResourceListChangedNotification, (_, cancellationToken) => InitializeResources(Clients, cancellationToken) },
+                { NotificationMethods.ToolListChangedNotification, (_, cancellationToken) => InitializeTools(Clients, cancellationToken) }
             },
             Sampling = new()
             {

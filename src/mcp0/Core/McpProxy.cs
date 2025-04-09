@@ -16,9 +16,9 @@ internal sealed partial class McpProxy
     public static string Name { get; } = typeof(McpProxy).Assembly.GetName().Name ?? "mcp0";
     public static string Version { get; } = typeof(McpProxy).Assembly.GetName().Version?.ToString() ?? "0.0.0";
 
-    public static Implementation CreateServerInfo(IEnumerable<McpServerConfig> servers) => new()
+    public static Implementation CreateServerInfo(IEnumerable<IClientTransport> transports) => new()
     {
-        Name = string.Join('/', servers.Select(static server => server.Name).DefaultIfEmpty(Name)),
+        Name = string.Join('/', transports.Select(static transport => transport.Name).DefaultIfEmpty(Name)),
         Version = Version
     };
 

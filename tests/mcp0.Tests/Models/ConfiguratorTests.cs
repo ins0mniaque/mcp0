@@ -1,8 +1,5 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
-using ModelContextProtocol;
-using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Transport;
 
 namespace mcp0.Models;
@@ -22,18 +19,15 @@ public sealed class ConfiguratorTests
             ShutdownTimeout = 60
         };
 
-        var mcpServerConfig = server.ToMcpServerConfig("mcp0");
-        var transport = CreateTransport(mcpServerConfig);
+        var transport = server.ToClientTransport("mcp0");
 
         Assert.IsInstanceOfType<StdioClientTransport>(transport);
-
-        Assert.AreEqual(server.Command, mcpServerConfig.Location);
 
         var actualOptions = GetTransportOptions((StdioClientTransport)transport);
         var expectedOptions = new StdioClientTransportOptions
         {
             Command = "npx",
-            Arguments = "-y @modelcontextprotocol/server-everything",
+            Arguments = ["-y", "@modelcontextprotocol/server-everything"],
             WorkingDirectory = "/home/user",
             EnvironmentVariables = new() { { "KEY", "VALUE" } },
             ShutdownTimeout = TimeSpan.FromSeconds(60)
@@ -54,16 +48,14 @@ public sealed class ConfiguratorTests
             ReconnectDelay = 60
         };
 
-        var mcpServerConfig = server.ToMcpServerConfig("mcp0");
-        var transport = CreateTransport(mcpServerConfig);
+        var transport = server.ToClientTransport("mcp0");
 
         Assert.IsInstanceOfType<SseClientTransport>(transport);
-
-        Assert.AreEqual(server.Url.ToString(), mcpServerConfig.Location);
 
         var actualOptions = GetTransportOptions((SseClientTransport)transport);
         var expectedOptions = new SseClientTransportOptions
         {
+            Endpoint = server.Url,
             AdditionalHeaders = new() { { "Authorization", "TOKEN" } },
             ConnectionTimeout = TimeSpan.FromSeconds(30),
             MaxReconnectAttempts = 10,
@@ -78,7 +70,7 @@ public sealed class ConfiguratorTests
     {
         var server = new Server { Command = "" };
 
-        Assert.ThrowsException<InvalidOperationException>(() => server.ToMcpServerConfig("mcp0"));
+        Assert.ThrowsException<InvalidOperationException>(() => server.ToClientTransport("mcp0"));
     }
 
     [TestMethod]
@@ -86,7 +78,7 @@ public sealed class ConfiguratorTests
     {
         var server = new Server { ConnectionTimeout = 60 };
 
-        Assert.ThrowsException<InvalidOperationException>(() => server.ToMcpServerConfig("mcp0"));
+        Assert.ThrowsException<InvalidOperationException>(() => server.ToClientTransport("mcp0"));
     }
 
     [TestMethod]
@@ -99,13 +91,13 @@ public sealed class ConfiguratorTests
             Url = new Uri("http://localhost:8080/server-everything")
         };
 
-        Assert.ThrowsException<InvalidOperationException>(() => server.ToMcpServerConfig("mcp0"));
+        Assert.ThrowsException<InvalidOperationException>(() => server.ToClientTransport("mcp0"));
     }
 
     private static void AreEqual(StdioClientTransportOptions expected, StdioClientTransportOptions actual)
     {
         Assert.AreEqual(expected.Command, actual.Command);
-        Assert.AreEqual(expected.Arguments, actual.Arguments);
+        Assert.IsTrue((expected.Arguments ?? []).SequenceEqual(actual.Arguments ?? []));
         Assert.AreEqual(expected.WorkingDirectory, actual.WorkingDirectory);
         Assert.AreEqual(expected.ShutdownTimeout, actual.ShutdownTimeout);
 
@@ -135,18 +127,6 @@ public sealed class ConfiguratorTests
                 Assert.AreEqual(actual.AdditionalHeaders[header.Key], header.Value);
             }
         }
-    }
-
-    private static IClientTransport CreateTransport(McpServerConfig config)
-    {
-        var createTransportMethod = typeof(McpClientFactory).GetMethod("CreateTransport", BindingFlags.NonPublic | BindingFlags.Static);
-        if (createTransportMethod is null)
-            throw new InvalidOperationException("ModelContextProtocol infrastructure changed: Unable to find the McpClientFactory.CreateTransport method");
-
-        if (createTransportMethod.Invoke(null, [config, null]) is not IClientTransport transport)
-            throw new InvalidOperationException("ModelContextProtocol infrastructure changed: McpClientFactory.CreateTransport method did not return an instance of IClientTransport");
-
-        return transport;
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_options")]
