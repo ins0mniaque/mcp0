@@ -6,15 +6,30 @@ namespace mcp0;
 
 internal static partial class Log
 {
-    public static LogLevel MinimumLevel { get; private set; } = LogLevel.Warning;
-
-    public static void SetMinimumLevel(LogLevel level)
+    private static LogLevel? level;
+    public static LogLevel? Level
     {
-        // TODO: Implement minimum level change at runtime through IConfigurationRoot.Reload
-        MinimumLevel = level;
+        get => level;
+        set
+        {
+            // TODO: Implement minimum level change at runtime through IConfigurationRoot.Reload
+            level = value;
+        }
     }
 
-    public static void SetMinimumLevel(LoggingLevel level) => SetMinimumLevel(level switch
+    public static ILoggerFactory CreateLoggerFactory()
+    {
+        return LoggerFactory.Create(static logging =>
+        {
+            if (Level is { } minimumLevel)
+                logging.SetMinimumLevel(minimumLevel);
+
+            // Send all logs to standard error because MCP uses standard output
+            logging.AddConsole(static options => options.LogToStandardErrorThreshold = LogLevel.Trace);
+        });
+    }
+
+    public static LogLevel ToLogLevel(this LoggingLevel loggingLevel) => loggingLevel switch
     {
         LoggingLevel.Debug => LogLevel.Debug,
         LoggingLevel.Info => LogLevel.Information,
@@ -24,19 +39,19 @@ internal static partial class Log
         LoggingLevel.Critical => LogLevel.Critical,
         LoggingLevel.Alert => LogLevel.Critical,
         LoggingLevel.Emergency => LogLevel.Critical,
-        _ => MinimumLevel
-    });
+        _ => LogLevel.None
+    };
 
-    public static ILoggerFactory CreateLoggerFactory()
+    public static LoggingLevel ToLoggingLevel(this LogLevel logLevel) => logLevel switch
     {
-        return LoggerFactory.Create(static logging =>
-        {
-            logging.SetMinimumLevel(MinimumLevel);
-
-            // Send all logs to standard error because MCP uses standard output
-            logging.AddConsole(static options => options.LogToStandardErrorThreshold = LogLevel.Trace);
-        });
-    }
+        LogLevel.Trace => LoggingLevel.Debug,
+        LogLevel.Debug => LoggingLevel.Debug,
+        LogLevel.Information => LoggingLevel.Info,
+        LogLevel.Warning => LoggingLevel.Warning,
+        LogLevel.Error => LoggingLevel.Error,
+        LogLevel.Critical => LoggingLevel.Critical,
+        _ => LoggingLevel.Emergency
+    };
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Reloading contexts: {Contexts}")]
     public static partial void ContextReloading(this ILogger logger, string[] contexts);

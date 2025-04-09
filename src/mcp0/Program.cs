@@ -14,7 +14,7 @@ var rootCommand = new RootCommand()
     new RunCommand()
 };
 
-var logLevelOption = new Option<LogLevel>("--loglevel", static () => LogLevel.Warning);
+var logLevelOption = new Option<LogLevel?>("--loglevel");
 
 rootCommand.AddGlobalOption(logLevelOption);
 
@@ -28,12 +28,12 @@ var parser = new CommandLineBuilder(rootCommand)
             HelpBuilder.Default.GetLayout().Skip(1).Prepend(static _ => Terminal.WriteLine(Title)));
         ctx.HelpBuilder.CustomizeSymbol(logLevelOption,
             firstColumnText: "--loglevel <level>",
-            secondColumnText: "Minimum severity logging level: <Trace|Debug|Information|Warning|Error|Critical>");
+            secondColumnText: "Minimum severity logging level: <Trace|Debug|Information|Warning|Error|Critical|None>");
     })
     .Build();
 
 var parsed = parser.Parse(args);
 
-Log.SetMinimumLevel(parsed.GetValueForOption(logLevelOption));
+Log.Level = parsed.GetValueForOption(logLevelOption);
 
 return await parsed.InvokeAsync();

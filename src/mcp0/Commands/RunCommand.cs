@@ -30,6 +30,8 @@ internal sealed class RunCommand : Command
 
     private static async Task Execute(string[] contexts, bool noReload, CancellationToken cancellationToken)
     {
+        Log.Level ??= LogLevel.Information;
+
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var config = await ContextConfig.Read(contexts, cancellationToken);

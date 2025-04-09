@@ -57,6 +57,10 @@ internal sealed class Server
         Clients = clients;
         disabledCompletionClients.Clear();
 
+        var loggingLevel = Log.Level?.ToLoggingLevel() ?? LoggingLevel.Info;
+        if (loggingLevel is not LoggingLevel.Info)
+            await SetLoggingLevel(loggingLevel, cancellationToken);
+
         await InitializePrompts(clients, cancellationToken);
         await InitializeResources(clients, cancellationToken);
         await InitializeTools(clients, cancellationToken);
@@ -152,6 +156,15 @@ internal sealed class Server
             await server.SendNotificationAsync(NotificationMethods.ToolListChangedNotification, cancellationToken);
     }
 
+    private async Task SetLoggingLevel(LoggingLevel level, CancellationToken cancellationToken)
+    {
+        var setLoggingLevelTasks = new List<Task>(Clients.Count);
+        foreach (var client in Clients)
+            setLoggingLevelTasks.Add(client.SafeSetLoggingLevel(level, cancellationToken));
+
+        await Task.WhenAll(setLoggingLevelTasks);
+    }
+
     public McpClientOptions GetClientOptions() => new()
     {
         Capabilities = new()
@@ -219,13 +232,9 @@ internal sealed class Server
                         if (request.Params?.Level is not { } level)
                             throw new McpException("Missing logging level parameter");
 
-                        Log.SetMinimumLevel(level);
+                        Log.Level = level.ToLogLevel();
 
-                        var setLoggingLevelTasks = new List<Task>(Clients.Count);
-                        foreach (var client in Clients)
-                            setLoggingLevelTasks.Add(client.SafeSetLoggingLevel(level, cancellationToken));
-
-                        await Task.WhenAll(setLoggingLevelTasks);
+                        await SetLoggingLevel(level, cancellationToken);
 
                         return new();
                     }

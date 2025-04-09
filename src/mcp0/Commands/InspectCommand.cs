@@ -3,6 +3,8 @@ using System.CommandLine;
 using mcp0.Configuration;
 using mcp0.Core;
 
+using Microsoft.Extensions.Logging;
+
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Types;
 
@@ -27,6 +29,8 @@ internal sealed class InspectCommand : Command
 
     private static async Task Execute(string[] contexts, CancellationToken cancellationToken)
     {
+        Log.Level ??= LogLevel.Warning;
+
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var config = await ContextConfig.Read(contexts, cancellationToken);
