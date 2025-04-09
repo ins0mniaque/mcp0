@@ -60,6 +60,26 @@ internal static class McpClientExtensions
             .CatchMethodNotFound(static _ => new List<ResourceTemplate>());
     }
 
+    public static Task SafeSubscribeToResourceAsync(
+        this IMcpClient client, string uri, CancellationToken cancellationToken = default)
+    {
+        if (client.ServerCapabilities.Resources?.Subscribe is not true)
+            return Task.CompletedTask;
+
+        return client.SubscribeToResourceAsync(uri, cancellationToken)
+            .CatchMethodNotFound(static _ => { });
+    }
+
+    public static Task SafeUnsubscribeFromResourceAsync(
+        this IMcpClient client, string uri, CancellationToken cancellationToken = default)
+    {
+        if (client.ServerCapabilities.Resources?.Subscribe is not true)
+            return Task.CompletedTask;
+
+        return client.UnsubscribeFromResourceAsync(uri, cancellationToken)
+            .CatchMethodNotFound(static _ => { });
+    }
+
     public static Task<IList<McpClientTool>> SafeListToolsAsync(
         this IMcpClient client,
         JsonSerializerOptions? serializerOptions = null,

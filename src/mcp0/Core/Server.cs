@@ -255,7 +255,7 @@ internal sealed class Server
                     {
                         var (client, resource) = Find(resources, "resource", request.Params?.Uri);
 
-                        await client.SubscribeToResourceAsync(resource.Uri, cancellationToken);
+                        await client.SafeSubscribeToResourceAsync(resource.Uri, cancellationToken);
 
                         return new();
                     },
@@ -263,7 +263,7 @@ internal sealed class Server
                     {
                         var (client, resource) = Find(resources, "resource", request.Params?.Uri);
 
-                        await client.UnsubscribeFromResourceAsync(resource.Uri, cancellationToken);
+                        await client.SafeUnsubscribeFromResourceAsync(resource.Uri, cancellationToken);
 
                         return new();
                     }
