@@ -15,8 +15,8 @@ public sealed class ConfiguratorTests
     {
         var server = new Server
         {
-            Command = "uvx",
-            Arguments = ["mcp-server-fetch"],
+            Command = "npx",
+            Arguments = ["-y", "@modelcontextprotocol/server-everything"],
             WorkingDirectory = "/home/user",
             Environment = new() { { "KEY", "VALUE" } },
             ShutdownTimeout = 60
@@ -32,8 +32,8 @@ public sealed class ConfiguratorTests
         var actualOptions = GetTransportOptions((StdioClientTransport)transport);
         var expectedOptions = new StdioClientTransportOptions
         {
-            Command = "uvx",
-            Arguments = "mcp-server-fetch",
+            Command = "npx",
+            Arguments = "-y @modelcontextprotocol/server-everything",
             WorkingDirectory = "/home/user",
             EnvironmentVariables = new() { { "KEY", "VALUE" } },
             ShutdownTimeout = TimeSpan.FromSeconds(60)
@@ -47,7 +47,7 @@ public sealed class ConfiguratorTests
     {
         var server = new Server
         {
-            Url = new Uri("http://localhost:8080/mcp-server-fetch"),
+            Url = new Uri("http://localhost:8080/server-everything"),
             Headers = new() { { "Authorization", "TOKEN" } },
             ConnectionTimeout = 30,
             MaxReconnectAttempts = 10,
@@ -94,8 +94,9 @@ public sealed class ConfiguratorTests
     {
         var server = new Server
         {
-            Command = "uvx",
-            Url = new Uri("http://localhost:8080/mcp-server-fetch")
+            Command = "npx",
+            Arguments = ["-y", "@modelcontextprotocol/server-everything"],
+            Url = new Uri("http://localhost:8080/server-everything")
         };
 
         Assert.ThrowsException<InvalidOperationException>(() => server.ToMcpServerConfig("mcp0"));
