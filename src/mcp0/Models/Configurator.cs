@@ -144,30 +144,6 @@ internal static class Configurator
         };
     }
 
-    private static async Task<ResourceContents> ToResourceContents(this Resource resource, byte[] data, CancellationToken cancellationToken)
-    {
-        var binary = data.AsSpan().Contains((byte)0);
-        if (binary)
-            return new BlobResourceContents
-            {
-                Uri = resource.Uri,
-                Blob = Convert.ToBase64String(data),
-                MimeType = resource.MimeType
-            };
-
-        string text;
-        using (var stream = new MemoryStream(data))
-        using (var reader = new StreamReader(stream))
-            text = await reader.ReadToEndAsync(cancellationToken);
-
-        return new TextResourceContents
-        {
-            Uri = resource.Uri,
-            Text = text,
-            MimeType = resource.MimeType
-        };
-    }
-
     public static IClientTransport[] ToClientTransports(this Configuration configuration)
     {
         return configuration.Servers?.Select(static entry => entry.Value.ToClientTransport(entry.Key)).ToArray() ?? [];
