@@ -18,7 +18,7 @@ public sealed class ToolCommandTests
     }
 
     [TestMethod]
-    public void ParsesQuotedCommandsCorrectly()
+    public void ParsesCommandsWithQuotesCorrectly()
     {
         var env = ToolCommand.Parse("ollama run {{model}} \"Help me with this task: {{task}}\"", new Dictionary<string, string>
         {
