@@ -28,7 +28,7 @@ public sealed class PromptTemplateTests
     [TestMethod]
     public void ParsesDescriptionCorrectly()
     {
-        var arguments = PromptTemplate.Parse("{{argument:desc}}");
+        var arguments = PromptTemplate.Parse("{{argument#desc}}");
         var expected = new PromptArgument { Name = "argument", Description = "desc", Required = true };
 
         Assert.AreEqual(1, arguments.Count);
@@ -40,7 +40,7 @@ public sealed class PromptTemplateTests
     {
         var template =
         """
-        These are arguments: {{argument}} {{_underscore}} {{numbered0}} {{optional?}} {{described?:desc}}.
+        These are arguments: {{argument}} {{_underscore}} {{numbered0}} {{optional?}} {{described?#desc}}.
         These are not arguments: {{}} {{0}} {{ not_argument }} {{0argument}} {{\"escaped\"}}.
         """;
 
@@ -64,11 +64,11 @@ public sealed class PromptTemplateTests
     {
         var template =
         """
-        These are arguments: {{argument}} {{_underscore}} {{numbered0}} {{optional?}} {{described?:desc}}.
+        These are arguments: {{argument}} {{_underscore}} {{numbered0}} {{optional?}} {{described?#desc}}.
         These are not arguments: {{}} {{0}} {{ not_argument }} {{0argument}} {{\"escaped\"}}.
         """;
 
-        var actual = PromptTemplate.Render(template, new Dictionary<string, string>
+        var actual = Template.Render(template, new Dictionary<string, string>
         {
             { "argument", "value" },
             { "optional", "option" }

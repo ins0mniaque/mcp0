@@ -204,6 +204,9 @@ internal sealed class InspectCommand : Command
                 separator = ", ";
 
                 Terminal.Write(property.Name, PropertyNameColor);
+                if (property.Type is JsonSchemaType { Required: false })
+                    Terminal.Write("?", DecoratorColor);
+
                 Terminal.Write(":");
                 WriteJsonSchema(property.Type);
             }
@@ -232,8 +235,5 @@ internal sealed class InspectCommand : Command
             Terminal.Write(symbol.Name, SymbolColor);
         else
             throw new ArgumentException($"Unknown JSON schema node: {node.GetType().Name}", nameof(node));
-
-        if (node is JsonSchemaType { IsRequired: false })
-            Terminal.Write("?", DecoratorColor);
     }
 }

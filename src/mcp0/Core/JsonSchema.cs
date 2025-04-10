@@ -4,12 +4,12 @@ namespace mcp0.Core;
 
 internal static class JsonSchema
 {
-    public static JsonSchemaSymbol Null { get; } = new JsonSchemaSymbol("null");
-    public static JsonSchemaSymbol Unknown { get; } = new JsonSchemaSymbol("unknown");
+    public static JsonSchemaSymbol Null { get; } = new("null");
+    public static JsonSchemaSymbol Unknown { get; } = new("unknown");
 
     public static IJsonSchemaNode Parse(JsonElement element) => Parse(element, true);
 
-    private static IJsonSchemaNode Parse(JsonElement element, bool isRequired)
+    private static IJsonSchemaNode Parse(JsonElement element, bool required)
     {
         if (element.ValueKind is JsonValueKind.Null)
             return Null;
@@ -20,7 +20,7 @@ internal static class JsonSchema
                 "boolean" or
                 "number" or
                 "string" or
-                "integer" => new JsonSchemaPrimitiveType(type, isRequired),
+                "integer" => new JsonSchemaPrimitiveType(type, required),
                 _ => new JsonSchemaSymbol(type)
             };
 
@@ -30,55 +30,55 @@ internal static class JsonSchema
         if (element.TryGetProperty("type", out var typeElement))
         {
             if (typeElement.ValueKind is JsonValueKind.Array)
-                return new JsonSchemaUnionType(typeElement.EnumerateArray().Select(Parse).ToArray(), isRequired);
+                return new JsonSchemaUnionType(typeElement.EnumerateArray().Select(Parse).ToArray(), required);
 
             if (typeElement.TryGetString(out var complexType))
                 return complexType switch
                 {
-                    "array" => ParseArray(element, isRequired),
-                    "object" => ParseObject(element, isRequired),
-                    _ => Parse(typeElement, isRequired)
+                    "array" => ParseArray(element, required),
+                    "object" => ParseObject(element, required),
+                    _ => Parse(typeElement, required)
                 };
         }
 
         if (element.TryGetProperty("enum", JsonValueKind.Array, out var enumElement))
-            return new JsonSchemaUnionType(enumElement.EnumerateArray().Select(Parse).ToArray(), isRequired);
+            return new JsonSchemaUnionType(enumElement.EnumerateArray().Select(Parse).ToArray(), required);
 
         if (element.TryGetProperty("const", out var constElement))
-            return new JsonSchemaUnionType([Parse(constElement)], isRequired);
+            return new JsonSchemaUnionType([Parse(constElement)], required);
 
         if (element.TryGetProperty("anyOf", JsonValueKind.Array, out var anyOfElement))
-            return new JsonSchemaUnionType(anyOfElement.EnumerateArray().Select(Parse).ToArray(), isRequired);
+            return new JsonSchemaUnionType(anyOfElement.EnumerateArray().Select(Parse).ToArray(), required);
 
         return Unknown;
     }
 
-    private static JsonSchemaArrayType ParseArray(JsonElement element, bool isRequired)
+    private static JsonSchemaArrayType ParseArray(JsonElement element, bool required)
     {
         if (!element.TryGetProperty("items", out var itemsElement))
-            return new JsonSchemaArrayType(Unknown, isRequired);
+            return new JsonSchemaArrayType(Unknown, required);
 
-        return new(Parse(itemsElement), isRequired);
+        return new(Parse(itemsElement), required);
     }
 
-    private static JsonSchemaObjectType ParseObject(JsonElement element, bool isRequired)
+    private static JsonSchemaObjectType ParseObject(JsonElement element, bool required)
     {
         if (!element.TryGetProperty("properties", JsonValueKind.Object, out var propertiesElement))
-            return new([], isRequired);
+            return new([], required);
 
-        var required = new HashSet<string>(StringComparer.Ordinal);
+        var requiredProperties = new HashSet<string>(StringComparer.Ordinal);
         if (element.TryGetProperty("required", JsonValueKind.Array, out var requiredElement))
             foreach (var propertyElement in requiredElement.EnumerateArray())
                 if (propertyElement.TryGetString(out var property))
-                    required.Add(property);
+                    requiredProperties.Add(property);
 
         var properties = propertiesElement.EnumerateObject().Select(ParseProperty).ToArray();
 
-        return new(properties, isRequired);
+        return new(properties, required);
 
         JsonSchemaProperty ParseProperty(JsonProperty property)
         {
-            return new(property.Name, Parse(property.Value, required.Contains(property.Name)));
+            return new(property.Name, Parse(property.Value, requiredProperties.Contains(property.Name)));
         }
     }
 
@@ -101,19 +101,19 @@ internal static class JsonSchema
 }
 
 internal interface IJsonSchemaNode { }
-internal abstract record JsonSchemaType(bool IsRequired) : IJsonSchemaNode;
+internal abstract record JsonSchemaType(bool Required) : IJsonSchemaNode;
 internal sealed record JsonSchemaSymbol(string Name) : IJsonSchemaNode;
-internal sealed record JsonSchemaPrimitiveType(string Name, bool IsRequired) : JsonSchemaType(IsRequired);
-internal sealed record JsonSchemaArrayType(IJsonSchemaNode ElementType, bool IsRequired) : JsonSchemaType(IsRequired);
+internal sealed record JsonSchemaPrimitiveType(string Name, bool Required) : JsonSchemaType(Required);
+internal sealed record JsonSchemaArrayType(IJsonSchemaNode ElementType, bool Required) : JsonSchemaType(Required);
 
 internal sealed record JsonSchemaProperty(string Name, IJsonSchemaNode Type);
-internal sealed record JsonSchemaObjectType(JsonSchemaProperty[] Properties, bool IsRequired) : JsonSchemaType(IsRequired)
+internal sealed record JsonSchemaObjectType(JsonSchemaProperty[] Properties, bool Required) : JsonSchemaType(Required)
 {
     public bool Equals(JsonSchemaObjectType? other)
     {
         return other is not null
             && EqualityContract == other.EqualityContract
-            && EqualityComparer<bool>.Default.Equals(IsRequired, other.IsRequired)
+            && EqualityComparer<bool>.Default.Equals(Required, other.Required)
             && Properties.SequenceEqual(other.Properties, EqualityComparer<JsonSchemaProperty>.Default);
     }
 
@@ -121,7 +121,7 @@ internal sealed record JsonSchemaObjectType(JsonSchemaProperty[] Properties, boo
     {
         var hashCode = new HashCode();
 
-        hashCode.Add(IsRequired);
+        hashCode.Add(Required);
         foreach (var property in Properties)
             hashCode.Add(property);
 
@@ -129,13 +129,13 @@ internal sealed record JsonSchemaObjectType(JsonSchemaProperty[] Properties, boo
     }
 }
 
-internal sealed record JsonSchemaUnionType(IJsonSchemaNode[] UnionTypes, bool IsRequired) : JsonSchemaType(IsRequired)
+internal sealed record JsonSchemaUnionType(IJsonSchemaNode[] UnionTypes, bool Required) : JsonSchemaType(Required)
 {
     public bool Equals(JsonSchemaUnionType? other)
     {
         return other is not null
             && EqualityContract == other.EqualityContract
-            && EqualityComparer<bool>.Default.Equals(IsRequired, other.IsRequired)
+            && EqualityComparer<bool>.Default.Equals(Required, other.Required)
             && UnionTypes.SequenceEqual(other.UnionTypes, EqualityComparer<IJsonSchemaNode>.Default);
     }
 
@@ -143,7 +143,7 @@ internal sealed record JsonSchemaUnionType(IJsonSchemaNode[] UnionTypes, bool Is
     {
         var hashCode = new HashCode();
 
-        hashCode.Add(IsRequired);
+        hashCode.Add(Required);
         foreach (var unionType in UnionTypes)
             hashCode.Add(unionType);
 

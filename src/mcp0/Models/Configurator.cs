@@ -55,7 +55,7 @@ internal static class Configurator
 
                 var text = prompt.Template;
                 if (request.Params?.Arguments is { } arguments)
-                    text = PromptTemplate.Render(text, arguments);
+                    text = Template.Render(text, arguments);
 
                 return await Task.FromResult(new GetPromptResult
                 {
