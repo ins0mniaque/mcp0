@@ -9,7 +9,7 @@ using ModelContextProtocol.Server;
 
 namespace mcp0.Core;
 
-internal sealed partial class McpProxy
+internal sealed partial class McpProxy : IAsyncDisposable
 {
     public static string Name { get; } = typeof(McpProxy).Assembly.GetName().Name ?? "mcp0";
     public static string Version { get; } = typeof(McpProxy).Assembly.GetName().Version?.ToString() ?? "0.0.0";
@@ -50,8 +50,11 @@ internal sealed partial class McpProxy
     public IReadOnlyDictionary<string, (IMcpClient Client, ResourceTemplate ResourceTemplate)> ResourceTemplates { get; }
     public IReadOnlyDictionary<string, (IMcpClient Client, McpClientTool Tool)> Tools { get; }
 
-    public async Task InitializeAsync(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
+    public async Task ConnectAsync(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
     {
+        foreach (var client in Clients)
+            await client.DisposeAsync();
+
         Clients = clients;
 
         if (proxyOptions.LoggingLevel is { } loggingLevel)
@@ -60,6 +63,11 @@ internal sealed partial class McpProxy
         await InitializePrompts(clients, cancellationToken);
         await InitializeResources(clients, cancellationToken);
         await InitializeTools(clients, cancellationToken);
+    }
+
+    public async Task DisconnectAsync(CancellationToken cancellationToken)
+    {
+        await ConnectAsync([], cancellationToken);
     }
 
     public async Task RunAsync(CancellationToken cancellationToken)
@@ -82,6 +90,15 @@ internal sealed partial class McpProxy
         {
             runningServer = null;
         }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (runningServer is not null)
+            await runningServer.DisposeAsync();
+
+        foreach (var client in Clients)
+            await client.DisposeAsync();
     }
 
     private async Task InitializePrompts(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)

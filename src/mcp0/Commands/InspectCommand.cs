@@ -58,10 +58,11 @@ internal sealed class InspectCommand : Command
 
         proxyOptions.ServerInfo = McpProxy.CreateServerInfo(clientTransports);
 
-        var proxy = new McpProxy(proxyOptions, loggerFactory);
+        await using var proxy = new McpProxy(proxyOptions, loggerFactory);
+
         var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
 
-        await proxy.InitializeAsync(clients, cancellationToken);
+        await proxy.ConnectAsync(clients, cancellationToken);
 
         Inspect(proxy);
     }

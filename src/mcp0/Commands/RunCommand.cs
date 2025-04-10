@@ -60,8 +60,7 @@ internal sealed class RunCommand : Command
 
         proxyOptions.ServerInfo = McpProxy.CreateServerInfo(clientTransports);
 
-        var proxy = new McpProxy(proxyOptions, loggerFactory);
-        var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
+        await using var proxy = new McpProxy(proxyOptions, loggerFactory);
 
         using var watchers = new CompositeDisposable<FileSystemWatcher>(noReload ? [] : paths.Select(CreateWatcher));
         foreach (var watcher in watchers)
@@ -70,7 +69,9 @@ internal sealed class RunCommand : Command
             watcher.Changed += async (_, _) => await Reload(proxy, paths, transport?.ClientTransport, loggerFactory, cancellationToken);
         }
 
-        await proxy.InitializeAsync(clients, cancellationToken);
+        var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
+
+        await proxy.ConnectAsync(clients, cancellationToken);
         await proxy.RunAsync(cancellationToken);
     }
 
@@ -96,9 +97,11 @@ internal sealed class RunCommand : Command
             if (clientTransport is not null)
                 clientTransports = clientTransports.Append(clientTransport).ToArray();
 
+            await proxy.DisconnectAsync(cancellationToken);
+
             var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
 
-            await proxy.InitializeAsync(clients, cancellationToken);
+            await proxy.ConnectAsync(clients, cancellationToken);
 
             logger.ConfigurationReloaded(paths);
         }
