@@ -7,6 +7,7 @@ using mcp0.Models;
 using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
+using ModelContextProtocol.Server;
 
 namespace mcp0.Commands;
 
@@ -41,12 +42,25 @@ internal sealed class RunCommand : Command
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var configuration = await Model.Load(paths, cancellationToken);
-        var servers = configuration.ToClientTransports();
+        var clientTransports = configuration.ToClientTransports();
+        var serverOptions = configuration.ToMcpServerOptions();
 
-        proxyOptions.ServerInfo = McpProxy.CreateServerInfo(servers);
+        await using var transport = serverOptions is null ? null : new ClientServerTransport(McpProxy.Name, loggerFactory);
+        await using var serverTask = serverOptions is null ? null : new DisposableTask(async ct =>
+        {
+            // ReSharper disable once AccessToDisposedClosure
+            await using var server = McpServerFactory.Create(transport!.ServerTransport, serverOptions);
+
+            await server.RunAsync(ct);
+        }, cancellationToken);
+
+        if (transport is not null)
+            clientTransports = clientTransports.Append(transport.ClientTransport).ToArray();
+
+        proxyOptions.ServerInfo = McpProxy.CreateServerInfo(clientTransports);
 
         var proxy = new McpProxy(proxyOptions, loggerFactory);
-        var clients = await servers.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
+        var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
 
         using var watchers = new CompositeDisposable<FileSystemWatcher>(noReload ? [] : paths.Select(CreateWatcher));
         foreach (var watcher in watchers)

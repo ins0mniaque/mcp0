@@ -23,7 +23,7 @@ internal static partial class Template
         }
     }
 
-    public static string Render(string template, IReadOnlyDictionary<string, string> arguments)
+    public static string Render<T>(string template, IReadOnlyDictionary<string, T> arguments)
     {
         return engine.Replace(template, ReplaceArgument);
 
@@ -31,7 +31,7 @@ internal static partial class Template
         {
             var name = match.Groups["name"].Value;
             if (arguments.TryGetValue(name, out var value))
-                return value;
+                return value?.ToString() ?? string.Empty;
 
             if (match.Groups["required"].Length is 0)
                 return match.Value;

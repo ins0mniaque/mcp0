@@ -1,11 +1,65 @@
 using mcp0.Core;
 
+using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Transport;
+using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol.Server;
 
 namespace mcp0.Models;
 
 internal static class Configurator
 {
+    public static McpServerOptions? ToMcpServerOptions(this Configuration configuration)
+    {
+        var prompts = configuration.ToPromptsCapability();
+        if (prompts is null)
+            return null;
+
+        return new()
+        {
+            Capabilities = new()
+            {
+                Prompts = prompts
+            }
+        };
+    }
+
+    private static PromptsCapability? ToPromptsCapability(this Configuration configuration)
+    {
+        if (configuration.Prompts is null)
+            return null;
+
+        var prompts = configuration.Prompts.ToDictionary(e => e.Key, e =>
+        {
+            var arguments = Template.Parse(e.Value).Select(a => new PromptArgument() { Name = a.Name, Description = a.Description, Required = a.IsRequired }).ToList();
+            return (Prompt: new Prompt { Name = e.Key, Arguments = arguments.Count is 0 ? null : arguments }, Template: e.Value);
+        });
+
+        var listPromptsResultTask = Task.FromResult(new ListPromptsResult
+        {
+            Prompts = prompts.Select(entry => entry.Value.Prompt).ToList()
+        });
+
+        return new PromptsCapability()
+        {
+            ListPromptsHandler = (_, _) => listPromptsResultTask,
+            GetPromptHandler = async (request, _) =>
+            {
+                if (request.Params?.Name is not { } name || !prompts.TryGetValue(name, out var prompt))
+                    throw new McpException($"Unknown prompt: {request.Params?.Name}");
+
+                var text = prompt.Template;
+                if (request.Params?.Arguments is { } arguments)
+                    text = Template.Render(text, arguments);
+
+                return await Task.FromResult(new GetPromptResult
+                {
+                    Messages = [new() { Role = Role.User, Content = new Content { Type = "text", Text = text } }]
+                });
+            }
+        };
+    }
+
     public static IClientTransport[] ToClientTransports(this Configuration configuration)
     {
         return configuration.Servers?.Select(static entry => entry.Value.ToClientTransport(entry.Key)).ToArray() ?? [];

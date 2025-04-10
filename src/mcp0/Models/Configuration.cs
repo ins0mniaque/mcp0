@@ -4,11 +4,21 @@ namespace mcp0.Models;
 
 internal sealed class Configuration
 {
+    [JsonPropertyName("prompts")]
+    public Dictionary<string, string>? Prompts { get; set; }
+
     [JsonPropertyName("servers")]
     public Dictionary<string, Server>? Servers { get; set; }
 
     public void Merge(Configuration configuration)
     {
+        if (configuration.Prompts is { } prompts)
+        {
+            Prompts ??= new(prompts.Count, StringComparer.Ordinal);
+            foreach (var entry in prompts)
+                Prompts[entry.Key] = entry.Value;
+        }
+
         if (configuration.Servers is { } servers)
         {
             Servers ??= new(servers.Count, StringComparer.Ordinal);
