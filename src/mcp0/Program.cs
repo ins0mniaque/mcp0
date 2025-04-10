@@ -11,7 +11,8 @@ using Microsoft.Extensions.Logging;
 var rootCommand = new RootCommand()
 {
     new InspectCommand(),
-    new RunCommand()
+    new RunCommand(),
+    new ShellCommand()
 };
 
 var logLevelOption = new Option<LogLevel?>("--loglevel");
