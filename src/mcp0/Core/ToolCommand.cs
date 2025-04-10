@@ -16,7 +16,7 @@ internal static class ToolCommand
             RedirectStandardError = true
         };
 
-        if(arguments.Length > 1)
+        if (arguments.Length > 1)
             foreach (var argument in arguments[1..])
                 startInfo.ArgumentList.Add(argument);
 
