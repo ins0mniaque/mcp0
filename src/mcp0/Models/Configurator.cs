@@ -31,8 +31,10 @@ internal static class Configurator
 
         var prompts = configuration.Prompts.ToDictionary(e => e.Key, e =>
         {
-            var arguments = Template.Parse(e.Value).Select(a => new PromptArgument() { Name = a.Name, Description = a.Description, Required = a.IsRequired }).ToList();
-            return (Prompt: new Prompt { Name = e.Key, Arguments = arguments.Count is 0 ? null : arguments }, Template: e.Value);
+            var arguments = PromptTemplate.Parse(e.Value);
+            var prompt = new Prompt { Name = e.Key, Description = null, Arguments = arguments.Count is 0 ? null : arguments };
+
+            return (Prompt: prompt, Template: e.Value);
         });
 
         var listPromptsResultTask = Task.FromResult(new ListPromptsResult
@@ -50,7 +52,7 @@ internal static class Configurator
 
                 var text = prompt.Template;
                 if (request.Params?.Arguments is { } arguments)
-                    text = Template.Render(text, arguments);
+                    text = PromptTemplate.Render(text, arguments);
 
                 return await Task.FromResult(new GetPromptResult
                 {

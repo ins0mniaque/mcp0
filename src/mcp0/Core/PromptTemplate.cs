@@ -1,25 +1,27 @@
 using System.Text.RegularExpressions;
 
+using ModelContextProtocol.Protocol.Types;
+
 namespace mcp0.Core;
 
-internal static partial class Template
+internal static partial class PromptTemplate
 {
     [GeneratedRegex(@"\{\{(?<name>[a-zA-Z_][a-zA-Z0-9_]+)(?<required>\??):?(?<description>[^\}]*)\}\}", RegexOptions.Compiled)]
     private static partial Regex GenerateEngine();
     private static readonly Regex engine = GenerateEngine();
 
-    internal record Argument(string Name, string? Description, bool IsRequired);
-
-    public static Argument[] Parse(string template)
+    public static List<PromptArgument> Parse(string template)
     {
-        return engine.Matches(template).Select(ToArgument).ToArray();
+        return engine.Matches(template).Select(ToArgument).ToList();
 
-        static Argument ToArgument(Match match)
+        static PromptArgument ToArgument(Match match)
         {
-            return new(
-                match.Groups["name"].Value,
-                match.Groups["description"].Length is 0 ? null : match.Groups["description"].Value,
-                match.Groups["required"].Length is 0);
+            return new()
+            {
+                Name = match.Groups["name"].Value,
+                Description = match.Groups["description"].Length is 0 ? null : match.Groups["description"].Value,
+                Required = match.Groups["required"].Length is 0 ? true : null
+            };
         }
     }
 
