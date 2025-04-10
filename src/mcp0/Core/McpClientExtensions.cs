@@ -28,30 +28,30 @@ internal static class McpClientExtensions
         this IMcpClient client, CancellationToken cancellationToken = default)
     {
         if (client.ServerCapabilities.Prompts is null)
-            return Task.FromResult<IList<McpClientPrompt>>(new List<McpClientPrompt>());
+            return Task.FromResult<IList<McpClientPrompt>>([]);
 
         return client.ListPromptsAsync(cancellationToken)
-            .CatchMethodNotFound(static _ => new List<McpClientPrompt>());
+            .CatchMethodNotFound(static _ => []);
     }
 
     public static Task<IList<Resource>> SafeListResourcesAsync(
         this IMcpClient client, CancellationToken cancellationToken = default)
     {
         if (client.ServerCapabilities.Resources is null)
-            return Task.FromResult<IList<Resource>>(new List<Resource>());
+            return Task.FromResult<IList<Resource>>([]);
 
         return client.ListResourcesAsync(cancellationToken)
-            .CatchMethodNotFound(static _ => new List<Resource>());
+            .CatchMethodNotFound(static _ => []);
     }
 
     public static Task<IList<ResourceTemplate>> SafeListResourceTemplatesAsync(
         this IMcpClient client, CancellationToken cancellationToken = default)
     {
         if (client.ServerCapabilities.Resources is null)
-            return Task.FromResult<IList<ResourceTemplate>>(new List<ResourceTemplate>());
+            return Task.FromResult<IList<ResourceTemplate>>([]);
 
         return client.ListResourceTemplatesAsync(cancellationToken)
-            .CatchMethodNotFound(static _ => new List<ResourceTemplate>());
+            .CatchMethodNotFound(static _ => []);
     }
 
     public static Task SafeSubscribeToResourceAsync(
@@ -80,10 +80,24 @@ internal static class McpClientExtensions
         CancellationToken cancellationToken = default)
     {
         if (client.ServerCapabilities.Tools is null)
-            return Task.FromResult<IList<McpClientTool>>(new List<McpClientTool>());
+            return Task.FromResult<IList<McpClientTool>>([]);
 
         return client.ListToolsAsync(serializerOptions, cancellationToken)
-            .CatchMethodNotFound(static _ => new List<McpClientTool>());
+            .CatchMethodNotFound(static _ => []);
+    }
+
+    private static readonly CompleteResult emptyCompleteResult = new();
+
+    public static Task<CompleteResult> SafeCompleteAsync(
+        this IMcpClient client,
+        Reference reference, string argumentName, string argumentValue,
+        CancellationToken cancellationToken = default)
+    {
+        if (client.ServerCapabilities.Completions is null)
+            return Task.FromResult(emptyCompleteResult);
+
+        return client.CompleteAsync(reference, argumentName, argumentValue, cancellationToken)
+            .CatchMethodNotFound(static _ => emptyCompleteResult);
     }
 
     public static Task SafeSetLoggingLevel(

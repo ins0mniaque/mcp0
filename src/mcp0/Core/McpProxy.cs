@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-
 using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
@@ -26,7 +24,6 @@ internal sealed partial class McpProxy
     private readonly Dictionary<string, (IMcpClient Client, Resource Resource)> resources;
     private readonly Dictionary<string, (IMcpClient Client, ResourceTemplate ResourceTemplate)> resourceTemplates;
     private readonly Dictionary<string, (IMcpClient Client, McpClientTool Tool)> tools;
-    private readonly ConcurrentDictionary<IMcpClient, byte> disabledCompletionClients = new();
     private readonly McpProxyOptions proxyOptions;
     private readonly ILoggerFactory loggerFactory;
 
@@ -56,7 +53,6 @@ internal sealed partial class McpProxy
     public async Task Initialize(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
     {
         Clients = clients;
-        disabledCompletionClients.Clear();
 
         if (proxyOptions.LoggingLevel is { } loggingLevel)
             await SetLoggingLevel(loggingLevel, cancellationToken);

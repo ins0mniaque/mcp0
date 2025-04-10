@@ -1,7 +1,6 @@
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Messages;
-using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
 namespace mcp0.Core;
@@ -10,8 +9,6 @@ internal sealed partial class McpProxy
 {
     private McpServerOptions GetServerOptions()
     {
-        var emptyCompleteResult = new CompleteResult();
-
         return new McpServerOptions
         {
             ServerInfo = proxyOptions.ServerInfo ?? new() { Name = Name, Version = Version },
@@ -118,21 +115,11 @@ internal sealed partial class McpProxy
                         else
                             throw new McpException($"Missing completion request parameters");
 
-                        if (disabledCompletionClients.ContainsKey(client))
-                            return emptyCompleteResult;
-
-                        var completeTask = client.CompleteAsync(
+                        return await client.SafeCompleteAsync(
                             request.Params.Ref,
                             request.Params.Argument.Name,
                             request.Params.Argument.Value,
                             cancellationToken);
-
-                        return await completeTask.CatchMethodNotFound(_ =>
-                        {
-                            disabledCompletionClients.AddOrUpdate(client, 0, static (_, _) => 0);
-
-                            return emptyCompleteResult;
-                        });
                     }
                 }
             }
