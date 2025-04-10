@@ -5,19 +5,27 @@ namespace mcp0.Core;
 
 internal static class ToolCommand
 {
-    public static async Task<(string, string, int)> Run(string command, CancellationToken cancellationToken)
+    public static string[] Parse<T>(string command, IReadOnlyDictionary<string, T> arguments)
     {
-        var arguments = CommandLineStringSplitter.Instance.Split(command).ToArray();
+        var commandLine = CommandLineStringSplitter.Instance.Split(command).ToArray();
+        for (var index = 0; index < commandLine.Length; index++)
+            commandLine[index] = Template.Render(commandLine[index], arguments);
+
+        return commandLine;
+    }
+
+    public static async Task<(string, string, int)> Run(string[] commandLine, CancellationToken cancellationToken)
+    {
         var startInfo = new ProcessStartInfo
         {
-            FileName = arguments[0],
+            FileName = commandLine[0],
             CreateNoWindow = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
 
-        if (arguments.Length > 1)
-            foreach (var argument in arguments[1..])
+        if (commandLine.Length > 1)
+            foreach (var argument in commandLine[1..])
                 startInfo.ArgumentList.Add(argument);
 
         using var process = new Process();

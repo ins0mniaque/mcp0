@@ -1,3 +1,6 @@
+using System.Collections.Immutable;
+using System.Text.Json;
+
 using mcp0.Core;
 
 using ModelContextProtocol;
@@ -126,11 +129,9 @@ internal static class Configurator
                 if (request.Params?.Name is not { } name || !tools.TryGetValue(name, out var tool))
                     throw new McpException($"Unknown tool: {request.Params?.Name}");
 
-                var command = tool.Template;
-                if (request.Params?.Arguments is { } arguments)
-                    command = Template.Render(command, arguments);
-
-                var (stdout, stderr, exitCode) = await ToolCommand.Run(command, cancellationToken);
+                var arguments = request.Params?.Arguments ?? ImmutableDictionary<string, JsonElement>.Empty;
+                var commandLine = ToolCommand.Parse(tool.Template, arguments);
+                var (stdout, stderr, exitCode) = await ToolCommand.Run(commandLine, cancellationToken);
 
                 var output = stdout.Trim();
                 if (exitCode is not 0 && !string.IsNullOrWhiteSpace(stderr))
