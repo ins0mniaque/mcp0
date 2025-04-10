@@ -12,7 +12,8 @@ internal static class Configurator
     public static McpServerOptions? ToMcpServerOptions(this Configuration configuration)
     {
         var prompts = configuration.ToPromptsCapability();
-        if (prompts is null)
+        var resources = configuration.ToResourcesCapability();
+        if (prompts is null && resources is null)
             return null;
 
         return new()
@@ -20,7 +21,8 @@ internal static class Configurator
             ServerInfo = new() { Name = McpProxy.Name, Version = McpProxy.Version },
             Capabilities = new()
             {
-                Prompts = prompts
+                Prompts = prompts,
+                Resources = resources
             }
         };
     }
@@ -43,7 +45,7 @@ internal static class Configurator
             Prompts = prompts.Select(entry => entry.Value.Prompt).ToList()
         });
 
-        return new PromptsCapability()
+        return new()
         {
             ListPromptsHandler = (_, _) => listPromptsResultTask,
             GetPromptHandler = async (request, _) =>
@@ -60,6 +62,64 @@ internal static class Configurator
                     Messages = [new() { Role = Role.User, Content = new Content { Type = "text", Text = text } }]
                 });
             }
+        };
+    }
+
+    private static ResourcesCapability? ToResourcesCapability(this Configuration configuration)
+    {
+        if (configuration.Resources is null)
+            return null;
+
+        var resources = configuration.Resources.ToDictionary(e => new Uri(e.Value).ToString(), e => new Resource
+        {
+            Name = e.Key,
+            Uri = new Uri(e.Value).ToString(),
+            MimeType = MimeType.FromExtension(Path.GetExtension(e.Value))
+        });
+
+        var listResourcesResultTask = Task.FromResult(new ListResourcesResult
+        {
+            Resources = resources.Select(entry => entry.Value).ToList()
+        });
+
+        return new()
+        {
+            ListResourcesHandler = (_, _) => listResourcesResultTask,
+            ReadResourceHandler = async (request, cancellationToken) =>
+            {
+                if (request.Params?.Uri is not { } uri || !resources.TryGetValue(uri, out var resource))
+                    throw new McpException($"Unknown resource: {request.Params?.Uri}");
+
+                var path = new Uri(resource.Uri).LocalPath;
+                var data = await File.ReadAllBytesAsync(path, cancellationToken);
+                var contents = await resource.ToResourceContents(data, cancellationToken);
+
+                return new() { Contents = [contents] };
+            }
+        };
+    }
+
+    private static async Task<ResourceContents> ToResourceContents(this Resource resource, byte[] data, CancellationToken cancellationToken)
+    {
+        var binary = data.AsSpan().Contains((byte)0);
+        if (binary)
+            return new BlobResourceContents
+            {
+                Uri = resource.Uri,
+                Blob = Convert.ToBase64String(data),
+                MimeType = resource.MimeType
+            };
+
+        string text;
+        using (var stream = new MemoryStream(data))
+        using (var reader = new StreamReader(stream))
+            text = await reader.ReadToEndAsync(cancellationToken);
+
+        return new TextResourceContents
+        {
+            Uri = resource.Uri,
+            Text = text,
+            MimeType = resource.MimeType
         };
     }
 
