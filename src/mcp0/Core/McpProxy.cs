@@ -25,7 +25,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
     private readonly Dictionary<string, (IMcpClient Client, ResourceTemplate ResourceTemplate)> resourceTemplates;
     private readonly Dictionary<string, (IMcpClient Client, McpClientTool Tool)> tools;
     private readonly McpProxyOptions proxyOptions;
-    private readonly ILoggerFactory loggerFactory;
+    private readonly ILoggerFactory? loggerFactory;
 
     private IMcpServer? runningServer;
     private Task<ListPromptsResult> listPromptsResultTask = Task.FromResult(new ListPromptsResult());
@@ -33,7 +33,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
     private Task<ListResourceTemplatesResult> listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult());
     private Task<ListToolsResult> listToolsResultTask = Task.FromResult(new ListToolsResult());
 
-    public McpProxy(McpProxyOptions proxyOptions, ILoggerFactory loggerFactory)
+    public McpProxy(McpProxyOptions proxyOptions, ILoggerFactory? loggerFactory)
     {
         Prompts = prompts = new(StringComparer.Ordinal);
         Resources = resources = new(StringComparer.Ordinal);

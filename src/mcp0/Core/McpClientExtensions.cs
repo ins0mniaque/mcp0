@@ -13,9 +13,9 @@ internal static class McpClientExtensions
 {
     public static async Task<IMcpClient[]> CreateMcpClientsAsync(
         this IEnumerable<IClientTransport> clientTransports,
-        McpClientOptions clientOptions,
-        ILoggerFactory loggerFactory,
-        CancellationToken cancellationToken)
+        McpClientOptions? clientOptions,
+        ILoggerFactory? loggerFactory,
+        CancellationToken cancellationToken = default)
     {
         var clientTasks = new List<Task<IMcpClient>>();
         foreach (var clientTransport in clientTransports)
@@ -112,10 +112,10 @@ internal static class McpClientExtensions
             .CatchMethodNotFound(static _ => { });
     }
 
-    public static async Task CatchMethodNotFound(this Task task, Action<McpException> fallback)
-    {
-        const int MethodNotFoundErrorCode = -32601;
+    private const int MethodNotFoundErrorCode = -32601;
 
+    private static async Task CatchMethodNotFound(this Task task, Action<McpException> fallback)
+    {
         try
         {
             await task;
@@ -126,10 +126,8 @@ internal static class McpClientExtensions
         }
     }
 
-    public static async Task<T> CatchMethodNotFound<T>(this Task<T> task, Func<McpException, T> fallback)
+    private static async Task<T> CatchMethodNotFound<T>(this Task<T> task, Func<McpException, T> fallback)
     {
-        const int MethodNotFoundErrorCode = -32601;
-
         try
         {
             return await task;
