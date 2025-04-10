@@ -1,6 +1,6 @@
 using ModelContextProtocol.Protocol.Types;
 
-namespace mcp0.Core;
+namespace mcp0.Mcp;
 
 internal sealed class McpProxyOptions
 {

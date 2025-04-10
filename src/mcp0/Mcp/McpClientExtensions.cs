@@ -7,7 +7,7 @@ using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 
-namespace mcp0.Core;
+namespace mcp0.Mcp;
 
 internal static class McpClientExtensions
 {

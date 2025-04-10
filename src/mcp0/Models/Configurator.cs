@@ -22,7 +22,7 @@ internal static class Configurator
 
         return new()
         {
-            ServerInfo = new() { Name = McpProxy.Name, Version = McpProxy.Version },
+            ServerInfo = ServerInfo.Default,
             Capabilities = new()
             {
                 Prompts = prompts,

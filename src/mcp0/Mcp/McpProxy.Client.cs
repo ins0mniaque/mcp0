@@ -3,7 +3,7 @@ using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Messages;
 using ModelContextProtocol.Server;
 
-namespace mcp0.Core;
+namespace mcp0.Mcp;
 
 internal sealed partial class McpProxy
 {

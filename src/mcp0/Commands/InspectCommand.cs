@@ -1,6 +1,7 @@
 using System.CommandLine;
 
 using mcp0.Core;
+using mcp0.Mcp;
 using mcp0.Models;
 
 using Microsoft.Extensions.Logging;
@@ -42,8 +43,11 @@ internal sealed class InspectCommand : Command
 
         var configuration = await Model.Load(paths, cancellationToken);
         var serverOptions = configuration.ToMcpServerOptions();
+        var serverName = proxyOptions.ServerInfo?.Name ??
+                         serverOptions?.ServerInfo?.Name ??
+                         ServerInfo.Default.Name;
 
-        await using var transport = serverOptions is null ? null : new ClientServerTransport(McpProxy.Name, loggerFactory);
+        await using var transport = serverOptions is null ? null : new ClientServerTransport(serverName, loggerFactory);
         await using var serverTask = serverOptions is null ? null : new DisposableTask(async ct =>
         {
             // ReSharper disable once AccessToDisposedClosure
@@ -56,7 +60,7 @@ internal sealed class InspectCommand : Command
         if (transport?.ClientTransport is { } clientTransport)
             clientTransports = clientTransports.Append(clientTransport).ToArray();
 
-        proxyOptions.ServerInfo = McpProxy.CreateServerInfo(clientTransports);
+        proxyOptions.ServerInfo = ServerInfo.Create(clientTransports);
 
         await using var proxy = new McpProxy(proxyOptions, loggerFactory);
 

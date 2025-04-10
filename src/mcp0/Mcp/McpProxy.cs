@@ -7,19 +7,10 @@ using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
-namespace mcp0.Core;
+namespace mcp0.Mcp;
 
 internal sealed partial class McpProxy : IAsyncDisposable
 {
-    public static string Name { get; } = typeof(McpProxy).Assembly.GetName().Name ?? "mcp0";
-    public static string Version { get; } = typeof(McpProxy).Assembly.GetName().Version?.ToString() ?? "0.0.0";
-
-    public static Implementation CreateServerInfo(IEnumerable<IClientTransport> transports) => new()
-    {
-        Name = string.Join('/', transports.Select(static transport => transport.Name).DefaultIfEmpty(Name)),
-        Version = Version
-    };
-
     private readonly Dictionary<string, (IMcpClient Client, McpClientPrompt Prompt)> prompts;
     private readonly Dictionary<string, (IMcpClient Client, Resource Resource)> resources;
     private readonly Dictionary<string, (IMcpClient Client, ResourceTemplate ResourceTemplate)> resourceTemplates;
@@ -76,8 +67,11 @@ internal sealed partial class McpProxy : IAsyncDisposable
             throw new InvalidOperationException("Server is already running");
 
         var serverOptions = GetServerOptions();
+        var serverName = proxyOptions.ServerInfo?.Name ??
+                         serverOptions.ServerInfo?.Name ??
+                         DefaultImplementation.Name;
 
-        await using var transport = new StdioServerTransport(proxyOptions.ServerInfo?.Name ?? Name, loggerFactory);
+        await using var transport = new StdioServerTransport(serverName, loggerFactory);
         await using var server = McpServerFactory.Create(transport, serverOptions, loggerFactory);
 
         try

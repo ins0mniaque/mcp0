@@ -1,17 +1,28 @@
+using System.Reflection;
+
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Messages;
+using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
-namespace mcp0.Core;
+namespace mcp0.Mcp;
 
 internal sealed partial class McpProxy
 {
+    private static AssemblyName DefaultAssemblyName { get; } = (Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).GetName();
+
+    private static Implementation DefaultImplementation { get; } = new()
+    {
+        Name = DefaultAssemblyName.Name ?? nameof(McpProxy),
+        Version = DefaultAssemblyName.Version?.ToString() ?? "1.0.0",
+    };
+
     private McpServerOptions GetServerOptions()
     {
         return new McpServerOptions
         {
-            ServerInfo = proxyOptions.ServerInfo ?? new() { Name = Name, Version = Version },
+            ServerInfo = proxyOptions.ServerInfo ?? DefaultImplementation,
             Capabilities = new()
             {
                 NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, CancellationToken, Task>>(StringComparer.Ordinal)

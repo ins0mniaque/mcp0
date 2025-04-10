@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Protocol.Transport;
 
-namespace mcp0.Core;
+namespace mcp0.Mcp;
 
 internal sealed class ClientServerTransport : IAsyncDisposable
 {
