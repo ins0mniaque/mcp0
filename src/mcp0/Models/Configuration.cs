@@ -10,6 +10,9 @@ internal sealed class Configuration
     [JsonPropertyName("resources")]
     public Dictionary<string, string>? Resources { get; set; }
 
+    [JsonPropertyName("tools")]
+    public Dictionary<string, string>? Tools { get; set; }
+
     [JsonPropertyName("servers")]
     public Dictionary<string, Server>? Servers { get; set; }
 
@@ -27,6 +30,13 @@ internal sealed class Configuration
             Resources ??= new(resources.Count, StringComparer.Ordinal);
             foreach (var entry in resources)
                 Resources[entry.Key] = entry.Value;
+        }
+
+        if (configuration.Tools is { } tools)
+        {
+            Tools ??= new(tools.Count, StringComparer.Ordinal);
+            foreach (var entry in tools)
+                Tools[entry.Key] = entry.Value;
         }
 
         if (configuration.Servers is { } servers)

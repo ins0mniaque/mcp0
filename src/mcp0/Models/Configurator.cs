@@ -13,7 +13,8 @@ internal static class Configurator
     {
         var prompts = configuration.ToPromptsCapability();
         var resources = configuration.ToResourcesCapability();
-        if (prompts is null && resources is null)
+        var tools = configuration.ToToolsCapability();
+        if (prompts is null && resources is null && tools is null)
             return null;
 
         return new()
@@ -22,7 +23,8 @@ internal static class Configurator
             Capabilities = new()
             {
                 Prompts = prompts,
-                Resources = resources
+                Resources = resources,
+                Tools = tools
             }
         };
     }
@@ -95,6 +97,44 @@ internal static class Configurator
                 var contents = await resource.ToResourceContents(data, cancellationToken);
 
                 return new() { Contents = [contents] };
+            }
+        };
+    }
+
+    private static ToolsCapability? ToToolsCapability(this Configuration configuration)
+    {
+        if (configuration.Tools is null)
+            return null;
+
+        var tools = configuration.Tools.ToDictionary(e => e.Key, e =>
+        {
+            var tool = new Tool { Name = e.Key, InputSchema = ToolTemplate.Parse(e.Value) };
+
+            return (Tool: tool, Template: e.Value);
+        });
+
+        var listToolsResultTask = Task.FromResult(new ListToolsResult
+        {
+            Tools = tools.Select(entry => entry.Value.Tool).ToList()
+        });
+
+        return new()
+        {
+            ListToolsHandler = (_, _) => listToolsResultTask,
+            CallToolHandler = async (request, cancellationToken) =>
+            {
+                if (request.Params?.Name is not { } name || !tools.TryGetValue(name, out var tool))
+                    throw new McpException($"Unknown tool: {request.Params?.Name}");
+
+                var command = tool.Template;
+                if (request.Params?.Arguments is { } arguments)
+                    command = Template.Render(command, arguments);
+
+                var (stdout, stderr, exitCode) = await ToolCommand.Run(command, cancellationToken);
+                var output = (stdout + "\n\n" + stderr).Trim();
+                var content = new Content { Type = "text", Text = output };
+
+                return new CallToolResponse { Content = [content], IsError = exitCode is not 0 };
             }
         };
     }
