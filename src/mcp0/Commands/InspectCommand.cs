@@ -41,7 +41,6 @@ internal sealed class InspectCommand : Command
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var configuration = await Model.Load(paths, cancellationToken);
-        var clientTransports = configuration.ToClientTransports();
         var serverOptions = configuration.ToMcpServerOptions();
 
         await using var transport = serverOptions is null ? null : new ClientServerTransport(McpProxy.Name, loggerFactory);
@@ -53,15 +52,16 @@ internal sealed class InspectCommand : Command
             await server.RunAsync(ct);
         }, cancellationToken);
 
-        if (transport is not null)
-            clientTransports = clientTransports.Append(transport.ClientTransport).ToArray();
+        var clientTransports = configuration.ToClientTransports();
+        if (transport?.ClientTransport is { } clientTransport)
+            clientTransports = clientTransports.Append(clientTransport).ToArray();
 
         proxyOptions.ServerInfo = McpProxy.CreateServerInfo(clientTransports);
 
         var proxy = new McpProxy(proxyOptions, loggerFactory);
         var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
 
-        await proxy.Initialize(clients, cancellationToken);
+        await proxy.InitializeAsync(clients, cancellationToken);
 
         Inspect(proxy);
     }

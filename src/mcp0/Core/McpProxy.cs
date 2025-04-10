@@ -50,7 +50,7 @@ internal sealed partial class McpProxy
     public IReadOnlyDictionary<string, (IMcpClient Client, ResourceTemplate ResourceTemplate)> ResourceTemplates { get; }
     public IReadOnlyDictionary<string, (IMcpClient Client, McpClientTool Tool)> Tools { get; }
 
-    public async Task Initialize(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
+    public async Task InitializeAsync(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
     {
         Clients = clients;
 
@@ -62,7 +62,7 @@ internal sealed partial class McpProxy
         await InitializeTools(clients, cancellationToken);
     }
 
-    public async Task Run(CancellationToken cancellationToken)
+    public async Task RunAsync(CancellationToken cancellationToken)
     {
         if (runningServer is not null)
             throw new InvalidOperationException("Server is already running");

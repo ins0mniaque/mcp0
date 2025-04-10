@@ -7,6 +7,7 @@ using mcp0.Models;
 using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
+using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Server;
 
 namespace mcp0.Commands;
@@ -42,7 +43,6 @@ internal sealed class RunCommand : Command
         using var loggerFactory = Log.CreateLoggerFactory();
 
         var configuration = await Model.Load(paths, cancellationToken);
-        var clientTransports = configuration.ToClientTransports();
         var serverOptions = configuration.ToMcpServerOptions();
 
         await using var transport = serverOptions is null ? null : new ClientServerTransport(McpProxy.Name, loggerFactory);
@@ -54,8 +54,9 @@ internal sealed class RunCommand : Command
             await server.RunAsync(ct);
         }, cancellationToken);
 
-        if (transport is not null)
-            clientTransports = clientTransports.Append(transport.ClientTransport).ToArray();
+        var clientTransports = configuration.ToClientTransports();
+        if (transport?.ClientTransport is { } clientTransport)
+            clientTransports = clientTransports.Append(clientTransport).ToArray();
 
         proxyOptions.ServerInfo = McpProxy.CreateServerInfo(clientTransports);
 
@@ -66,11 +67,11 @@ internal sealed class RunCommand : Command
         foreach (var watcher in watchers)
         {
             // ReSharper disable once AccessToDisposedClosure
-            watcher.Changed += async (_, _) => await Reload(proxy, paths, loggerFactory, cancellationToken);
+            watcher.Changed += async (_, _) => await Reload(proxy, paths, transport?.ClientTransport, loggerFactory, cancellationToken);
         }
 
-        await proxy.Initialize(clients, cancellationToken);
-        await proxy.Run(cancellationToken);
+        await proxy.InitializeAsync(clients, cancellationToken);
+        await proxy.RunAsync(cancellationToken);
     }
 
     private static FileSystemWatcher CreateWatcher(string path) => new()
@@ -81,7 +82,7 @@ internal sealed class RunCommand : Command
         EnableRaisingEvents = true
     };
 
-    private static async Task Reload(McpProxy proxy, string[] paths, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
+    private static async Task Reload(McpProxy proxy, string[] paths, IClientTransport? clientTransport, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger<RunCommand>();
 
@@ -90,10 +91,14 @@ internal sealed class RunCommand : Command
             logger.ConfigurationReloading(paths);
 
             var configuration = await Model.Load(paths, cancellationToken);
-            var servers = configuration.ToClientTransports();
-            var clients = await servers.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
 
-            await proxy.Initialize(clients, cancellationToken);
+            var clientTransports = configuration.ToClientTransports();
+            if (clientTransport is not null)
+                clientTransports = clientTransports.Append(clientTransport).ToArray();
+
+            var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
+
+            await proxy.InitializeAsync(clients, cancellationToken);
 
             logger.ConfigurationReloaded(paths);
         }
