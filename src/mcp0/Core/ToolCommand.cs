@@ -1,3 +1,4 @@
+using System.CommandLine.Parsing;
 using System.Diagnostics;
 
 namespace mcp0.Core;
@@ -6,16 +7,22 @@ internal static class ToolCommand
 {
     public static async Task<(string, string, int)> Run(string command, CancellationToken cancellationToken)
     {
-        var arguments = command.Split(' ', 2);
+        var arguments = CommandLineStringSplitter.Instance.Split(command).ToArray();
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = arguments[0],
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        if(arguments.Length > 1)
+            foreach (var argument in arguments[1..])
+                startInfo.ArgumentList.Add(argument);
 
         using var process = new Process();
 
-        process.StartInfo.FileName = arguments[0];
-        process.StartInfo.Arguments = arguments.Length is 2 ? arguments[1] : null;
-        process.StartInfo.CreateNoWindow = true;
-        process.StartInfo.RedirectStandardError = true;
-        process.StartInfo.RedirectStandardOutput = true;
-
+        process.StartInfo = startInfo;
         process.Start();
 
         using var stdoutStream = new MemoryStream();
