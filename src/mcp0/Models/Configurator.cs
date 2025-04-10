@@ -131,10 +131,12 @@ internal static class Configurator
                     command = Template.Render(command, arguments);
 
                 var (stdout, stderr, exitCode) = await ToolCommand.Run(command, cancellationToken);
-                if (exitCode is not 0 && !string.IsNullOrWhiteSpace(stderr))
-                    stdout += $"\nError: {stderr}";
 
-                var content = new Content { Type = "text", Text = stdout };
+                var output = stdout.Trim();
+                if (exitCode is not 0 && !string.IsNullOrWhiteSpace(stderr))
+                    output += $"\n\nError: {stderr.Trim()}";
+
+                var content = new Content { Type = "text", Text = output };
 
                 return new CallToolResponse { Content = [content], IsError = exitCode is not 0 };
             }
