@@ -1,12 +1,22 @@
 using System.Text.Json;
 
+using Generator.Equals;
+
 namespace mcp0.Models;
 
-internal sealed class Configuration
+[Equatable]
+internal sealed partial record Configuration
 {
+    [UnorderedEquality]
     public Dictionary<string, string>? Prompts { get; set; }
+
+    [UnorderedEquality]
     public Dictionary<string, string>? Resources { get; set; }
+
+    [UnorderedEquality]
     public Dictionary<string, string>? Tools { get; set; }
+
+    [UnorderedEquality]
     public Dictionary<string, Server>? Servers { get; set; }
 
     public void Merge(Configuration configuration)
