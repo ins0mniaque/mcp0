@@ -10,13 +10,13 @@ public sealed class ConfiguratorTests
     [TestMethod]
     public void ConfiguresStdioClientTransportCorrectly()
     {
-        var server = new Server
+        var server = new StdioServer
         {
             Command = "npx",
             Arguments = ["-y", "@modelcontextprotocol/server-everything"],
             WorkingDirectory = "/home/user",
             Environment = new() { { "KEY", "VALUE" } },
-            ShutdownTimeout = 60
+            ShutdownTimeout = TimeSpan.FromSeconds(60)
         };
 
         var transport = server.ToClientTransport("mcp0");
@@ -39,13 +39,13 @@ public sealed class ConfiguratorTests
     [TestMethod]
     public void ConfiguresSseClientTransportCorrectly()
     {
-        var server = new Server
+        var server = new SseServer
         {
             Url = new Uri("http://localhost:8080/server-everything"),
             Headers = new() { { "Authorization", "TOKEN" } },
-            ConnectionTimeout = 30,
+            ConnectionTimeout = TimeSpan.FromSeconds(30),
             MaxReconnectAttempts = 10,
-            ReconnectDelay = 60
+            ReconnectDelay = TimeSpan.FromSeconds(60)
         };
 
         var transport = server.ToClientTransport("mcp0");
@@ -63,35 +63,6 @@ public sealed class ConfiguratorTests
         };
 
         AreEqual(expectedOptions, actualOptions);
-    }
-
-    [TestMethod]
-    public void ThrowsOnMissingCommand()
-    {
-        var server = new Server { Command = "" };
-
-        Assert.ThrowsException<InvalidOperationException>(() => server.ToClientTransport("mcp0"));
-    }
-
-    [TestMethod]
-    public void ThrowsOnMissingUrl()
-    {
-        var server = new Server { ConnectionTimeout = 60 };
-
-        Assert.ThrowsException<InvalidOperationException>(() => server.ToClientTransport("mcp0"));
-    }
-
-    [TestMethod]
-    public void ThrowsOnMixedUpConfig()
-    {
-        var server = new Server
-        {
-            Command = "npx",
-            Arguments = ["-y", "@modelcontextprotocol/server-everything"],
-            Url = new Uri("http://localhost:8080/server-everything")
-        };
-
-        Assert.ThrowsException<InvalidOperationException>(() => server.ToClientTransport("mcp0"));
     }
 
     private static void AreEqual(StdioClientTransportOptions expected, StdioClientTransportOptions actual)

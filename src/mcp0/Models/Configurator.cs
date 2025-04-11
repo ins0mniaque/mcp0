@@ -149,20 +149,15 @@ internal static class Configurator
         return configuration.Servers?.Select(static entry => entry.Value.ToClientTransport(entry.Key)).ToArray() ?? [];
     }
 
-    public static IClientTransport ToClientTransport(this Server server, string serverName) => server.Url switch
+    public static IClientTransport ToClientTransport(this Server server, string serverName) => server switch
     {
-        null => server.ToStdioClientTransport(serverName),
-        _ => server.ToSseClientTransport(serverName)
+        StdioServer stdioServer => stdioServer.ToStdioClientTransport(serverName),
+        SseServer sseServer => sseServer.ToSseClientTransport(serverName),
+        _ => throw new ArgumentException($"Unknown server type: {server.GetType().Name}", nameof(server))
     };
 
-    private static StdioClientTransport ToStdioClientTransport(this Server server, string serverName)
+    private static StdioClientTransport ToStdioClientTransport(this StdioServer server, string serverName)
     {
-        if (server.Url is not null || server.Headers is not null || server.ConnectionTimeout is not null || server.MaxReconnectAttempts is not null || server.ReconnectDelay is not null)
-            throw new InvalidOperationException("Server with command does not support URL, Headers, ConnectionTimeout, MaxReconnectAttempts, or ReconnectDelay");
-
-        if (string.IsNullOrWhiteSpace(server.Command))
-            throw new InvalidOperationException("Command is empty");
-
         var environment = server.Environment?.ToDictionary();
         if (server.EnvironmentFile is { } environmentFile)
         {
@@ -178,7 +173,7 @@ internal static class Configurator
             Arguments = server.Arguments,
             WorkingDirectory = server.WorkingDirectory,
             EnvironmentVariables = environment?.Count is 0 ? null : environment,
-            ShutdownTimeout = server.ShutdownTimeout?.ToTimeSpan() ?? StdioClientTransportOptions.DefaultShutdownTimeout,
+            ShutdownTimeout = server.ShutdownTimeout ?? StdioClientTransportOptions.DefaultShutdownTimeout
         });
     }
 
@@ -187,24 +182,16 @@ internal static class Configurator
         Endpoint = new Uri("http://localhost:8080")
     };
 
-    private static SseClientTransport ToSseClientTransport(this Server server, string serverName)
+    private static SseClientTransport ToSseClientTransport(this SseServer server, string serverName)
     {
-        if (server.Command is not null || server.Arguments is not null || server.WorkingDirectory is not null || server.Environment is not null || server.EnvironmentFile is not null || server.ShutdownTimeout is not null)
-            throw new InvalidOperationException("Server with URL does not support Command, Arguments, WorkingDirectory, Environment, EnvironmentFile or ShutdownTimeout");
-
-        if (server.Url is null)
-            throw new InvalidOperationException("URL is empty");
-
         return new SseClientTransport(new()
         {
             Name = serverName,
             Endpoint = server.Url,
             AdditionalHeaders = server.Headers,
-            ConnectionTimeout = server.ConnectionTimeout?.ToTimeSpan() ?? defaultSseClientTransportOptions.ConnectionTimeout,
+            ConnectionTimeout = server.ConnectionTimeout ?? defaultSseClientTransportOptions.ConnectionTimeout,
             MaxReconnectAttempts = server.MaxReconnectAttempts ?? defaultSseClientTransportOptions.MaxReconnectAttempts,
-            ReconnectDelay = server.ReconnectDelay?.ToTimeSpan() ?? defaultSseClientTransportOptions.ReconnectDelay
+            ReconnectDelay = server.ReconnectDelay ?? defaultSseClientTransportOptions.ReconnectDelay
         });
     }
-
-    private static TimeSpan ToTimeSpan(this int seconds) => TimeSpan.FromSeconds(seconds);
 }

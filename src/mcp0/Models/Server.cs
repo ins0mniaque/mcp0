@@ -1,39 +1,32 @@
 using System.Text.Json.Serialization;
 
+using Generator.Equals;
+
 namespace mcp0.Models;
 
-internal sealed class Server
+[JsonConverter(typeof(ServerConverter))]
+internal abstract record Server;
+
+[Equatable]
+internal sealed partial record StdioServer : Server
 {
-    [JsonPropertyName("command")]
-    public string? Command { get; set; }
+    public required string Command { get; init; }
+    [OrderedEquality]
+    public string[]? Arguments { get; init; }
+    public string? WorkingDirectory { get; init; }
+    [UnorderedEquality]
+    public Dictionary<string, string>? Environment { get; init; }
+    public string? EnvironmentFile { get; init; }
+    public TimeSpan? ShutdownTimeout { get; init; }
+}
 
-    [JsonPropertyName("args")]
-    public List<string>? Arguments { get; set; }
-
-    [JsonPropertyName("workDir")]
-    public string? WorkingDirectory { get; set; }
-
-    [JsonPropertyName("env")]
-    public Dictionary<string, string>? Environment { get; set; }
-
-    [JsonPropertyName("envFile")]
-    public string? EnvironmentFile { get; set; }
-
-    [JsonPropertyName("shutdownTimeout")]
-    public int? ShutdownTimeout { get; set; }
-
-    [JsonPropertyName("url")]
-    public Uri? Url { get; set; }
-
-    [JsonPropertyName("headers")]
-    public Dictionary<string, string>? Headers { get; set; }
-
-    [JsonPropertyName("connectionTimeout")]
-    public int? ConnectionTimeout { get; set; }
-
-    [JsonPropertyName("maxReconnectAttempts")]
-    public int? MaxReconnectAttempts { get; set; }
-
-    [JsonPropertyName("reconnectDelay")]
-    public int? ReconnectDelay { get; set; }
+[Equatable]
+internal sealed partial record SseServer : Server
+{
+    public required Uri Url { get; init; }
+    [UnorderedEquality]
+    public Dictionary<string, string>? Headers { get; init; }
+    public TimeSpan? ConnectionTimeout { get; init; }
+    public int? MaxReconnectAttempts { get; init; }
+    public TimeSpan? ReconnectDelay { get; init; }
 }

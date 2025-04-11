@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using Generator.Equals;
+
 namespace mcp0.Core;
 
 internal static class JsonSchema
@@ -105,48 +107,10 @@ internal abstract record JsonSchemaType(bool Required) : IJsonSchemaNode;
 internal sealed record JsonSchemaSymbol(string Name) : IJsonSchemaNode;
 internal sealed record JsonSchemaPrimitiveType(string Name, bool Required) : JsonSchemaType(Required);
 internal sealed record JsonSchemaArrayType(IJsonSchemaNode ElementType, bool Required) : JsonSchemaType(Required);
-
 internal sealed record JsonSchemaProperty(string Name, IJsonSchemaNode Type);
-internal sealed record JsonSchemaObjectType(JsonSchemaProperty[] Properties, bool Required) : JsonSchemaType(Required)
-{
-    public bool Equals(JsonSchemaObjectType? other)
-    {
-        return other is not null
-            && EqualityContract == other.EqualityContract
-            && EqualityComparer<bool>.Default.Equals(Required, other.Required)
-            && Properties.SequenceEqual(other.Properties, EqualityComparer<JsonSchemaProperty>.Default);
-    }
 
-    public override int GetHashCode()
-    {
-        var hashCode = new HashCode();
+[Equatable]
+internal sealed partial record JsonSchemaObjectType([property: OrderedEquality] JsonSchemaProperty[] Properties, bool Required) : JsonSchemaType(Required);
 
-        hashCode.Add(Required);
-        foreach (var property in Properties)
-            hashCode.Add(property);
-
-        return hashCode.ToHashCode();
-    }
-}
-
-internal sealed record JsonSchemaUnionType(IJsonSchemaNode[] UnionTypes, bool Required) : JsonSchemaType(Required)
-{
-    public bool Equals(JsonSchemaUnionType? other)
-    {
-        return other is not null
-            && EqualityContract == other.EqualityContract
-            && EqualityComparer<bool>.Default.Equals(Required, other.Required)
-            && UnionTypes.SequenceEqual(other.UnionTypes, EqualityComparer<IJsonSchemaNode>.Default);
-    }
-
-    public override int GetHashCode()
-    {
-        var hashCode = new HashCode();
-
-        hashCode.Add(Required);
-        foreach (var unionType in UnionTypes)
-            hashCode.Add(unionType);
-
-        return hashCode.ToHashCode();
-    }
-}
+[Equatable]
+internal sealed partial record JsonSchemaUnionType([property: OrderedEquality] IJsonSchemaNode[] UnionTypes, bool Required) : JsonSchemaType(Required);

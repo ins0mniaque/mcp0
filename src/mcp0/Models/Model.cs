@@ -3,8 +3,13 @@ using System.Text.Json.Serialization;
 
 namespace mcp0.Models;
 
+[JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(Configuration))]
 [JsonSerializable(typeof(Server))]
+[JsonSerializable(typeof(StdioServer))]
+[JsonSerializable(typeof(SseServer))]
+[JsonSerializable(typeof(string[]))]
+[JsonSerializable(typeof(Dictionary<string, string>))]
 internal sealed partial class Model : JsonSerializerContext
 {
     public static async Task<Configuration> Load(string[] paths, CancellationToken cancellationToken)
