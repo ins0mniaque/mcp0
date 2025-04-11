@@ -78,7 +78,7 @@ internal sealed class InspectCommand : Command
         const ConsoleColor ErrorColor = ConsoleColor.Red;
         const string Indentation = "  ";
 
-        var width = Terminal.Width;
+        var width = Terminal.Columns;
 
         foreach (var client in proxy.Clients)
         {
