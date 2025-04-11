@@ -1,49 +1,58 @@
-using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace mcp0.Models;
 
 internal sealed class Configuration
 {
-    [JsonPropertyName("prompts")]
     public Dictionary<string, string>? Prompts { get; set; }
-
-    [JsonPropertyName("resources")]
     public Dictionary<string, string>? Resources { get; set; }
-
-    [JsonPropertyName("tools")]
     public Dictionary<string, string>? Tools { get; set; }
-
-    [JsonPropertyName("servers")]
     public Dictionary<string, Server>? Servers { get; set; }
 
     public void Merge(Configuration configuration)
     {
-        if (configuration.Prompts is { } prompts)
-        {
-            Prompts ??= new(prompts.Count, StringComparer.Ordinal);
-            foreach (var entry in prompts)
-                Prompts[entry.Key] = entry.Value;
-        }
+        Prompts = Merge(Prompts, configuration.Prompts);
+        Resources = Merge(Resources, configuration.Resources);
+        Tools = Merge(Tools, configuration.Tools);
+        Servers = Merge(Servers, configuration.Servers);
+    }
 
-        if (configuration.Resources is { } resources)
-        {
-            Resources ??= new(resources.Count, StringComparer.Ordinal);
-            foreach (var entry in resources)
-                Resources[entry.Key] = entry.Value;
-        }
+    private static Dictionary<string, T>? Merge<T>(Dictionary<string, T>? dictionary, Dictionary<string, T>? with)
+    {
+        if (with is null)
+            return dictionary;
 
-        if (configuration.Tools is { } tools)
-        {
-            Tools ??= new(tools.Count, StringComparer.Ordinal);
-            foreach (var entry in tools)
-                Tools[entry.Key] = entry.Value;
-        }
+        dictionary ??= new(with.Count, StringComparer.Ordinal);
+        foreach (var entry in with)
+            dictionary[entry.Key] = entry.Value;
 
-        if (configuration.Servers is { } servers)
-        {
-            Servers ??= new(servers.Count, StringComparer.Ordinal);
-            foreach (var entry in servers)
-                Servers[entry.Key] = entry.Value;
-        }
+        return dictionary;
+    }
+
+    public static async Task<Configuration> Load(string[] paths, CancellationToken cancellationToken)
+    {
+        var merged = new Configuration();
+
+        var tasks = new Task<Configuration>[paths.Length];
+        for (var index = 0; index < paths.Length; index++)
+            tasks[index] = Load(paths[index], cancellationToken);
+
+        var configurations = await Task.WhenAll(tasks);
+        foreach (var configuration in configurations)
+            merged.Merge(configuration);
+
+        return merged;
+    }
+
+    public static async Task<Configuration> Load(string path, CancellationToken cancellationToken)
+    {
+        Configuration? configuration;
+        await using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+            configuration = await JsonSerializer.DeserializeAsync(stream, ModelContext.Default.Configuration, cancellationToken);
+
+        if (configuration is null)
+            throw new InvalidOperationException("Configuration is empty");
+
+        return configuration;
     }
 }

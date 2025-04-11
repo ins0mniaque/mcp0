@@ -104,11 +104,11 @@ internal sealed class ServerConverter : JsonConverter<Server>
         {
             if (propertyName == "args")
             {
-                arguments = JsonSerializer.Deserialize(ref reader, Model.Default.StringArray);
+                arguments = JsonSerializer.Deserialize(ref reader, ModelContext.Default.StringArray);
             }
             else if (propertyName == "env")
             {
-                environment = JsonSerializer.Deserialize(ref reader, Model.Default.DictionaryStringString);
+                environment = JsonSerializer.Deserialize(ref reader, ModelContext.Default.DictionaryStringString);
             }
             else
             {
@@ -167,7 +167,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
         {
             if (propertyName == "headers")
             {
-                headers = JsonSerializer.Deserialize(ref reader, Model.Default.DictionaryStringString);
+                headers = JsonSerializer.Deserialize(ref reader, ModelContext.Default.DictionaryStringString);
             }
             else
             {

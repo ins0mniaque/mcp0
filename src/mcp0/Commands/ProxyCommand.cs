@@ -29,7 +29,7 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
 
         using var loggerFactory = Log.CreateLoggerFactory();
 
-        var configuration = await Model.Load(paths, cancellationToken);
+        var configuration = await Configuration.Load(paths, cancellationToken);
         var serverOptions = configuration.ToMcpServerOptions();
         var serverName = proxyOptions.ServerInfo?.Name ??
                          serverOptions?.ServerInfo?.Name ??
@@ -74,7 +74,7 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
         {
             logger.ConfigurationReloading(paths);
 
-            var configuration = await Model.Load(paths, cancellationToken);
+            var configuration = await Configuration.Load(paths, cancellationToken);
 
             var clientTransports = configuration.ToClientTransports();
             if (clientTransport is not null)

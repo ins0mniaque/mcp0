@@ -1,11 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 
 namespace mcp0.Core;
 
-[JsonSerializable(typeof(JsonElement))]
-internal sealed partial class ToolTemplate : JsonSerializerContext
+internal static class ToolTemplate
 {
     public static JsonElement Parse(string template)
     {
@@ -21,7 +19,7 @@ internal sealed partial class ToolTemplate : JsonSerializerContext
             ["required"] = new JsonArray(requiredProperties.ToArray())
         };
 
-        return inputSchema.Deserialize(Default.JsonElement);
+        return inputSchema.Deserialize(JsonSchemaContext.Default.JsonElement);
 
         KeyValuePair<string, JsonNode?> CreateArgument(string name, string? type, string? description, bool required)
         {
