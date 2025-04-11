@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 
+using mcp0.Core;
 using mcp0.Mcp;
 
 using Microsoft.Extensions.Logging;
@@ -46,8 +47,13 @@ internal sealed class ShellCommand : ProxyCommand
                 break;
 
             var arguments = CommandLineStringSplitter.Instance.Split(line).ToArray();
+            var command = arguments[0];
 
-            Terminal.WriteLine($"command not found: {arguments[0]}");
+            if (command == "inspect" || command == "i")
+                Inspector.Inspect(proxy);
+            else
+                Terminal.WriteLine($"command not found: {command}");
+
             if (history.Count is 0 || history[^1] != line)
                 history.Add(line);
         }
