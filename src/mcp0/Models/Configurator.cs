@@ -151,12 +151,12 @@ internal static class Configurator
 
     public static IClientTransport ToClientTransport(this Server server, string serverName) => server switch
     {
-        StdioServer stdioServer => stdioServer.ToStdioClientTransport(serverName),
-        SseServer sseServer => sseServer.ToSseClientTransport(serverName),
+        StdioServer stdioServer => new StdioClientTransport(stdioServer.ToClientTransportOptions(serverName)),
+        SseServer sseServer => new SseClientTransport(sseServer.ToClientTransportOptions(serverName)),
         _ => throw new ArgumentException($"Unknown server type: {server.GetType().Name}", nameof(server))
     };
 
-    private static StdioClientTransport ToStdioClientTransport(this StdioServer server, string serverName)
+    public static StdioClientTransportOptions ToClientTransportOptions(this StdioServer server, string serverName)
     {
         var environment = server.Environment?.ToDictionary();
         if (server.EnvironmentFile is { } environmentFile)
@@ -166,7 +166,7 @@ internal static class Configurator
                 environment[variable.Key] = variable.Value;
         }
 
-        return new StdioClientTransport(new()
+        return new StdioClientTransportOptions
         {
             Name = serverName,
             Command = server.Command,
@@ -174,7 +174,7 @@ internal static class Configurator
             WorkingDirectory = server.WorkingDirectory,
             EnvironmentVariables = environment?.Count is 0 ? null : environment,
             ShutdownTimeout = server.ShutdownTimeout ?? StdioClientTransportOptions.DefaultShutdownTimeout
-        });
+        };
     }
 
     private static readonly SseClientTransportOptions defaultSseClientTransportOptions = new()
@@ -182,9 +182,9 @@ internal static class Configurator
         Endpoint = new Uri("http://localhost:8080")
     };
 
-    private static SseClientTransport ToSseClientTransport(this SseServer server, string serverName)
+    public static SseClientTransportOptions ToClientTransportOptions(this SseServer server, string serverName)
     {
-        return new SseClientTransport(new()
+        return new SseClientTransportOptions
         {
             Name = serverName,
             Endpoint = server.Url,
@@ -192,6 +192,6 @@ internal static class Configurator
             ConnectionTimeout = server.ConnectionTimeout ?? defaultSseClientTransportOptions.ConnectionTimeout,
             MaxReconnectAttempts = server.MaxReconnectAttempts ?? defaultSseClientTransportOptions.MaxReconnectAttempts,
             ReconnectDelay = server.ReconnectDelay ?? defaultSseClientTransportOptions.ReconnectDelay
-        });
+        };
     }
 }

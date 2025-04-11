@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-using ModelContextProtocol.Protocol.Transport;
+﻿using ModelContextProtocol.Protocol.Transport;
 
 namespace mcp0.Models;
 
@@ -19,11 +17,7 @@ public sealed class ConfiguratorTests
             ShutdownTimeout = TimeSpan.FromSeconds(60)
         };
 
-        var transport = server.ToClientTransport("mcp0");
-
-        Assert.IsInstanceOfType<StdioClientTransport>(transport);
-
-        var actualOptions = GetTransportOptions((StdioClientTransport)transport);
+        var actualOptions = server.ToClientTransportOptions("mcp0");
         var expectedOptions = new StdioClientTransportOptions
         {
             Command = "npx",
@@ -48,11 +42,7 @@ public sealed class ConfiguratorTests
             ReconnectDelay = TimeSpan.FromSeconds(60)
         };
 
-        var transport = server.ToClientTransport("mcp0");
-
-        Assert.IsInstanceOfType<SseClientTransport>(transport);
-
-        var actualOptions = GetTransportOptions((SseClientTransport)transport);
+        var actualOptions = server.ToClientTransportOptions("mcp0");
         var expectedOptions = new SseClientTransportOptions
         {
             Endpoint = server.Url,
@@ -99,10 +89,4 @@ public sealed class ConfiguratorTests
             }
         }
     }
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_options")]
-    private static extern ref StdioClientTransportOptions GetTransportOptions(StdioClientTransport transport);
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_options")]
-    private static extern ref SseClientTransportOptions GetTransportOptions(SseClientTransport transport);
 }
