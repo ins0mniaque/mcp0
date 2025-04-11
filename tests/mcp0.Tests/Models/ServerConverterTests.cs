@@ -90,4 +90,69 @@ public sealed class ServerConverterTests
 
         Assert.AreEqual(expected, actual);
     }
+
+    [TestMethod]
+    public void SerializesStdioServerToStringCorrectly()
+    {
+        var expected = new StdioServer
+        {
+            Command = "npx",
+            Arguments = ["-y", "@modelcontextprotocol/server-everything"]
+        };
+
+        var json = JsonSerializer.Serialize(expected, ModelContext.Default.Server);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Server);
+
+        Assert.AreEqual(expected, actual);
+    }
+
+    [TestMethod]
+    public void SerializesStdioServerToObjectCorrectly()
+    {
+        var expected = new StdioServer
+        {
+            Command = "npx",
+            Arguments = ["-y", "@modelcontextprotocol/server-everything"],
+            WorkingDirectory = "/home/user",
+            Environment = new() { { "KEY", "VALUE" } },
+            ShutdownTimeout = TimeSpan.FromSeconds(60)
+        };
+
+        var json = JsonSerializer.Serialize(expected, ModelContext.Default.Server);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Server);
+
+        Assert.AreEqual(expected, actual);
+    }
+
+    [TestMethod]
+    public void SerializesSseServerToStringCorrectly()
+    {
+        var expected = new SseServer
+        {
+            Url = new Uri("http://localhost:8080/server-everything")
+        };
+
+        var json = JsonSerializer.Serialize(expected, ModelContext.Default.Server);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Server);
+
+        Assert.AreEqual(expected, actual);
+    }
+
+    [TestMethod]
+    public void SerializesSseServerToObjectCorrectly()
+    {
+        var expected = new SseServer
+        {
+            Url = new Uri("http://localhost:8080/server-everything"),
+            Headers = new() { { "Authorization", "TOKEN" } },
+            ConnectionTimeout = TimeSpan.FromSeconds(30),
+            MaxReconnectAttempts = 10,
+            ReconnectDelay = TimeSpan.FromSeconds(60)
+        };
+
+        var json = JsonSerializer.Serialize(expected, ModelContext.Default.Server);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Server);
+
+        Assert.AreEqual(expected, actual);
+    }
 }

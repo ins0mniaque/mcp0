@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.CommandLine.Parsing;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -6,11 +7,36 @@ namespace mcp0.Models;
 
 internal sealed class ServerConverter : JsonConverter<Server>
 {
+    private static class Property
+    {
+        public const string Command = "command";
+        public const string Args = "args";
+        public const string WorkDir = "workDir";
+        public const string Env = "env";
+        public const string EnvFile = "envFile";
+        public const string ShutdownTimeout = "shutdownTimeout";
+        public const string Url = "url";
+        public const string Headers = "headers";
+        public const string ConnectionTimeout = "connectionTimeout";
+        public const string MaxReconnectAttempts = "maxReconnectAttempts";
+        public const string ReconnectDelay = "reconnectDelay";
+
+        public static bool IsStdioServerProperty(string propertyName)
+        {
+            return propertyName is Command or Args or WorkDir or Env or EnvFile or ShutdownTimeout;
+        }
+
+        public static bool IsSseServerProperty(string propertyName)
+        {
+            return propertyName is Url or Headers or ConnectionTimeout or MaxReconnectAttempts or ReconnectDelay;
+        }
+    }
+
     public override bool CanConvert(Type typeToConvert) => typeof(Server).IsAssignableFrom(typeToConvert);
 
     public override Server Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType == JsonTokenType.String)
+        if (reader.TokenType is JsonTokenType.String)
         {
             var commandOrUrl = reader.GetString();
             if (Uri.IsWellFormedUriString(commandOrUrl, UriKind.Absolute))
@@ -30,29 +56,22 @@ internal sealed class ServerConverter : JsonConverter<Server>
             throw new JsonException();
         }
 
-        if (reader.TokenType != JsonTokenType.StartObject)
+        if (reader.TokenType is not JsonTokenType.StartObject)
             throw new JsonException();
 
         reader.Read();
-        if (reader.TokenType != JsonTokenType.PropertyName)
+        if (reader.TokenType is not JsonTokenType.PropertyName)
             throw new JsonException();
 
-        var propertyName = reader.GetString();
-        return propertyName switch
-        {
-            "command" or
-            "args" or
-            "workDir" or
-            "env" or
-            "envFile" or
-            "shutdownTimeout" => (Server?)ReadStdioServer(ref reader, propertyName),
-            "url" or
-            "headers" or
-            "connectionTimeout" or
-            "maxReconnectAttempts" or
-            "reconnectDelay" => ReadSseServer(ref reader, propertyName),
-            _ => throw new JsonException()
-        } ?? throw new JsonException();
+        var propertyName = reader.GetString() ?? throw new JsonException();
+
+        if (Property.IsStdioServerProperty(propertyName))
+            return ReadStdioServer(ref reader, propertyName);
+
+        if (Property.IsSseServerProperty(propertyName))
+            return ReadSseServer(ref reader, propertyName);
+
+        throw new JsonException();
     }
 
     private static StdioServer ReadStdioServer(ref Utf8JsonReader reader, string propertyName)
@@ -68,14 +87,14 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
         while (reader.Read())
         {
-            if (reader.TokenType == JsonTokenType.PropertyName)
+            if (reader.TokenType is JsonTokenType.PropertyName)
             {
                 propertyName = reader.GetString() ?? throw new JsonException();
                 ReadProperty(ref reader);
                 continue;
             }
 
-            if (reader.TokenType == JsonTokenType.EndObject)
+            if (reader.TokenType is JsonTokenType.EndObject)
             {
                 if (command is not null && arguments is null)
                 {
@@ -102,24 +121,24 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
         void ReadProperty(ref Utf8JsonReader reader)
         {
-            if (propertyName == "args")
+            if (propertyName is Property.Args)
             {
                 arguments = JsonSerializer.Deserialize(ref reader, ModelContext.Default.StringArray);
             }
-            else if (propertyName == "env")
+            else if (propertyName is Property.Env)
             {
                 environment = JsonSerializer.Deserialize(ref reader, ModelContext.Default.DictionaryStringString);
             }
             else
             {
                 reader.Read();
-                if (propertyName == "command")
+                if (propertyName is Property.Command)
                     command = reader.GetString();
-                else if (propertyName == "workDir")
+                else if (propertyName is Property.WorkDir)
                     workingDirectory = reader.GetString();
-                else if (propertyName == "envFile")
+                else if (propertyName is Property.EnvFile)
                     environmentFile = reader.GetString();
-                else if (propertyName == "shutdownTimeout")
+                else if (propertyName is Property.ShutdownTimeout)
                     shutdownTimeout = TimeSpan.FromSeconds(reader.GetInt32());
                 else
                     throw new JsonException();
@@ -139,14 +158,14 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
         while (reader.Read())
         {
-            if (reader.TokenType == JsonTokenType.PropertyName)
+            if (reader.TokenType is JsonTokenType.PropertyName)
             {
                 propertyName = reader.GetString() ?? throw new JsonException();
                 ReadProperty(ref reader);
                 continue;
             }
 
-            if (reader.TokenType == JsonTokenType.EndObject)
+            if (reader.TokenType is JsonTokenType.EndObject)
             {
                 return new SseServer
                 {
@@ -165,20 +184,21 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
         void ReadProperty(ref Utf8JsonReader reader)
         {
-            if (propertyName == "headers")
-            {
+            if (propertyName is Property.Headers)
                 headers = JsonSerializer.Deserialize(ref reader, ModelContext.Default.DictionaryStringString);
-            }
             else
             {
                 reader.Read();
-                if (propertyName == "url")
-                    url = Uri.TryCreate(reader.GetString(), UriKind.Absolute, out var uri) ? uri : throw new JsonException();
-                else if (propertyName == "connectionTimeout")
+                if (propertyName is Property.Url)
+                {
+                    if (!Uri.TryCreate(reader.GetString(), UriKind.Absolute, out url))
+                        throw new JsonException();
+                }
+                else if (propertyName is Property.ConnectionTimeout)
                     connectionTimeout = TimeSpan.FromSeconds(reader.GetInt32());
-                else if (propertyName == "maxReconnectAttempts")
+                else if (propertyName is Property.MaxReconnectAttempts)
                     maxReconnectAttempts = reader.GetInt32();
-                else if (propertyName == "reconnectDelay")
+                else if (propertyName is Property.ReconnectDelay)
                     reconnectDelay = TimeSpan.FromSeconds(reader.GetInt32());
                 else
                     throw new JsonException();
@@ -186,9 +206,98 @@ internal sealed class ServerConverter : JsonConverter<Server>
         }
     }
 
-    public override void Write(Utf8JsonWriter writer, Server person, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, Server server, JsonSerializerOptions options)
     {
-        // TODO: Implement serialization
-        throw new NotImplementedException();
+        if (server is StdioServer stdioServer)
+            Write(writer, stdioServer);
+        else if (server is SseServer sseServer)
+            Write(writer, sseServer);
+        else
+            throw new JsonException();
+    }
+
+    private static readonly SearchValues<char> commandDelimiters = SearchValues.Create(' ', '\"', '\'');
+
+    private static void Write(Utf8JsonWriter writer, StdioServer server)
+    {
+        var stringFormattable = server.WorkingDirectory is null &&
+                                server.Environment is null &&
+                                server.EnvironmentFile is null &&
+                                server.ShutdownTimeout is null &&
+                                server.Command.AsSpan().ContainsAny(commandDelimiters) is false &&
+                                server.Arguments?.Any(a => a.AsSpan().ContainsAny(commandDelimiters)) is false or null;
+
+        if (stringFormattable)
+        {
+            if (server.Arguments is null || server.Arguments.Length is 0)
+                writer.WriteStringValue(server.Command);
+            else
+                writer.WriteStringValue(server.Command + ' ' + string.Join(' ', server.Arguments));
+        }
+        else
+        {
+            writer.WriteStartObject();
+
+            writer.WriteString(Property.Command, server.Command);
+
+            if (server.Arguments is not null && server.Arguments.Length > 0)
+            {
+                writer.WritePropertyName(Property.Args);
+                JsonSerializer.Serialize(writer, server.Arguments, ModelContext.Default.StringArray);
+            }
+
+            if (server.WorkingDirectory is not null)
+                writer.WriteString(Property.WorkDir, server.WorkingDirectory);
+
+            if (server.Environment is not null)
+            {
+                writer.WritePropertyName(Property.Env);
+                JsonSerializer.Serialize(writer, server.Environment, ModelContext.Default.DictionaryStringString);
+            }
+
+            if (server.EnvironmentFile is not null)
+                writer.WriteString(Property.EnvFile, server.EnvironmentFile);
+
+            if (server.ShutdownTimeout.HasValue)
+                writer.WriteNumber(Property.ShutdownTimeout, server.ShutdownTimeout.Value.TotalSeconds);
+
+            writer.WriteEndObject();
+        }
+    }
+
+    private static void Write(Utf8JsonWriter writer, SseServer server)
+    {
+        var stringFormattable = server.Headers is null &&
+                                server.ConnectionTimeout is null &&
+                                server.MaxReconnectAttempts is null &&
+                                server.ReconnectDelay is null;
+
+        if (stringFormattable)
+        {
+            writer.WriteStringValue(server.Url.ToString());
+        }
+        else
+        {
+            writer.WriteStartObject();
+
+            writer.WriteString(Property.Url, server.Url.ToString());
+
+            if (server.Headers is not null)
+            {
+                writer.WritePropertyName(Property.Headers);
+                JsonSerializer.Serialize(writer, server.Headers, ModelContext.Default.DictionaryStringString);
+            }
+
+            if (server.ConnectionTimeout is not null)
+                writer.WriteNumber(Property.ConnectionTimeout, server.ConnectionTimeout.Value.TotalSeconds);
+
+            if (server.MaxReconnectAttempts is not null)
+                writer.WriteNumber(Property.MaxReconnectAttempts, server.MaxReconnectAttempts.Value);
+
+            if (server.ReconnectDelay is not null)
+                writer.WriteNumber(Property.ReconnectDelay, server.ReconnectDelay.Value.TotalSeconds);
+
+            writer.WriteEndObject();
+        }
     }
 }
