@@ -19,9 +19,6 @@ internal sealed partial class Model : JsonSerializerContext
         foreach (var configuration in configurations)
             merged.Merge(configuration);
 
-        if (merged.Servers is null)
-            throw new InvalidOperationException("Servers configuration is empty");
-
         return merged;
     }
 

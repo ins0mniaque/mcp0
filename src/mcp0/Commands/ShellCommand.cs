@@ -1,26 +1,37 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 
+using mcp0.Mcp;
+
+using Microsoft.Extensions.Logging;
+
 namespace mcp0.Commands;
 
-internal sealed class ShellCommand : Command
+internal sealed class ShellCommand : ProxyCommand
 {
     public ShellCommand() : base("shell", "Run an interactive shell on the MCP server for one or more configured contexts")
     {
+        var noReloadOption = new Option<bool>("--no-reload", "Do not reload when context configuration files change");
         var pathsArgument = new Argument<string[]>("files", "A list of context configuration files to run at start")
         {
             Arity = ArgumentArity.ZeroOrMore
         };
 
         AddAlias("sh");
+        AddOption(noReloadOption);
         AddArgument(pathsArgument);
 
-        this.SetHandler(Execute, pathsArgument);
+        this.SetHandler(Execute, pathsArgument, noReloadOption);
     }
 
-    private static Task Execute(string[] paths) => Execute(paths, CancellationToken.None);
+    private Task Execute(string[] paths, bool noReload) => Execute(paths, noReload, CancellationToken.None);
 
-    private static async Task Execute(string[] paths, CancellationToken cancellationToken)
+    private async Task Execute(string[] paths, bool noReload, CancellationToken cancellationToken)
+    {
+        await ConnectAndRun(paths, noReload, LogLevel.Warning, cancellationToken);
+    }
+
+    protected override async Task Run(McpProxy proxy, CancellationToken cancellationToken)
     {
         var history = new List<string>();
         var hist = (int index) => index < 0 || index >= history.Count ? null : history[^(index + 1)];
@@ -39,8 +50,8 @@ internal sealed class ShellCommand : Command
             Terminal.WriteLine($"command not found: {arguments[0]}");
             if (history.Count is 0 || history[^1] != line)
                 history.Add(line);
-
-            await Task.CompletedTask;
         }
+
+        await Task.CompletedTask;
     }
 }

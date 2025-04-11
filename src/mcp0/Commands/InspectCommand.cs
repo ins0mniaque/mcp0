@@ -2,17 +2,15 @@ using System.CommandLine;
 
 using mcp0.Core;
 using mcp0.Mcp;
-using mcp0.Models;
 
 using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Types;
-using ModelContextProtocol.Server;
 
 namespace mcp0.Commands;
 
-internal sealed class InspectCommand : Command
+internal sealed class InspectCommand : ProxyCommand
 {
     public InspectCommand() : base("inspect", "Inspect the MCP server for one or more configured contexts")
     {
@@ -27,48 +25,18 @@ internal sealed class InspectCommand : Command
         this.SetHandler(Execute, pathsArgument);
     }
 
-    private static Task Execute(string[] paths) => Execute(paths, CancellationToken.None);
+    private Task Execute(string[] paths) => Execute(paths, CancellationToken.None);
 
-    private static async Task Execute(string[] paths, CancellationToken cancellationToken)
+    private async Task Execute(string[] paths, CancellationToken cancellationToken)
     {
-        var proxyOptions = new McpProxyOptions
-        {
-            LoggingLevel = Log.Level?.ToLoggingLevel(),
-            SetLoggingLevelCallback = static level => Log.Level = level.ToLogLevel()
-        };
+        await ConnectAndRun(paths, noReload: true, LogLevel.Warning, cancellationToken);
+    }
 
-        Log.Level ??= LogLevel.Warning;
-
-        using var loggerFactory = Log.CreateLoggerFactory();
-
-        var configuration = await Model.Load(paths, cancellationToken);
-        var serverOptions = configuration.ToMcpServerOptions();
-        var serverName = proxyOptions.ServerInfo?.Name ??
-                         serverOptions?.ServerInfo?.Name ??
-                         ServerInfo.Default.Name;
-
-        await using var transport = serverOptions is null ? null : new ClientServerTransport(serverName, loggerFactory);
-        await using var serverTask = serverOptions is null ? null : new DisposableTask(async ct =>
-        {
-            // ReSharper disable once AccessToDisposedClosure
-            await using var server = McpServerFactory.Create(transport!.ServerTransport, serverOptions);
-
-            await server.RunAsync(ct);
-        }, cancellationToken);
-
-        var clientTransports = configuration.ToClientTransports();
-        if (transport?.ClientTransport is { } clientTransport)
-            clientTransports = clientTransports.Append(clientTransport).ToArray();
-
-        proxyOptions.ServerInfo = ServerInfo.Create(clientTransports);
-
-        await using var proxy = new McpProxy(proxyOptions, loggerFactory);
-
-        var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
-
-        await proxy.ConnectAsync(clients, cancellationToken);
-
+    protected override async Task Run(McpProxy proxy, CancellationToken cancellationToken)
+    {
         Inspect(proxy);
+
+        await Task.CompletedTask;
     }
 
     private static void Inspect(McpProxy proxy)
