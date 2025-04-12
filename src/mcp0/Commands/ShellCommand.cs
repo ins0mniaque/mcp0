@@ -46,9 +46,11 @@ internal sealed class ShellCommand : ProxyCommand
             if (line is null or "exit")
                 break;
 
-            var arguments = CommandLineStringSplitter.Instance.Split(line).ToArray();
-            var command = arguments[0];
+            var commandLine = CommandLineStringSplitter.Instance.Split(line).ToArray();
+            if (commandLine.Length is 0)
+                continue;
 
+            var command = commandLine[0];
             if (command is "i" or "inspect")
                 Inspector.Inspect(proxy);
             else

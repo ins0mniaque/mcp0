@@ -44,13 +44,15 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
             if (!string.IsNullOrWhiteSpace(commandOrUrl))
             {
-                var arguments = CommandLineStringSplitter.Instance.Split(commandOrUrl).ToArray();
-
-                return new StdioServer
+                var commandLine = CommandLineStringSplitter.Instance.Split(commandOrUrl).ToArray();
+                if (commandLine.Length is not 0)
                 {
-                    Command = arguments[0],
-                    Arguments = arguments.Length is 0 ? null : arguments[1..]
-                };
+                    return new StdioServer
+                    {
+                        Command = commandLine[0],
+                        Arguments = commandLine.Length is 0 ? null : commandLine[1..]
+                    };
+                }
             }
 
             throw new JsonException("Invalid string value for server configuration");
@@ -99,7 +101,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 if (command is not null && arguments is null)
                 {
                     arguments = CommandLineStringSplitter.Instance.Split(command).ToArray();
-                    command = arguments[0];
+                    command = arguments.Length is 0 ? null : arguments[0];
                     arguments = arguments.Length is 0 ? null : arguments[1..];
                 }
 
