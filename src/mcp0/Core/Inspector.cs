@@ -35,10 +35,8 @@ internal static class Inspector
             Terminal.WriteLine();
             Terminal.WriteLine("Prompts", SectionColor);
 
-            foreach (var entry in proxy.Prompts)
+            foreach (var prompt in proxy.Prompts)
             {
-                var prompt = entry.Value.Prompt;
-
                 Terminal.Write(Indentation);
                 Terminal.Write(prompt.Name, HeaderColor);
                 WritePromptArguments(prompt);
@@ -52,10 +50,8 @@ internal static class Inspector
             Terminal.WriteLine();
             Terminal.WriteLine("Resources", SectionColor);
 
-            foreach (var entry in proxy.Resources)
+            foreach (var resource in proxy.Resources)
             {
-                var resource = entry.Value.Resource;
-
                 Terminal.Write(Indentation);
                 Terminal.Write(resource.Name, HeaderColor);
                 Terminal.Write(": ");
@@ -68,10 +64,8 @@ internal static class Inspector
             Terminal.WriteLine();
             Terminal.WriteLine("Resource Templates", SectionColor);
 
-            foreach (var entry in proxy.ResourceTemplates)
+            foreach (var resourceTemplate in proxy.ResourceTemplates)
             {
-                var resourceTemplate = entry.Value.ResourceTemplate;
-
                 Terminal.Write(Indentation);
                 Terminal.Write(resourceTemplate.Name, HeaderColor);
                 Terminal.Write(": ");
@@ -84,10 +78,8 @@ internal static class Inspector
             Terminal.WriteLine();
             Terminal.WriteLine("Tools", SectionColor);
 
-            foreach (var entry in proxy.Tools)
+            foreach (var tool in proxy.Tools)
             {
-                var tool = entry.Value.Tool;
-
                 Terminal.Write(Indentation);
                 Terminal.Write(tool.Name, HeaderColor);
                 Terminal.Write("(");

@@ -58,7 +58,7 @@ internal sealed partial class McpProxy
             ListPromptsHandler = (_, _) => listPromptsResultTask,
             GetPromptHandler = async (request, cancellationToken) =>
             {
-                var (_, prompt) = Find(prompts, "prompt", request.Params?.Name);
+                var (_, prompt) = Prompts.Find(request.Params?.Name);
                 var arguments = request.Params?.Arguments?.ToDictionary(
                     static entry => entry.Key,
                     static entry => (object?)entry.Value,
@@ -73,13 +73,13 @@ internal sealed partial class McpProxy
             ListResourceTemplatesHandler = (_, _) => listResourceTemplatesResultTask,
             ReadResourceHandler = async (request, cancellationToken) =>
             {
-                var (client, resource) = Find(resources, "resource", request.Params?.Uri);
+                var (client, resource) = Resources.Find(request.Params?.Uri);
 
                 return await client.ReadResourceAsync(resource.Uri, cancellationToken);
             },
             SubscribeToResourcesHandler = async (request, cancellationToken) =>
             {
-                var (client, resource) = Find(resources, "resource", request.Params?.Uri);
+                var (client, resource) = Resources.Find(request.Params?.Uri);
 
                 await client.SafeSubscribeToResourceAsync(resource.Uri, cancellationToken);
 
@@ -87,7 +87,7 @@ internal sealed partial class McpProxy
             },
             UnsubscribeFromResourcesHandler = async (request, cancellationToken) =>
             {
-                var (client, resource) = Find(resources, "resource", request.Params?.Uri);
+                var (client, resource) = Resources.Find(request.Params?.Uri);
 
                 await client.SafeUnsubscribeFromResourceAsync(resource.Uri, cancellationToken);
 
@@ -99,7 +99,7 @@ internal sealed partial class McpProxy
             ListToolsHandler = (_, _) => listToolsResultTask,
             CallToolHandler = async (request, cancellationToken) =>
             {
-                var (client, tool) = Find(tools, "tool", request.Params?.Name);
+                var (client, tool) = Tools.Find(request.Params?.Name);
                 var arguments = request.Params?.Arguments?.ToDictionary(
                     static entry => entry.Key,
                     static entry => (object?)entry.Value,
@@ -115,15 +115,12 @@ internal sealed partial class McpProxy
                 IMcpClient client;
                 if (request.Params?.Ref.Uri is { } resourceUri)
                 {
-                    if (resources.TryGetValue(resourceUri, out var resourceEntry))
-                        client = resourceEntry.Client;
-                    else if (resourceTemplates.TryGetValue(resourceUri, out var resourceTemplateEntry))
-                        client = resourceTemplateEntry.Client;
-                    else
-                        throw new McpException($"Unknown resource or resource template: '{resourceUri}'");
+                    client = Resources.TryFind(resourceUri)?.Client ??
+                             ResourceTemplates.TryFind(resourceUri)?.Client ??
+                             throw new McpException($"Unknown resource or resource template: '{resourceUri}'");
                 }
                 else if (request.Params?.Ref.Name is { } promptName)
-                    client = Find(prompts, "prompt", promptName).Client;
+                    client = Prompts.Find(promptName).Client;
                 else
                     throw new McpException("Missing completion request parameters");
 
