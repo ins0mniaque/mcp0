@@ -6,7 +6,7 @@ public sealed class ToolCommandTests
     [TestMethod]
     public void ParsesCommandsCorrectly()
     {
-        var env = ToolCommand.Parse("bc -e {{expression}}", new Dictionary<string, string>
+        var env = ToolCommand.Parse("bc -e {{expression}}", new Dictionary<string, string>(StringComparer.Ordinal)
         {
             { "expression", "2 + 2" }
         });
@@ -20,7 +20,7 @@ public sealed class ToolCommandTests
     [TestMethod]
     public void ParsesCommandsWithQuotesCorrectly()
     {
-        var env = ToolCommand.Parse("ollama run {{model}} \"Help me with this task: {{task}}\"", new Dictionary<string, string>
+        var env = ToolCommand.Parse("ollama run {{model}} \"Help me with this task: {{task}}\"", new Dictionary<string, string>(StringComparer.Ordinal)
         {
             { "model", "deepseek-r1" },
             { "task", "Write a story about a cat" }

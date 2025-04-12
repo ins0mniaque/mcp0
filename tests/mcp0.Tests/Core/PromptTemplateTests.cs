@@ -68,7 +68,7 @@ public sealed class PromptTemplateTests
         These are not arguments: {{}} {{0}} {{ not_argument }} {{0argument}} {{\"escaped\"}}.
         """;
 
-        var actual = Template.Render(template, new Dictionary<string, string>
+        var actual = Template.Render(template, new Dictionary<string, string>(StringComparer.Ordinal)
         {
             { "argument", "value" },
             { "optional", "option" }

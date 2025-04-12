@@ -39,19 +39,18 @@ internal static partial class UriResource
 
         if (uri.Scheme is "http" or "https")
         {
-            using (var client = new HttpClient())
-            using (var result = await client.GetAsync(uri, cancellationToken))
+            using var client = new HttpClient();
+            using var result = await client.GetAsync(uri, cancellationToken);
+
+            if (result.IsSuccessStatusCode)
             {
-                if (result.IsSuccessStatusCode)
-                {
-                    var data = await result.Content.ReadAsByteArrayAsync(cancellationToken);
-                    var mimetype = result.Content.Headers.ContentType?.MediaType;
+                var data = await result.Content.ReadAsByteArrayAsync(cancellationToken);
+                var mimetype = result.Content.Headers.ContentType?.MediaType;
 
-                    return (data, mimetype);
-                }
-
-                throw new McpException($"Error: HTTP Status Code {result.StatusCode}: {result.ReasonPhrase}");
+                return (data, mimetype);
             }
+
+            throw new McpException($"Error: HTTP Status Code {result.StatusCode}: {result.ReasonPhrase}");
         }
 
         if (uri.IsFile)

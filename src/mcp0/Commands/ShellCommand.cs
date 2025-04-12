@@ -42,8 +42,8 @@ internal sealed class ShellCommand : ProxyCommand
         {
             Terminal.Write("> ");
 
-            var line = Terminal.ReadLine(hist, hint)?.Trim();
-            if (line is null or "exit")
+            var line = Terminal.ReadLine(hist, hint).Trim();
+            if (line is "exit")
                 break;
 
             var commandLine = CommandLineStringSplitter.Instance.Split(line).ToArray();

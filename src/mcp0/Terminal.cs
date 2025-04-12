@@ -15,7 +15,7 @@ internal static class Terminal
 
     public static ConsoleKeyInfo ReadKey(bool intercept = false) => Console.ReadKey(intercept);
 
-    public static string? ReadLine(
+    public static string ReadLine(
         Func<int, string?>? history = null,
         Func<string, string?>? hint = null,
         ConsoleColor hintColor = ConsoleColor.DarkGray)

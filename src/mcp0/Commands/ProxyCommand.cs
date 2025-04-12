@@ -55,8 +55,9 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
         using var watchers = new CompositeDisposable<FileSystemWatcher>(noReload ? [] : paths.Select(CreateWatcher));
         foreach (var watcher in watchers)
         {
-            // ReSharper disable once AccessToDisposedClosure
+            // ReSharper disable AccessToDisposedClosure
             watcher.Changed += async (_, _) => await Reload(proxy, paths, transport?.ClientTransport, loggerFactory, cancellationToken);
+            // ReSharper restore AccessToDisposedClosure
         }
 
         var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
