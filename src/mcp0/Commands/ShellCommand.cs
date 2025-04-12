@@ -43,13 +43,13 @@ internal sealed class ShellCommand : ProxyCommand
             Terminal.Write("> ");
 
             var line = Terminal.ReadLine(hist, hint)?.Trim();
-            if (line is null || line == "exit")
+            if (line is null or "exit")
                 break;
 
             var arguments = CommandLineStringSplitter.Instance.Split(line).ToArray();
             var command = arguments[0];
 
-            if (command == "inspect" || command == "i")
+            if (command is "i" or "inspect")
                 Inspector.Inspect(proxy);
             else
                 Terminal.WriteLine($"command not found: {command}");
