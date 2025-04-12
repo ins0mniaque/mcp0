@@ -6,27 +6,43 @@ internal static class DotEnv
 {
     private static readonly SearchValues<char> validKeyChars = SearchValues.Create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
 
-    public static Dictionary<string, string> Parse(ReadOnlySpan<char> envFile)
+    public static Dictionary<string, string> Parse(ReadOnlySpan<char> dotEnv)
     {
         var environment = new Dictionary<string, string>(StringComparer.Ordinal);
         var keyValueRanges = (Span<Range>)stackalloc Range[2];
 
-        foreach (var lineRange in envFile.Split('\n'))
+        foreach (var lineRange in dotEnv.Split('\n'))
         {
-            var line = envFile[lineRange];
+            var line = dotEnv[lineRange];
             if (line.Length is 0 || line[0] is '#' || line.IsWhiteSpace())
                 continue;
 
-            if (line.Split(keyValueRanges, '=', StringSplitOptions.TrimEntries) is not 2)
+            if (!Split(line, keyValueRanges))
                 continue;
 
             var key = line[keyValueRanges[0]];
-            if (key.Length is 0 || key.ContainsAnyExcept(validKeyChars))
+            if (!IsValidKey(key))
                 continue;
 
-            environment[key.ToString()] = line[keyValueRanges[1]].ToString();
+            environment[key.ToString()] = Unquote(line[keyValueRanges[1]]);
         }
 
         return environment;
+    }
+
+    public static bool Split(ReadOnlySpan<char> line, Span<Range> keyValueRanges)
+    {
+        return line.Split(keyValueRanges, '=', StringSplitOptions.TrimEntries) is 2;
+    }
+
+    public static bool IsValidKey(ReadOnlySpan<char> key)
+    {
+        return key.Length is not 0 && !key.ContainsAnyExcept(validKeyChars);
+    }
+
+    public static string Unquote(ReadOnlySpan<char> value)
+    {
+        // TODO: Implement unquoting
+        return value.ToString();
     }
 }

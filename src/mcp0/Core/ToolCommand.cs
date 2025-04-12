@@ -1,6 +1,8 @@
 using System.CommandLine.Parsing;
 using System.Diagnostics;
 
+using ModelContextProtocol;
+
 namespace mcp0.Core;
 
 internal static class ToolCommand
@@ -18,15 +20,17 @@ internal static class ToolCommand
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = commandLine[0],
             CreateNoWindow = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
         };
 
-        if (commandLine.Length > 1)
-            foreach (var argument in commandLine[1..])
+        var commandIndex = ParseEnvironment(commandLine, startInfo.Environment);
+
+        startInfo.FileName = commandLine[commandIndex];
+        if (commandLine.Length > commandIndex + 1)
+            foreach (var argument in commandLine[(commandIndex + 1)..])
                 startInfo.ArgumentList.Add(argument);
 
         using var process = new Process();
@@ -57,5 +61,26 @@ internal static class ToolCommand
             stderr = await reader.ReadToEndAsync(cancellationToken);
 
         return (stdout, stderr, process.ExitCode);
+    }
+
+    private static int ParseEnvironment(string[] commandLine, IDictionary<string, string?> environment)
+    {
+        var commandIndex = -1;
+        var keyValueRanges = (Span<Range>)stackalloc Range[2];
+
+        while (++commandIndex < commandLine.Length)
+        {
+            var keyValue = commandLine[commandIndex].AsSpan();
+            if (!DotEnv.Split(keyValue, keyValueRanges))
+                break;
+
+            var key = keyValue[keyValueRanges[0]];
+            if (!DotEnv.IsValidKey(key))
+                throw new McpException($"Invalid environment variable name: {key}");
+
+            environment[key.ToString()] = DotEnv.Unquote(keyValue[keyValueRanges[1]]);
+        }
+
+        return commandIndex;
     }
 }
