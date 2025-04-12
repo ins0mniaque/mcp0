@@ -13,8 +13,8 @@ internal sealed partial class McpProxy : IAsyncDisposable
 {
     private readonly McpProxyOptions proxyOptions;
     private readonly ILoggerFactory? loggerFactory;
-
     private IMcpServer? runningServer;
+
     private Task<ListPromptsResult> listPromptsResultTask = Task.FromResult(new ListPromptsResult());
     private Task<ListResourcesResult> listResourcesResultTask = Task.FromResult(new ListResourcesResult());
     private Task<ListResourceTemplatesResult> listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult());
