@@ -111,9 +111,15 @@ internal static class Configurator
 
         var tools = configuration.Tools.ToDictionary(e => e.Key, e =>
         {
-            var tool = new Tool { Name = e.Key, InputSchema = ToolTemplate.Parse(e.Value) };
+            var template = e.Value;
+            var tool = new Tool
+            {
+                Name = e.Key,
+                Description = ToolTemplate.ParseDescription(ref template),
+                InputSchema = ToolTemplate.ParseInputSchema(template)
+            };
 
-            return (Tool: tool, Template: e.Value);
+            return (Tool: tool, Template: template);
         });
 
         var listToolsResultTask = Task.FromResult(new ListToolsResult

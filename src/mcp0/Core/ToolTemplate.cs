@@ -5,7 +5,18 @@ namespace mcp0.Core;
 
 internal static class ToolTemplate
 {
-    public static JsonElement Parse(string template)
+    public static string? ParseDescription(ref string template)
+    {
+        var comment = template.AsSpan().LastIndexOf(" #");
+        if (comment is -1)
+            return null;
+
+        var description = template[(comment + 2)..].Trim();
+        template = template[..comment].Trim();
+        return description;
+    }
+
+    public static JsonElement ParseInputSchema(string template)
     {
         var requiredProperties = new List<JsonNode?>();
         var properties = new JsonObject();
