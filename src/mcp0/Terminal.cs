@@ -23,9 +23,12 @@ internal static class Terminal
         var input = default(ConsoleKeyInfo);
         int row = Row;
         int column = Column;
+        var viewport = Columns - column;
 
         var line = string.Empty;
+        var clearLine = new string(' ', viewport);
         var cursor = 0;
+        var scroll = 0;
         var historyIndex = -1;
         var current = (Line: string.Empty, Cursor: cursor);
         var hintLine = (string?)null;
@@ -69,26 +72,37 @@ internal static class Terminal
             else
                 EditLine(ref line, ref cursor, input);
 
+            if (cursor >= viewport - 1)
+                scroll = cursor - (viewport - 1);
+            else if (cursor < scroll)
+                scroll = cursor;
+
             HideCursor();
-            ClearLine(row, column);
-            Write(line);
+            MoveCursor(row, column);
+            Write(clearLine);
+            MoveCursor(row, column);
+            Write(LineView(line, 0));
 
             hintLine = hint?.Invoke(line);
-            if (hintLine?.Length > line.Length)
-                Write(hintLine[line.Length..], hintColor);
+            if (hintLine?.Length > line.Length && line.Length - scroll < viewport - 1)
+                Write(LineView(hintLine, line.Length), hintColor);
 
-            MoveCursor(row, column + cursor);
+            MoveCursor(row, column + cursor - scroll);
             ShowCursor();
 
             input = ReadKey();
         }
 
         HideCursor();
-        ClearLine(row, column);
+        MoveCursor(row, column);
+        Write(clearLine);
+        MoveCursor(row, column);
         WriteLine(line);
         ShowCursor();
 
         return line;
+
+        string LineView(string ln, int start) => ln[(scroll + start)..(Math.Min(ln.Length, scroll + viewport))];
     }
 
     private static void EditLine(ref string line, ref int cursor, ConsoleKeyInfo input)
@@ -119,13 +133,6 @@ internal static class Terminal
             cursor = line.Length;
         else if (!char.IsControl(input.KeyChar))
             line = line[..cursor] + input.KeyChar + line[cursor++..];
-    }
-
-    private static void ClearLine(int row, int column)
-    {
-        MoveCursor(row, column);
-        Write(new string(' ', Columns - column));
-        MoveCursor(row, column);
     }
 
     public static void Write(string? text) => Console.Write(text);
