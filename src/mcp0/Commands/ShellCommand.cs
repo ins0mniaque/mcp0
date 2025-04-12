@@ -56,7 +56,7 @@ internal sealed class ShellCommand : ProxyCommand
             else
                 Terminal.WriteLine($"command not found: {command}");
 
-            if (history.Count is 0 || history[^1] != line)
+            if (history.Count is 0 || !string.Equals(history[^1], line, StringComparison.Ordinal))
                 history.Add(line);
         }
 

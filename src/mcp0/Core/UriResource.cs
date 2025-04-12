@@ -7,7 +7,7 @@ namespace mcp0.Core;
 
 internal static partial class UriResource
 {
-    [GeneratedRegex("data:(?<type>.+?);base64,(?<data>.+)", RegexOptions.Compiled)]
+    [GeneratedRegex("data:(?<type>.+?);base64,(?<data>.+)", RegexOptions.Compiled, matchTimeoutMilliseconds: 1000)]
     private static partial Regex GenerateDataUriParser();
     private static readonly Regex dataUriParser = GenerateDataUriParser();
 
@@ -24,7 +24,7 @@ internal static partial class UriResource
 
     private static string? ParseDescription(ref string uri)
     {
-        var index = uri.AsSpan().LastIndexOf(" #");
+        var index = uri.AsSpan().LastIndexOf(" #", StringComparison.Ordinal);
         if (index is -1)
             return null;
 

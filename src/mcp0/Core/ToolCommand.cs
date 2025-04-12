@@ -21,7 +21,8 @@ internal static class ToolCommand
             FileName = commandLine[0],
             CreateNoWindow = true,
             RedirectStandardOutput = true,
-            RedirectStandardError = true
+            RedirectStandardError = true,
+            UseShellExecute = false
         };
 
         if (commandLine.Length > 1)

@@ -4,7 +4,8 @@ namespace mcp0.Core;
 
 internal static partial class Template
 {
-    [GeneratedRegex(@"\{\{(?<name>[a-zA-Z_][a-zA-Z0-9_]+)(?<required>\??):?(?<type>[a-z]*)#?(?<description>[^\}]*)\}\}", RegexOptions.Compiled)]
+    [GeneratedRegex(@"\{\{(?<name>[a-zA-Z_][a-zA-Z0-9_]+)(?<required>\??):?(?<type>[a-z]*)#?(?<description>[^\}]*)\}\}",
+        RegexOptions.Compiled, matchTimeoutMilliseconds: 1000)]
     private static partial Regex GenerateEngine();
     private static readonly Regex engine = GenerateEngine();
 

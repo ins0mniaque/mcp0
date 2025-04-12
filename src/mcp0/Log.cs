@@ -16,7 +16,8 @@ internal static partial class Log
         get => level;
         set
         {
-            configuration.SetMinimumLevel(level = value);
+            level = value;
+            configuration.SetMinimumLevel(level);
             configurationRoot.Reload();
         }
     }

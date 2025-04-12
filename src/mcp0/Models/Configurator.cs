@@ -37,13 +37,21 @@ internal static class Configurator
         if (configuration.Prompts is null)
             return null;
 
-        var prompts = configuration.Prompts.ToDictionary(e => e.Key, e =>
-        {
-            var arguments = PromptTemplate.Parse(e.Value);
-            var prompt = new Prompt { Name = e.Key, Description = null, Arguments = arguments.Count is 0 ? null : arguments };
+        var prompts = configuration.Prompts.ToDictionary(
+            entry => entry.Key,
+            entry =>
+            {
+                var arguments = PromptTemplate.Parse(entry.Value);
+                var prompt = new Prompt
+                {
+                    Name = entry.Key,
+                    Description = null,
+                    Arguments = arguments.Count is 0 ? null : arguments
+                };
 
-            return (Prompt: prompt, Template: e.Value);
-        });
+                return (Prompt: prompt, Template: entry.Value);
+            },
+            StringComparer.Ordinal);
 
         var listPromptsResultTask = Task.FromResult(new ListPromptsResult
         {
@@ -77,7 +85,8 @@ internal static class Configurator
 
         var resources = configuration.Resources.ToDictionary(
             entry => new Uri(entry.Value).ToString(),
-            entry => UriResource.Create(entry.Key, entry.Value));
+            entry => UriResource.Create(entry.Key, entry.Value),
+            StringComparer.Ordinal);
 
         var listResourcesResultTask = Task.FromResult(new ListResourcesResult
         {
@@ -105,18 +114,21 @@ internal static class Configurator
         if (configuration.Tools is null)
             return null;
 
-        var tools = configuration.Tools.ToDictionary(e => e.Key, e =>
-        {
-            var template = e.Value;
-            var tool = new Tool
+        var tools = configuration.Tools.ToDictionary(
+            entry => entry.Key,
+            entry =>
             {
-                Name = e.Key,
-                Description = ToolTemplate.ParseDescription(ref template),
-                InputSchema = ToolTemplate.ParseInputSchema(template)
-            };
+                var template = entry.Value;
+                var tool = new Tool
+                {
+                    Name = entry.Key,
+                    Description = ToolTemplate.ParseDescription(ref template),
+                    InputSchema = ToolTemplate.ParseInputSchema(template)
+                };
 
-            return (Tool: tool, Template: template);
-        });
+                return (Tool: tool, Template: template);
+            },
+            StringComparer.Ordinal);
 
         var listToolsResultTask = Task.FromResult(new ListToolsResult
         {
@@ -160,10 +172,10 @@ internal static class Configurator
 
     public static StdioClientTransportOptions ToClientTransportOptions(this StdioServer server, string serverName)
     {
-        var environment = server.Environment?.ToDictionary();
+        var environment = server.Environment?.ToDictionary(StringComparer.Ordinal);
         if (server.EnvironmentFile is { } environmentFile)
         {
-            environment ??= new Dictionary<string, string>();
+            environment ??= new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var variable in DotEnv.Parse(File.ReadAllText(environmentFile)))
                 environment[variable.Key] = variable.Value;
         }
@@ -179,11 +191,6 @@ internal static class Configurator
         };
     }
 
-    private static readonly SseClientTransportOptions defaultSseClientTransportOptions = new()
-    {
-        Endpoint = new Uri("http://localhost:8080")
-    };
-
     public static SseClientTransportOptions ToClientTransportOptions(this SseServer server, string serverName)
     {
         return new SseClientTransportOptions
@@ -196,4 +203,9 @@ internal static class Configurator
             ReconnectDelay = server.ReconnectDelay ?? defaultSseClientTransportOptions.ReconnectDelay
         };
     }
+
+    private static readonly SseClientTransportOptions defaultSseClientTransportOptions = new()
+    {
+        Endpoint = new Uri("http://localhost:8080")
+    };
 }

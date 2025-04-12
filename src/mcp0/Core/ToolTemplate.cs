@@ -7,7 +7,7 @@ internal static class ToolTemplate
 {
     public static string? ParseDescription(ref string template)
     {
-        var index = template.AsSpan().LastIndexOf(" #");
+        var index = template.AsSpan().LastIndexOf(" #", StringComparison.Ordinal);
         if (index is -1)
             return null;
 
