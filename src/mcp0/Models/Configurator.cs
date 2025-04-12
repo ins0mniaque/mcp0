@@ -77,7 +77,7 @@ internal static class Configurator
 
         var resources = configuration.Resources.ToDictionary(
             entry => new Uri(entry.Value).ToString(),
-            entry => UriResource.Create(entry.Key, new Uri(entry.Value)));
+            entry => UriResource.Create(entry.Key, entry.Value));
 
         var listResourcesResultTask = Task.FromResult(new ListResourcesResult
         {

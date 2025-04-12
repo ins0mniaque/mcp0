@@ -11,14 +11,26 @@ internal static partial class UriResource
     private static partial Regex GenerateDataUriParser();
     private static readonly Regex dataUriParser = GenerateDataUriParser();
 
-    public static Resource Create(string name, Uri uri)
+    public static Resource Create(string name, string uri)
     {
         return new()
         {
             Name = name,
-            Uri = uri.ToString(),
-            MimeType = MimeType.FromExtension(Path.GetExtension(uri.AbsolutePath))
+            Description = ParseDescription(ref uri),
+            Uri = uri,
+            MimeType = MimeType.FromExtension(Path.GetExtension(uri))
         };
+    }
+
+    private static string? ParseDescription(ref string uri)
+    {
+        var index = uri.AsSpan().LastIndexOf(" #");
+        if (index is -1)
+            return null;
+
+        var description = uri[(index + 2)..].Trim();
+        uri = uri[..index].Trim();
+        return description;
     }
 
     public static async Task<(byte[] Data, string? MimeType)> Download(this Resource resource, CancellationToken cancellationToken)

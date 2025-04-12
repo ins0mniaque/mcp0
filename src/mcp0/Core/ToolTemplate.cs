@@ -7,12 +7,12 @@ internal static class ToolTemplate
 {
     public static string? ParseDescription(ref string template)
     {
-        var comment = template.AsSpan().LastIndexOf(" #");
-        if (comment is -1)
+        var index = template.AsSpan().LastIndexOf(" #");
+        if (index is -1)
             return null;
 
-        var description = template[(comment + 2)..].Trim();
-        template = template[..comment].Trim();
+        var description = template[(index + 2)..].Trim();
+        template = template[..index].Trim();
         return description;
     }
 
