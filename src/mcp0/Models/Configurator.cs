@@ -75,12 +75,9 @@ internal static class Configurator
         if (configuration.Resources is null)
             return null;
 
-        var resources = configuration.Resources.ToDictionary(e => new Uri(e.Value).ToString(), e => new Resource
-        {
-            Name = e.Key,
-            Uri = new Uri(e.Value).ToString(),
-            MimeType = MimeType.FromExtension(Path.GetExtension(e.Value))
-        });
+        var resources = configuration.Resources.ToDictionary(
+            entry => new Uri(entry.Value).ToString(),
+            entry => UriResource.Create(entry.Key, new Uri(entry.Value)));
 
         var listResourcesResultTask = Task.FromResult(new ListResourcesResult
         {
@@ -95,9 +92,8 @@ internal static class Configurator
                 if (request.Params?.Uri is not { } uri || !resources.TryGetValue(uri, out var resource))
                     throw new McpException($"Unknown resource: {request.Params?.Uri}");
 
-                var path = new Uri(resource.Uri).LocalPath;
-                var data = await File.ReadAllBytesAsync(path, cancellationToken);
-                var contents = await resource.ToResourceContents(data, cancellationToken);
+                var (data, mimetype) = await resource.Download(cancellationToken);
+                var contents = await resource.ToResourceContents(data, mimetype, cancellationToken);
 
                 return new() { Contents = [contents] };
             }
