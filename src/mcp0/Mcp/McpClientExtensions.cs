@@ -13,8 +13,8 @@ internal static class McpClientExtensions
 {
     public static async Task<IMcpClient[]> CreateMcpClientsAsync(
         this IEnumerable<IClientTransport> clientTransports,
-        McpClientOptions? clientOptions,
-        ILoggerFactory? loggerFactory,
+        McpClientOptions? clientOptions = null,
+        ILoggerFactory? loggerFactory = null,
         CancellationToken cancellationToken = default)
     {
         var clientTasks = new List<Task<IMcpClient>>();

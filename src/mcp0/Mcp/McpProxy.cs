@@ -20,14 +20,14 @@ internal sealed partial class McpProxy : IAsyncDisposable
     private Task<ListResourceTemplatesResult> listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult());
     private Task<ListToolsResult> listToolsResultTask = Task.FromResult(new ListToolsResult());
 
-    public McpProxy(McpProxyOptions proxyOptions, ILoggerFactory? loggerFactory)
+    public McpProxy(McpProxyOptions? proxyOptions = null, ILoggerFactory? loggerFactory = null)
     {
         Prompts = new("prompt", static prompt => prompt.Name);
         Resources = new("resource", static resource => resource.Uri);
         ResourceTemplates = new("resource template", static resourceTemplate => resourceTemplate.UriTemplate);
         Tools = new("tool", static tool => tool.Name);
 
-        this.proxyOptions = proxyOptions;
+        this.proxyOptions = proxyOptions ?? new();
         this.loggerFactory = loggerFactory;
     }
 

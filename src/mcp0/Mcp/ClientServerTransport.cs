@@ -13,7 +13,7 @@ internal sealed class ClientServerTransport : IAsyncDisposable
     private readonly StreamClientTransport clientTransport;
     private readonly StreamServerTransport serverTransport;
 
-    public ClientServerTransport(string? serverName, ILoggerFactory? loggerFactory)
+    public ClientServerTransport(string? serverName = null, ILoggerFactory? loggerFactory = null)
     {
         clientTransport = new StreamClientTransport(
             clientToServerPipe.Writer.AsStream(),
