@@ -2,6 +2,8 @@ using System.Text.Json;
 
 using Generator.Equals;
 
+using mcp0.Core;
+
 namespace mcp0.Models;
 
 [Equatable]
@@ -57,7 +59,7 @@ internal sealed partial record Configuration
     public static async Task<Configuration> Load(string path, CancellationToken cancellationToken)
     {
         Configuration? configuration;
-        await using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+        await using (var stream = new FileStream(Posix.ExpandPath(path), FileMode.Open, FileAccess.Read))
             configuration = await JsonSerializer.DeserializeAsync(stream, ModelContext.Default.Configuration, cancellationToken);
 
         if (configuration is null)

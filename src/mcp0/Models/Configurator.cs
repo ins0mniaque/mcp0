@@ -83,10 +83,9 @@ internal static class Configurator
         if (configuration.Resources is null)
             return null;
 
-        var resources = configuration.Resources.ToDictionary(
-            entry => new Uri(entry.Value).ToString(),
-            entry => UriResource.Create(entry.Key, entry.Value),
-            StringComparer.Ordinal);
+        var resources = configuration.Resources
+            .Select(entry => UriResource.Create(entry.Key, Posix.ExpandPath(entry.Value)))
+            .ToDictionary(resource => resource.Uri, StringComparer.Ordinal);
 
         var listResourcesResultTask = Task.FromResult(new ListResourcesResult
         {
@@ -176,7 +175,7 @@ internal static class Configurator
         if (server.EnvironmentFile is { } environmentFile)
         {
             environment ??= new Dictionary<string, string>(StringComparer.Ordinal);
-            foreach (var variable in DotEnv.Parse(File.ReadAllText(environmentFile)))
+            foreach (var variable in DotEnv.Parse(File.ReadAllText(Posix.ExpandPath(environmentFile))))
                 environment[variable.Key] = variable.Value;
         }
 
