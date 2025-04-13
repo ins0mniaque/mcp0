@@ -7,13 +7,7 @@ internal static class ToolTemplate
 {
     public static string? ParseDescription(ref string template)
     {
-        var index = template.AsSpan().LastIndexOf(" #", StringComparison.Ordinal);
-        if (index is -1)
-            return null;
-
-        var description = template[(index + 2)..].Trim();
-        template = template[..index].Trim();
-        return description;
+        return CommandLine.ParseComment(ref template);
     }
 
     public static JsonElement ParseInputSchema(string template)

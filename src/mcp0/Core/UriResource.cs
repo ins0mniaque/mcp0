@@ -24,13 +24,7 @@ internal static partial class UriResource
 
     private static string? ParseDescription(ref string uri)
     {
-        var index = uri.AsSpan().LastIndexOf(" #", StringComparison.Ordinal);
-        if (index is -1)
-            return null;
-
-        var description = uri[(index + 2)..].Trim();
-        uri = uri[..index].Trim();
-        return description;
+        return CommandLine.ParseComment(ref uri);
     }
 
     public static async Task<(byte[] Data, string? MimeType)> Download(this Resource resource, CancellationToken cancellationToken)

@@ -30,6 +30,17 @@ internal static class CommandLine
         arguments = commandLine.Length is 0 ? null : commandLine[(commandIndex + 1)..];
     }
 
+    public static string? ParseComment(ref string commandLine)
+    {
+        var index = commandLine.AsSpan().LastIndexOf(" #", StringComparison.Ordinal);
+        if (index is -1)
+            return null;
+
+        var comment = commandLine[(index + 2)..].Trim();
+        commandLine = commandLine[..index].Trim();
+        return comment;
+    }
+
     public static int ParseEnvironment(string[] commandLine, IDictionary<string, string> environment)
     {
         var commandIndex = -1;
