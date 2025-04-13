@@ -179,32 +179,30 @@ internal static class Configurator
                 environment[variable.Key] = variable.Value;
         }
 
-        return new StdioClientTransportOptions
+        return new()
         {
             Name = serverName,
             Command = server.Command,
             Arguments = server.Arguments,
             WorkingDirectory = server.WorkingDirectory,
             EnvironmentVariables = environment?.Count is 0 ? null : environment,
-            ShutdownTimeout = server.ShutdownTimeout ?? StdioClientTransportOptions.DefaultShutdownTimeout
+            ShutdownTimeout = server.ShutdownTimeout ?? defaultStdioServer.ShutdownTimeout
         };
     }
 
     public static SseClientTransportOptions ToClientTransportOptions(this SseServer server, string serverName)
     {
-        return new SseClientTransportOptions
+        return new()
         {
             Name = serverName,
             Endpoint = server.Url,
             AdditionalHeaders = server.Headers,
-            ConnectionTimeout = server.ConnectionTimeout ?? defaultSseClientTransportOptions.ConnectionTimeout,
-            MaxReconnectAttempts = server.MaxReconnectAttempts ?? defaultSseClientTransportOptions.MaxReconnectAttempts,
-            ReconnectDelay = server.ReconnectDelay ?? defaultSseClientTransportOptions.ReconnectDelay
+            ConnectionTimeout = server.ConnectionTimeout ?? defaultSseServer.ConnectionTimeout,
+            MaxReconnectAttempts = server.MaxReconnectAttempts ?? defaultSseServer.MaxReconnectAttempts,
+            ReconnectDelay = server.ReconnectDelay ?? defaultSseServer.ReconnectDelay
         };
     }
 
-    private static readonly SseClientTransportOptions defaultSseClientTransportOptions = new()
-    {
-        Endpoint = new Uri("http://localhost:8080")
-    };
+    private static readonly StdioClientTransportOptions defaultStdioServer = new() { Command = "_" };
+    private static readonly SseClientTransportOptions defaultSseServer = new() { Endpoint = new Uri("http://_/") };
 }
