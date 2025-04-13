@@ -1,7 +1,8 @@
 using System.Buffers;
-using System.CommandLine.Parsing;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
+using mcp0.Core;
 
 namespace mcp0.Models;
 
@@ -44,13 +45,17 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
             if (!string.IsNullOrWhiteSpace(commandOrUrl))
             {
-                var commandLine = CommandLineStringSplitter.Instance.Split(commandOrUrl).ToArray();
-                if (commandLine.Length is not 0)
+                var environment = new Dictionary<string, string>(StringComparer.Ordinal);
+
+                CommandLine.Split(commandOrUrl, out var command, out var arguments, environment);
+
+                if (command is not null)
                 {
                     return new StdioServer
                     {
-                        Command = commandLine[0],
-                        Arguments = commandLine.Length is 0 ? null : commandLine[1..]
+                        Command = command,
+                        Arguments = arguments,
+                        Environment = environment.Count is 0 ? null : environment
                     };
                 }
             }
@@ -100,9 +105,9 @@ internal sealed class ServerConverter : JsonConverter<Server>
             {
                 if (command is not null && arguments is null)
                 {
-                    arguments = CommandLineStringSplitter.Instance.Split(command).ToArray();
-                    command = arguments.Length is 0 ? null : arguments[0];
-                    arguments = arguments.Length is 0 ? null : arguments[1..];
+                    environment ??= new(StringComparer.Ordinal);
+
+                    CommandLine.Split(command, out command, out arguments, environment);
                 }
 
                 return new StdioServer
@@ -110,7 +115,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
                     Command = command ?? throw new JsonException("Missing required server property: command"),
                     Arguments = arguments,
                     WorkingDirectory = workingDirectory,
-                    Environment = environment,
+                    Environment = environment?.Count is 0 ? null : environment,
                     EnvironmentFile = environmentFile,
                     ShutdownTimeout = shutdownTimeout
                 };

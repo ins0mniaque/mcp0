@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 
 using mcp0.Core;
 using mcp0.Mcp;
@@ -46,11 +45,10 @@ internal sealed class ShellCommand : ProxyCommand
             if (line is "exit")
                 break;
 
-            var commandLine = CommandLineStringSplitter.Instance.Split(line).ToArray();
-            if (commandLine.Length is 0)
+            CommandLine.Split(line, out var command, out _);
+            if (command is null)
                 continue;
 
-            var command = commandLine[0];
             if (command is "i" or "inspect")
                 Inspector.Inspect(proxy);
             else
