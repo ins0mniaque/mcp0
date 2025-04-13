@@ -45,7 +45,7 @@ internal sealed class ServeCommand : ProxyCommand
         if (proxy.Services?.GetService<ILoggerFactory>() is { } loggerFactory)
             builder.Services.AddSingleton(loggerFactory);
 
-        builder.Services.AddMcpServer(_ => proxy.GetServerOptions());
+        builder.Services.AddMcpServer(proxy.ConfigureServerOptions);
 
         var app = builder.Build();
 

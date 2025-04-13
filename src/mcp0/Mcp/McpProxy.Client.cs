@@ -8,10 +8,17 @@ namespace mcp0.Mcp;
 
 internal sealed partial class McpProxy
 {
-    public McpClientOptions GetClientOptions() => new()
+    public void ConfigureClientOptions(McpClientOptions options)
     {
-        Capabilities = GetClientCapabilities()
-    };
+        options.Capabilities = GetClientCapabilities();
+    }
+
+    public McpClientOptions GetClientOptions()
+    {
+        var options = new McpClientOptions();
+        ConfigureClientOptions(options);
+        return options;
+    }
 
     private ClientCapabilities GetClientCapabilities() => new()
     {

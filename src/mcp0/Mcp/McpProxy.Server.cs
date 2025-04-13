@@ -18,11 +18,18 @@ internal sealed partial class McpProxy
         Version = DefaultAssemblyName.Version?.ToString() ?? "1.0.0",
     };
 
-    public McpServerOptions GetServerOptions() => new()
+    public void ConfigureServerOptions(McpServerOptions options)
     {
-        ServerInfo = proxyOptions.ServerInfo ?? DefaultImplementation,
-        Capabilities = GetServerCapabilities()
-    };
+        options.ServerInfo = proxyOptions.ServerInfo ?? DefaultImplementation;
+        options.Capabilities = GetServerCapabilities();
+    }
+
+    public McpServerOptions GetServerOptions()
+    {
+        var options = new McpServerOptions();
+        ConfigureServerOptions(options);
+        return options;
+    }
 
     private ServerCapabilities GetServerCapabilities() => new()
     {
