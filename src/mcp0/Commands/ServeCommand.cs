@@ -42,6 +42,9 @@ internal sealed class ServeCommand : ProxyCommand
             options.ListenLocalhost(3001);
         });
 
+        if (proxy.Services?.GetService<ILoggerFactory>() is { } loggerFactory)
+            builder.Services.AddSingleton(loggerFactory);
+
         builder.Services.AddMcpServer(_ => proxy.GetServerOptions());
 
         var app = builder.Build();

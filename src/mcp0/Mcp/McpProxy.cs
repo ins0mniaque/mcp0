@@ -9,10 +9,11 @@ using ModelContextProtocol.Server;
 
 namespace mcp0.Mcp;
 
-internal sealed partial class McpProxy : IAsyncDisposable
+internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
 {
     private readonly McpProxyOptions proxyOptions;
     private readonly ILoggerFactory? loggerFactory;
+    private readonly IServiceProvider? serviceProvider;
     private IMcpServer? runningServer;
 
     private Task<ListPromptsResult> listPromptsResultTask = Task.FromResult(new ListPromptsResult());
@@ -20,7 +21,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
     private Task<ListResourceTemplatesResult> listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult());
     private Task<ListToolsResult> listToolsResultTask = Task.FromResult(new ListToolsResult());
 
-    public McpProxy(McpProxyOptions? proxyOptions = null, ILoggerFactory? loggerFactory = null)
+    public McpProxy(McpProxyOptions? proxyOptions = null, ILoggerFactory? loggerFactory = null, IServiceProvider? serviceProvider = null)
     {
         Prompts = new("prompt", static prompt => prompt.Name);
         Resources = new("resource", static resource => resource.Uri);
@@ -29,6 +30,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
 
         this.proxyOptions = proxyOptions ?? new();
         this.loggerFactory = loggerFactory;
+        this.serviceProvider = serviceProvider;
     }
 
     public IReadOnlyList<IMcpClient> Clients { get; private set; } = [];
@@ -36,6 +38,14 @@ internal sealed partial class McpProxy : IAsyncDisposable
     public McpClientRegistry<Resource> Resources { get; }
     public McpClientRegistry<ResourceTemplate> ResourceTemplates { get; }
     public McpClientRegistry<McpClientTool> Tools { get; }
+
+    public LoggingLevel? LoggingLevel => runningServer?.LoggingLevel;
+    public IServiceProvider? Services => runningServer?.Services ?? serviceProvider ?? this;
+
+    object? IServiceProvider.GetService(Type serviceType)
+    {
+        return serviceType == typeof(ILoggerFactory) ? loggerFactory : null;
+    }
 
     public async Task ConnectAsync(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
     {
@@ -68,7 +78,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
                          DefaultImplementation.Name;
 
         await using var transport = new StdioServerTransport(serverName, loggerFactory);
-        await using var server = McpServerFactory.Create(transport, serverOptions, loggerFactory);
+        await using var server = McpServerFactory.Create(transport, serverOptions, loggerFactory, serviceProvider);
 
         try
         {
