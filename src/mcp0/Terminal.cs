@@ -73,7 +73,7 @@ internal static class Terminal
             else
                 EditLine(ref line, ref cursor, input);
 
-            if (cursor >= viewport - 1)
+            if (cursor >= scroll + viewport - 1)
                 scroll = cursor - (viewport - 1);
             else if (cursor < scroll)
                 scroll = cursor;
