@@ -75,10 +75,11 @@ internal static class ToolCommand
                 break;
 
             var key = keyValue[keyValueRanges[0]];
+            var value = keyValue[keyValueRanges[1]];
             if (!DotEnv.IsValidKey(key))
                 throw new McpException($"Invalid environment variable name: {key}");
 
-            environment[key.ToString()] = DotEnv.Unquote(keyValue[keyValueRanges[1]]);
+            environment[key.ToString()] = value.ToString();
         }
 
         return commandIndex;

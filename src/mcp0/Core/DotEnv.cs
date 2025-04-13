@@ -21,10 +21,11 @@ internal static class DotEnv
                 continue;
 
             var key = line[keyValueRanges[0]];
+            var value = line[keyValueRanges[1]];
             if (!IsValidKey(key))
                 continue;
 
-            environment[key.ToString()] = Unquote(line[keyValueRanges[1]]);
+            environment[key.ToString()] = value.ToString();
         }
 
         return environment;
@@ -38,11 +39,5 @@ internal static class DotEnv
     public static bool IsValidKey(ReadOnlySpan<char> key)
     {
         return key.Length is not 0 && !key.ContainsAnyExcept(validKeyChars);
-    }
-
-    public static string Unquote(ReadOnlySpan<char> value)
-    {
-        // TODO: Implement unquoting
-        return value.ToString();
     }
 }
