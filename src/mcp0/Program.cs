@@ -12,6 +12,7 @@ var rootCommand = new RootCommand()
 {
     new InspectCommand(),
     new RunCommand(),
+    new ServeCommand(),
     new ShellCommand()
 };
 
