@@ -63,7 +63,7 @@ internal static class ToolCommand
         return (stdout, stderr, process.ExitCode);
     }
 
-    private static int ParseEnvironment(string[] commandLine, IDictionary<string, string?> environment)
+    internal static int ParseEnvironment(string[] commandLine, IDictionary<string, string?> environment)
     {
         var commandIndex = -1;
         var keyValueRanges = (Span<Range>)stackalloc Range[2];
