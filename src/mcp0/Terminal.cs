@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text;
 
 namespace mcp0;
@@ -109,23 +110,30 @@ internal static class Terminal
     {
         if (input.Key is ConsoleKey.Backspace)
         {
-            if (cursor is not 0 && line.Length is not 0)
-                line = line[..--cursor] + line[(cursor + 1)..];
+            if (cursor is 0)
+                return;
+
+            var until = IsCtrlOrAlt(input) ? IndexOfPreviousWord(line, cursor) : cursor - 1;
+            line = line[..until] + line[cursor..];
+            cursor = until;
         }
         else if (input.Key is ConsoleKey.Delete)
         {
-            if (cursor < line.Length)
-                line = line[..cursor] + line[(cursor + 1)..];
+            if (cursor >= line.Length)
+                return;
+
+            var until = IsCtrlOrAlt(input) ? IndexOfNextWord(line, cursor) : cursor + 1;
+            line = line[..cursor] + line[until..];
         }
         else if (input.Key is ConsoleKey.LeftArrow)
         {
             if (cursor is not 0)
-                cursor--;
+                cursor = IsCtrlOrAlt(input) ? IndexOfPreviousWord(line, cursor) : cursor - 1;
         }
         else if (input.Key is ConsoleKey.RightArrow)
         {
             if (cursor < line.Length)
-                cursor++;
+                cursor = IsCtrlOrAlt(input) ? IndexOfNextWord(line, cursor) : cursor + 1;
         }
         else if (input.Key is ConsoleKey.Home)
             cursor = 0;
@@ -133,6 +141,44 @@ internal static class Terminal
             cursor = line.Length;
         else if (!char.IsControl(input.KeyChar))
             line = line[..cursor] + input.KeyChar + line[cursor++..];
+    }
+
+    private static bool IsCtrlOrAlt(ConsoleKeyInfo input)
+    {
+        return (input.Modifiers & (ConsoleModifiers.Alt | ConsoleModifiers.Control)) is not 0;
+    }
+
+    private const string WordChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
+    private static readonly SearchValues<char> wordChars = SearchValues.Create(WordChars);
+    private static readonly SearchValues<char> wordCharsOrSpace = SearchValues.Create(WordChars + ' ');
+
+    private static int IndexOfPreviousWord(this ReadOnlySpan<char> line, int cursor)
+    {
+        cursor = line[..cursor].LastIndexOfAnyExcept(' ');
+        if (cursor is -1)
+            return 0;
+
+        if (wordChars.Contains(line[cursor]))
+            return line[..cursor].LastIndexOfAnyExcept(wordChars) + 1;
+
+        return line[..cursor].LastIndexOfAny(wordCharsOrSpace) + 1;
+    }
+
+    private static int IndexOfNextWord(this ReadOnlySpan<char> line, int cursor)
+    {
+        var offset = 0;
+        if (wordChars.Contains(line[cursor]))
+            offset = line[cursor..].IndexOfAnyExcept(wordChars);
+        else if (line[cursor] is not ' ')
+            offset = line[cursor..].IndexOfAny(wordCharsOrSpace);
+
+        if (offset is -1)
+            return line.Length;
+
+        cursor += offset;
+        offset = line[cursor..].IndexOfAnyExcept(' ');
+
+        return offset is -1 ? line.Length : cursor + offset;
     }
 
     public static void Write(string? text) => Console.Write(text);
