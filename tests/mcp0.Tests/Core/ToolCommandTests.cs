@@ -47,7 +47,7 @@ public sealed class ToolCommandTests
         Assert.AreEqual("-e", commandLine[2]);
         Assert.AreEqual("2 + 2", commandLine[3]);
 
-        var environment = new Dictionary<string, string?>();
+        var environment = new Dictionary<string, string?>(StringComparer.Ordinal);
         var commandIndex = ToolCommand.ParseEnvironment(commandLine, environment);
 
         Assert.AreEqual(1, commandIndex);
@@ -69,7 +69,7 @@ public sealed class ToolCommandTests
         Assert.AreEqual("-e", commandLine[2]);
         Assert.AreEqual("2 + 2", commandLine[3]);
 
-        var environment = new Dictionary<string, string?>();
+        var environment = new Dictionary<string, string?>(StringComparer.Ordinal);
         var commandIndex = ToolCommand.ParseEnvironment(commandLine, environment);
 
         Assert.AreEqual(1, commandIndex);
