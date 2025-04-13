@@ -97,7 +97,7 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
 
     private static FileSystemWatcher CreateWatcher(string path) => new()
     {
-        Path = Path.GetDirectoryName(path) ?? string.Empty,
+        Path = Path.GetDirectoryName(Posix.ExpandPath(path)) ?? string.Empty,
         Filter = Path.GetFileName(path),
         NotifyFilter = NotifyFilters.LastWrite,
         EnableRaisingEvents = true
