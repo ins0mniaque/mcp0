@@ -38,6 +38,7 @@ internal sealed class ServeCommand : ProxyCommand
 
         builder.WebHost.ConfigureKestrel(options =>
         {
+            options.AddServerHeader = false;
             options.ListenLocalhost(3001);
         });
 
