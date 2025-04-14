@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 
 namespace mcp0.Commands;
 
@@ -47,14 +48,14 @@ internal sealed class ServeCommand : ProxyCommand
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
     {
         var host = HostOption.GetRequiredValue("MCP0_HOST", context);
-        var origins = OriginsOption.GetValue("MCP0_ORIGINS", context);
+        var origins = OriginsOption.GetValue("MCP0_ORIGINS", context) ?? host;
         var apiKey = ApiKeyOption.GetValue("MCP0_API_KEY", context);
         var sslCertFile = SslCertFileOption.GetValue("MCP0_SSL_CERT_FILE", context);
         var sslKeyFile = SslKeyFileOption.GetValue("MCP0_SSL_KEY_FILE", context);
 
         var builder = WebApplication.CreateBuilder();
 
-        builder.WebHost.UseUrls(host);
+        builder.WebHost.UseUrls(host.Split(',', ';'));
 
         builder.WebHost.ConfigureKestrel(options =>
         {
@@ -68,12 +69,18 @@ internal sealed class ServeCommand : ProxyCommand
         if (proxy.Services?.GetService<ILoggerFactory>() is { } loggerFactory)
             builder.Services.AddSingleton(loggerFactory);
 
+        builder.Services.AddCors();
         builder.Services.AddMcpServer(proxy.ConfigureServerOptions);
 
         var app = builder.Build();
 
-        if (origins is not null)
-            app.UseCors(policy => policy.WithOrigins(origins.Split(',')));
+        app.Use(SecurityHeadersMiddleware);
+
+        app.UseCors(policy =>
+            policy.WithOrigins(origins.Split(',', ';'))
+                  .WithMethods(HttpMethods.Get, HttpMethods.Post)
+                  .WithHeaders(HeaderNames.Accept, HeaderNames.ContentType, HeaderNames.Origin,
+                               HeaderNames.Authorization, AuthorizationEndpointFilter.ApiKeyHeaderName));
 
         var endpoints = app.MapMcp();
         if (apiKey is not null)
@@ -91,19 +98,40 @@ internal sealed class ServeCommand : ProxyCommand
         return certificate;
     }
 
+    private static Task SecurityHeadersMiddleware(HttpContext context, Func<Task> next)
+    {
+        var headers = context.Response.Headers;
+
+        if (context.Request.IsHttps)
+            headers[HeaderNames.StrictTransportSecurity] = "max-age=31536000";
+
+        headers["X-Content-Type-Options"] = "nosniff";
+        headers["X-Frame-Options"] = "Deny";
+        headers[HeaderNames.ContentSecurityPolicy] = "default-src: none; frame-ancestors 'none'";
+        headers["Referrer-Policy"] = "no-referrer";
+        headers["Permissions-Policy"] = "accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()";
+        headers["Cross-Origin-Opener-Policy"] = "same-origin";
+        headers["Cross-Origin-Embedder-Policy"] = "require-corp";
+        headers["Cross-Origin-Resource-Policy"] = "same-site";
+
+        return next();
+    }
+
     private sealed class AuthorizationEndpointFilter(string apiKeyOrToken) : IEndpointFilter
     {
+        public const string ApiKeyHeaderName = "X-API-Key";
+
         private string ApiKey { get; } = apiKeyOrToken;
         private string Authorization { get; } = $"Bearer {apiKeyOrToken}";
 
         public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
         {
-            if (context.HttpContext.Request.Headers.TryGetValue("Authorization", out var authorization))
+            if (context.HttpContext.Request.Headers.TryGetValue(HeaderNames.Authorization, out var authorization))
             {
                 if (!string.Equals(authorization, Authorization, StringComparison.Ordinal))
                     return Results.Unauthorized();
             }
-            else if (context.HttpContext.Request.Headers.TryGetValue("X-API-Key", out var apiKey))
+            else if (context.HttpContext.Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKey))
             {
                 if (!string.Equals(apiKey, ApiKey, StringComparison.Ordinal))
                     return Results.Unauthorized();
