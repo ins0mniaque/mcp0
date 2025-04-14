@@ -103,18 +103,23 @@ internal static class Terminal
 
         return line;
 
-        string LineView(string ln, int start) => ln[(scroll + start)..(Math.Min(ln.Length, scroll + viewport))];
+        ReadOnlySpan<char> LineView(ReadOnlySpan<char> span, int start)
+        {
+            return span[(scroll + start)..(Math.Min(span.Length, scroll + viewport))];
+        }
     }
 
     private static void EditLine(ref string line, ref int cursor, ConsoleKeyInfo input)
     {
+        var span = line.AsSpan();
+
         if (input.Key is ConsoleKey.Backspace)
         {
             if (cursor is 0)
                 return;
 
-            var until = IsCtrlOrAlt(input) ? IndexOfPreviousWord(line, cursor) : cursor - 1;
-            line = line[..until] + line[cursor..];
+            var until = IsCtrlOrAlt(input) ? span.IndexOfPreviousWord(cursor) : cursor - 1;
+            line = string.Concat(span[..until], span[cursor..]);
             cursor = until;
         }
         else if (input.Key is ConsoleKey.Delete)
@@ -122,25 +127,25 @@ internal static class Terminal
             if (cursor >= line.Length)
                 return;
 
-            var until = IsCtrlOrAlt(input) ? IndexOfNextWord(line, cursor) : cursor + 1;
-            line = line[..cursor] + line[until..];
+            var until = IsCtrlOrAlt(input) ? span.IndexOfNextWord(cursor) : cursor + 1;
+            line = string.Concat(span[..cursor], span[until..]);
         }
         else if (input.Key is ConsoleKey.LeftArrow)
         {
             if (cursor is not 0)
-                cursor = IsCtrlOrAlt(input) ? IndexOfPreviousWord(line, cursor) : cursor - 1;
+                cursor = IsCtrlOrAlt(input) ? span.IndexOfPreviousWord(cursor) : cursor - 1;
         }
         else if (input.Key is ConsoleKey.RightArrow)
         {
             if (cursor < line.Length)
-                cursor = IsCtrlOrAlt(input) ? IndexOfNextWord(line, cursor) : cursor + 1;
+                cursor = IsCtrlOrAlt(input) ? span.IndexOfNextWord(cursor) : cursor + 1;
         }
         else if (input.Key is ConsoleKey.Home)
             cursor = 0;
         else if (input.Key is ConsoleKey.End)
             cursor = line.Length;
         else if (!char.IsControl(input.KeyChar))
-            line = line[..cursor] + input.KeyChar + line[cursor++..];
+            line = string.Concat(span[..cursor], [input.KeyChar], span[cursor++..]);
     }
 
     private static bool IsCtrlOrAlt(ConsoleKeyInfo input)
@@ -181,22 +186,22 @@ internal static class Terminal
         return offset is -1 ? line.Length : cursor + offset;
     }
 
-    public static void Write(string? text) => Console.Write(text);
-    public static void Write(string? text, ConsoleColor color)
+    public static void Write(ReadOnlySpan<char> text) => Console.Out.Write(text);
+    public static void Write(ReadOnlySpan<char> text, ConsoleColor color)
     {
         var currentColor = Console.ForegroundColor;
         Console.ForegroundColor = color;
-        Console.Write(text);
+        Console.Out.Write(text);
         Console.ForegroundColor = currentColor;
     }
 
-    public static void WriteLine() => Console.WriteLine();
-    public static void WriteLine(string? text) => Console.WriteLine(text);
-    public static void WriteLine(string? text, ConsoleColor color)
+    public static void WriteLine() => Console.Out.WriteLine();
+    public static void WriteLine(ReadOnlySpan<char> text) => Console.Out.WriteLine(text);
+    public static void WriteLine(ReadOnlySpan<char> text, ConsoleColor color)
     {
         var currentColor = Console.ForegroundColor;
         Console.ForegroundColor = color;
-        Console.WriteLine(text);
+        Console.Out.WriteLine(text);
         Console.ForegroundColor = currentColor;
     }
 
