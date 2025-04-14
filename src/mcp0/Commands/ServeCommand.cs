@@ -16,7 +16,7 @@ namespace mcp0.Commands;
 
 internal sealed class ServeCommand : ProxyCommand
 {
-    public ServeCommand() : base("serve", "Serve one or more configured contexts as an MCP server over HTTP with SSE")
+    public ServeCommand() : base("serve", "Serve an MCP server over SSE built from one or more configuration files")
     {
         AddOption(HostOption);
         AddOption(OriginsOption);
@@ -27,16 +27,11 @@ internal sealed class ServeCommand : ProxyCommand
         AddArgument(PathsArgument);
     }
 
-    private Option<string> HostOption { get; } = new("--host", () => "http://localhost:7890", "IP or host addresses and ports to listen to");
-    private Option<string> OriginsOption { get; } = new("--origins", "Allowed cross-origin requests origins");
-    private Option<string> ApiKeyOption { get; } = new("--api-key", "API key to use for authentication");
-    private Option<string> SslCertFileOption { get; } = new("--ssl-cert-file", "Path to PEM-encoded SSL certificate");
-    private Option<string> SslKeyFileOption { get; } = new("--ssl-key-file", "Path to PEM-encoded SSL private key");
-
-    private Argument<string[]> PathsArgument { get; } = new("files", "A list of context configuration files to serve")
-    {
-        Arity = ArgumentArity.OneOrMore
-    };
+    private static Option<string> HostOption { get; } = new("--host", () => "http://localhost:7890", "IP/host addresses and ports to listen to");
+    private static Option<string> OriginsOption { get; } = new("--origins", "Allowed origins for cross-origin requests [default: <host>]");
+    private static Option<string> ApiKeyOption { get; } = new("--api-key", "API key to use for authentication");
+    private static Option<string> SslCertFileOption { get; } = new("--ssl-cert-file", "Path to PEM-encoded SSL certificate");
+    private static Option<string> SslKeyFileOption { get; } = new("--ssl-key-file", "Path to PEM-encoded SSL private key");
 
     protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {

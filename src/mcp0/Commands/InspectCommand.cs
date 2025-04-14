@@ -1,4 +1,3 @@
-using System.CommandLine;
 using System.CommandLine.Invocation;
 
 using mcp0.Core;
@@ -10,16 +9,11 @@ namespace mcp0.Commands;
 
 internal sealed class InspectCommand : ProxyCommand
 {
-    public InspectCommand() : base("inspect", "Inspect the MCP server for one or more configured contexts")
+    public InspectCommand() : base("inspect", "Inspect an MCP server built from one or more configuration files")
     {
         AddAlias("i");
         AddArgument(PathsArgument);
     }
-
-    private Argument<string[]> PathsArgument { get; } = new("files", "A list of context configuration files to inspect")
-    {
-        Arity = ArgumentArity.OneOrMore
-    };
 
     protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {

@@ -10,14 +10,14 @@ namespace mcp0.Commands;
 
 internal sealed class ShellCommand : ProxyCommand
 {
-    public ShellCommand() : base("shell", "Run an interactive shell on the MCP server for one or more configured contexts")
+    public ShellCommand() : base("shell", "Run an interactive shell on the MCP server built from one or more configuration files")
     {
         AddAlias("sh");
         AddOption(NoReloadOption);
         AddArgument(PathsArgument);
     }
 
-    private Argument<string[]> PathsArgument { get; } = new("files", "A list of context configuration files to run at start")
+    private static new Argument<string[]> PathsArgument { get; } = new(ProxyCommand.PathsArgument.Name, ProxyCommand.PathsArgument.Description)
     {
         Arity = ArgumentArity.ZeroOrMore
     };

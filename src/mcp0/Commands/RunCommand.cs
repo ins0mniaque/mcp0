@@ -1,4 +1,3 @@
-using System.CommandLine;
 using System.CommandLine.Invocation;
 
 using mcp0.Mcp;
@@ -9,16 +8,11 @@ namespace mcp0.Commands;
 
 internal sealed class RunCommand : ProxyCommand
 {
-    public RunCommand() : base("run", "Run one or more configured contexts as an MCP server")
+    public RunCommand() : base("run", "Run an MCP server over STDIO built from one or more configuration files")
     {
         AddOption(NoReloadOption);
         AddArgument(PathsArgument);
     }
-
-    private Argument<string[]> PathsArgument { get; } = new("files", "A list of context configuration files to run")
-    {
-        Arity = ArgumentArity.OneOrMore
-    };
 
     protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {

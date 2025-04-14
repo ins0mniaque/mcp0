@@ -16,7 +16,12 @@ namespace mcp0.Commands;
 
 internal abstract class ProxyCommand(string name, string? description = null) : CancellableCommand(name, description)
 {
-    protected Option<bool> NoReloadOption { get; } = new("--no-reload", "Do not reload when context configuration files change");
+    protected static Option<bool> NoReloadOption { get; } = new("--no-reload", "Do not reload when context configuration files change");
+
+    protected static Argument<string[]> PathsArgument { get; } = new("files", "The configuration files to build an MCP server from")
+    {
+        Arity = ArgumentArity.OneOrMore
+    };
 
     protected abstract Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken);
 
