@@ -7,12 +7,16 @@ internal static class Terminal
 {
     public static int Rows => Console.WindowHeight;
     public static int Columns => Console.WindowWidth;
-    public static int Row => Console.CursorTop;
-    public static int Column => Console.CursorLeft;
 
-    public static void ShowCursor() => Console.CursorVisible = true;
-    public static void HideCursor() => Console.CursorVisible = false;
-    public static void MoveCursor(int row, int column) => Console.SetCursorPosition(column, row);
+    internal static class Cursor
+    {
+        public static int Row => Console.CursorTop;
+        public static int Column => Console.CursorLeft;
+
+        public static void Show() => Console.CursorVisible = true;
+        public static void Hide() => Console.CursorVisible = false;
+        public static void Move(int row, int column) => Console.SetCursorPosition(column, row);
+    }
 
     public static ConsoleKeyInfo ReadKey(bool intercept = false) => Console.ReadKey(intercept);
 
@@ -22,8 +26,8 @@ internal static class Terminal
         ConsoleColor hintColor = ConsoleColor.DarkGray)
     {
         var input = default(ConsoleKeyInfo);
-        int row = Row;
-        int column = Column;
+        int row = Cursor.Row;
+        int column = Cursor.Column;
         var viewport = Columns - column;
 
         var line = string.Empty;
@@ -78,28 +82,28 @@ internal static class Terminal
             else if (cursor < scroll)
                 scroll = cursor;
 
-            HideCursor();
-            MoveCursor(row, column);
+            Cursor.Hide();
+            Cursor.Move(row, column);
             Write(clearLine);
-            MoveCursor(row, column);
+            Cursor.Move(row, column);
             Write(LineView(line, 0));
 
             hintLine = hint?.Invoke(line);
             if (hintLine?.Length > line.Length && line.Length - scroll < viewport - 1)
                 Write(LineView(hintLine, line.Length), hintColor);
 
-            MoveCursor(row, column + cursor - scroll);
-            ShowCursor();
+            Cursor.Move(row, column + cursor - scroll);
+            Cursor.Show();
 
             input = ReadKey();
         }
 
-        HideCursor();
-        MoveCursor(row, column);
+        Cursor.Hide();
+        Cursor.Move(row, column);
         Write(clearLine);
-        MoveCursor(row, column);
+        Cursor.Move(row, column);
         WriteLine(line);
-        ShowCursor();
+        Cursor.Show();
 
         return line;
 
