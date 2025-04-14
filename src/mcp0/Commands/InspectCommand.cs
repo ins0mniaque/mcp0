@@ -23,7 +23,7 @@ internal sealed class InspectCommand : ProxyCommand
 
     protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {
-        var paths = context.ParseResult.GetValueForArgument(PathsArgument);
+        var paths = PathsArgument.GetValue(context);
 
         await ConnectAndRun(context, paths, LogLevel.Warning, cancellationToken);
     }

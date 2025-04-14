@@ -22,7 +22,7 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
 
     protected async Task ConnectAndRun(InvocationContext context, string[] paths, LogLevel logLevel, CancellationToken cancellationToken)
     {
-        var noReload = context.ParseResult.GetValueForOption(NoReloadOption);
+        var noReload = NoReloadOption.GetValue(context);
 
         var proxyOptions = new McpProxyOptions
         {
