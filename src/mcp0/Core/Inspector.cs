@@ -7,12 +7,13 @@ namespace mcp0.Core;
 
 internal static class Inspector
 {
+    private static ReadOnlySpan<char> Indentation => "  ";
+
     public static void Inspect(McpProxy proxy)
     {
         const ConsoleColor SectionColor = ConsoleColor.Magenta;
         const ConsoleColor HeaderColor = ConsoleColor.Green;
         const ConsoleColor ErrorColor = ConsoleColor.Red;
-        const string Indentation = "  ";
 
         var width = Terminal.Columns;
 
