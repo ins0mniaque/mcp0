@@ -1,3 +1,5 @@
+using System.Text;
+
 using mcp0.Mcp;
 
 using ModelContextProtocol.Client;
@@ -7,6 +9,7 @@ namespace mcp0.Core;
 
 internal static class Inspector
 {
+    private static StringBuilder Buffer { get; } = new(0);
     private static ReadOnlySpan<char> Indentation => "  ";
 
     public static void Inspect(McpProxy proxy)
@@ -114,7 +117,7 @@ internal static class Inspector
         if (width > 16 && description?.Length > width / 2)
         {
             Terminal.WriteLine();
-            Terminal.WriteLine(Terminal.Wrap(description, width - 4, 4));
+            Terminal.WriteLine(Terminal.WordWrap(Buffer, description, width - 4, 4));
         }
         else
             Terminal.WriteLine(description);

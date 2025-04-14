@@ -209,13 +209,33 @@ internal static class Terminal
         Console.ForegroundColor = currentColor;
     }
 
-    public static string Wrap(ReadOnlySpan<char> text, int width, int leftPad = 0)
+    public static string WordWrap(ReadOnlySpan<char> text, int width, int leftPad = 0)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(width, 1);
         ArgumentOutOfRangeException.ThrowIfNegative(leftPad);
 
-        var wraps = text.Length / (width - 1) + 1;
-        var buffer = new StringBuilder(text.Length + wraps * (leftPad + 1));
+        var bufferSize = EstimateWrapBufferSize(text, width, leftPad);
+        var buffer = new StringBuilder(bufferSize);
+
+        return Wrap(buffer, text, width, leftPad);
+    }
+
+    public static string WordWrap(StringBuilder buffer, ReadOnlySpan<char> text, int width, int leftPad = 0)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(width, 1);
+        ArgumentOutOfRangeException.ThrowIfNegative(leftPad);
+
+        return Wrap(buffer, text, width, leftPad);
+    }
+
+    private static string Wrap(StringBuilder buffer, ReadOnlySpan<char> text, int width, int leftPad)
+    {
+        buffer.Clear();
+
+        var bufferSize = EstimateWrapBufferSize(text, width, leftPad);
+        if (buffer.Capacity < bufferSize)
+            buffer.Capacity = bufferSize;
+
         if (leftPad > 0)
             buffer.Append(' ', leftPad);
 
@@ -281,5 +301,11 @@ internal static class Terminal
             buffer.Append(' ', leftPad);
 
         lineStart = buffer.Length;
+    }
+
+    private static int EstimateWrapBufferSize(ReadOnlySpan<char> text, int width, int leftPad)
+    {
+        var wraps = text.Length / (width - 1) + 1;
+        return text.Length + wraps * (leftPad + 1);
     }
 }

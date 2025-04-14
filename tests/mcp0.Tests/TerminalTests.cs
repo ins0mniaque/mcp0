@@ -4,10 +4,10 @@
 public sealed class TerminalTests
 {
     [TestMethod]
-    public void WrapsCorrectly()
+    public void WordWrapsCorrectly()
     {
         var paragraph = "One very long line with a bigwordthatshouldwrap and a verybigwordthatsalittlebitlongerthanthewidthusedtowrap that wraps correctly.\n\nMagic!";
-        var actual = Terminal.Wrap(paragraph, 40, 4);
+        var actual = Terminal.WordWrap(paragraph, 40, 4);
         var expected =
         """
             One very long line with a
