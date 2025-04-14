@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 
 using mcp0.Core;
 using mcp0.Mcp;
@@ -11,27 +12,24 @@ internal sealed class ShellCommand : ProxyCommand
 {
     public ShellCommand() : base("shell", "Run an interactive shell on the MCP server for one or more configured contexts")
     {
-        var noReloadOption = new Option<bool>("--no-reload", "Do not reload when context configuration files change");
-        var pathsArgument = new Argument<string[]>("files", "A list of context configuration files to run at start")
-        {
-            Arity = ArgumentArity.ZeroOrMore
-        };
-
         AddAlias("sh");
-        AddOption(noReloadOption);
-        AddArgument(pathsArgument);
-
-        this.SetHandler(Execute, pathsArgument, noReloadOption);
+        AddOption(NoReloadOption);
+        AddArgument(PathsArgument);
     }
 
-    private Task Execute(string[] paths, bool noReload) => Execute(paths, noReload, CancellationToken.None);
-
-    private async Task Execute(string[] paths, bool noReload, CancellationToken cancellationToken)
+    private Argument<string[]> PathsArgument { get; } = new("files", "A list of context configuration files to run at start")
     {
-        await ConnectAndRun(paths, noReload, LogLevel.Warning, cancellationToken);
+        Arity = ArgumentArity.ZeroOrMore
+    };
+
+    protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
+    {
+        var paths = context.ParseResult.GetValueForArgument(PathsArgument);
+
+        await ConnectAndRun(context, paths, LogLevel.Warning, cancellationToken);
     }
 
-    protected override async Task Run(McpProxy proxy, CancellationToken cancellationToken)
+    protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
     {
         var history = new List<string>();
         var hist = (int index) => index < 0 || index >= history.Count ? null : history[^(index + 1)];

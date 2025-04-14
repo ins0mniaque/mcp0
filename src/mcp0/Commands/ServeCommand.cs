@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 
@@ -16,29 +17,23 @@ internal sealed class ServeCommand : ProxyCommand
 {
     public ServeCommand() : base("serve", "Serve one or more configured contexts as an MCP server over HTTP with SSE")
     {
-        var noReloadOption = new Option<bool>("--no-reload", "Do not reload when context configuration files change");
-        var pathsArgument = new Argument<string[]>("files", "A list of context configuration files to serve")
-        {
-            Arity = ArgumentArity.OneOrMore
-        };
-
-        AddOption(noReloadOption);
-        AddArgument(pathsArgument);
-
-        this.SetHandler(Execute, pathsArgument, noReloadOption);
+        AddOption(NoReloadOption);
+        AddArgument(PathsArgument);
     }
 
-    private Task Execute(string[] paths, bool noReload)
+    private Argument<string[]> PathsArgument { get; } = new("files", "A list of context configuration files to serve")
     {
-        return Execute(paths, noReload, CancellationToken.None);
-    }
+        Arity = ArgumentArity.OneOrMore
+    };
 
-    private async Task Execute(string[] paths, bool noReload, CancellationToken cancellationToken)
+    protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {
-        await ConnectAndRun(paths, noReload, LogLevel.Information, cancellationToken);
+        var paths = context.ParseResult.GetValueForArgument(PathsArgument);
+
+        await ConnectAndRun(context, paths, LogLevel.Information, cancellationToken);
     }
 
-    protected override async Task Run(McpProxy proxy, CancellationToken cancellationToken)
+    protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
     {
         var host = Environment.GetEnvironmentVariable("MCP0_HOST") ?? "http://localhost:7890";
         var origins = Environment.GetEnvironmentVariable("MCP0_ORIGINS");

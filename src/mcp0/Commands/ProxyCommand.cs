@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Text.Json;
 
 using mcp0.Core;
@@ -13,12 +14,16 @@ using ModelContextProtocol.Server;
 
 namespace mcp0.Commands;
 
-internal abstract class ProxyCommand(string name, string? description = null) : Command(name, description)
+internal abstract class ProxyCommand(string name, string? description = null) : CancellableCommand(name, description)
 {
-    protected abstract Task Run(McpProxy proxy, CancellationToken cancellationToken);
+    protected Option<bool> NoReloadOption { get; } = new("--no-reload", "Do not reload when context configuration files change");
 
-    protected async Task ConnectAndRun(string[] paths, bool noReload, LogLevel logLevel, CancellationToken cancellationToken)
+    protected abstract Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken);
+
+    protected async Task ConnectAndRun(InvocationContext context, string[] paths, LogLevel logLevel, CancellationToken cancellationToken)
     {
+        var noReload = context.ParseResult.GetValueForOption(NoReloadOption);
+
         var proxyOptions = new McpProxyOptions
         {
             LoggingLevel = Log.Level?.ToLoggingLevel(),
@@ -64,7 +69,7 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
 
         await proxy.ConnectAsync(clients, cancellationToken);
 
-        await Run(proxy, cancellationToken);
+        await Run(proxy, context, cancellationToken);
     }
 
     private static async Task Reload(McpProxy proxy, string[] paths, IClientTransport? clientTransport, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
