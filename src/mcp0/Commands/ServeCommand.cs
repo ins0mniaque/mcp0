@@ -1,9 +1,12 @@
 using System.CommandLine;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 
 using mcp0.Mcp;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -25,7 +28,10 @@ internal sealed class ServeCommand : ProxyCommand
         this.SetHandler(Execute, pathsArgument, noReloadOption);
     }
 
-    private Task Execute(string[] paths, bool noReload) => Execute(paths, noReload, CancellationToken.None);
+    private Task Execute(string[] paths, bool noReload)
+    {
+        return Execute(paths, noReload, CancellationToken.None);
+    }
 
     private async Task Execute(string[] paths, bool noReload, CancellationToken cancellationToken)
     {
@@ -34,12 +40,23 @@ internal sealed class ServeCommand : ProxyCommand
 
     protected override async Task Run(McpProxy proxy, CancellationToken cancellationToken)
     {
+        var host = Environment.GetEnvironmentVariable("MCP0_HOST") ?? "http://localhost:7890";
+        var origins = Environment.GetEnvironmentVariable("MCP0_ORIGINS");
+        var apiKey = Environment.GetEnvironmentVariable("MCP0_API_KEY");
+        var sslCertFile = Environment.GetEnvironmentVariable("MCP0_SSL_CERT_FILE");
+        var sslKeyFile = Environment.GetEnvironmentVariable("MCP0_SSL_KEY_FILE");
+
         var builder = WebApplication.CreateBuilder();
+
+        builder.WebHost.UseUrls(host);
 
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.AddServerHeader = false;
-            options.ListenLocalhost(7890);
+
+            if (sslCertFile is not null && sslKeyFile is not null)
+                options.ConfigureHttpsDefaults(httpsOptions =>
+                    httpsOptions.ServerCertificate = LoadCertificate(sslCertFile, sslKeyFile));
         });
 
         if (proxy.Services?.GetService<ILoggerFactory>() is { } loggerFactory)
@@ -49,8 +66,46 @@ internal sealed class ServeCommand : ProxyCommand
 
         var app = builder.Build();
 
-        app.MapMcp();
+        if (origins is not null)
+            app.UseCors(policy => policy.WithOrigins(origins.Split(',')));
+
+        var endpoints = app.MapMcp();
+        if (apiKey is not null)
+            endpoints.AddEndpointFilter(new AuthorizationEndpointFilter(apiKey));
 
         await app.RunAsync();
+    }
+
+    private static X509Certificate2 LoadCertificate(string sslCertFile, string sslKeyFile)
+    {
+        var certificate = X509Certificate2.CreateFromPemFile(sslCertFile, sslKeyFile);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            certificate = X509CertificateLoader.LoadCertificate(certificate.Export(X509ContentType.Pkcs12));
+
+        return certificate;
+    }
+
+    private sealed class AuthorizationEndpointFilter(string apiKeyOrToken) : IEndpointFilter
+    {
+        private string ApiKey { get; } = apiKeyOrToken;
+        private string Authorization { get; } = $"Bearer {apiKeyOrToken}";
+
+        public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+        {
+            if (context.HttpContext.Request.Headers.TryGetValue("Authorization", out var authorization))
+            {
+                if (!string.Equals(authorization, Authorization, StringComparison.Ordinal))
+                    return Results.Unauthorized();
+            }
+            else if (context.HttpContext.Request.Headers.TryGetValue("X-API-Key", out var apiKey))
+            {
+                if (!string.Equals(apiKey, ApiKey, StringComparison.Ordinal))
+                    return Results.Unauthorized();
+            }
+            else
+                return Results.BadRequest();
+
+            return await next(context);
+        }
     }
 }
