@@ -60,17 +60,17 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 }
             }
 
-            throw new JsonException("Invalid string value for server configuration");
+            throw Exceptions.InvalidServerStringValue();
         }
 
         if (reader.TokenType is not JsonTokenType.StartObject)
-            throw new JsonException("Invalid JSON in server configuration");
+            throw Exceptions.InvalidServerJson();
 
         reader.Read();
         if (reader.TokenType is not JsonTokenType.PropertyName)
-            throw new JsonException("Invalid JSON in server configuration");
+            throw Exceptions.InvalidServerJson();
 
-        var propertyName = reader.GetString() ?? throw new JsonException("Invalid JSON in server configuration");
+        var propertyName = reader.GetString() ?? throw Exceptions.InvalidServerJson();
 
         if (Property.IsStdioServerProperty(propertyName))
             return ReadStdioServer(ref reader, propertyName);
@@ -78,7 +78,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
         if (Property.IsSseServerProperty(propertyName))
             return ReadSseServer(ref reader, propertyName);
 
-        throw new JsonException($"Unknown server property: {propertyName}");
+        throw Exceptions.UnknownServerProperty(propertyName);
     }
 
     private static StdioServer ReadStdioServer(ref Utf8JsonReader reader, string propertyName)
@@ -96,7 +96,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
         {
             if (reader.TokenType is JsonTokenType.PropertyName)
             {
-                propertyName = reader.GetString() ?? throw new JsonException("Invalid JSON in server configuration");
+                propertyName = reader.GetString() ?? throw Exceptions.InvalidServerJson();
                 ReadProperty(ref reader);
                 continue;
             }
@@ -112,7 +112,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
                 return new StdioServer
                 {
-                    Command = command ?? throw new JsonException("Missing required server property: command"),
+                    Command = command ?? throw Exceptions.MissingRequiredServerProperty(Property.Command),
                     Arguments = arguments,
                     WorkingDirectory = workingDirectory,
                     Environment = environment?.Count is 0 ? null : environment,
@@ -121,10 +121,10 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 };
             }
 
-            throw new JsonException("Invalid JSON in server configuration");
+            throw Exceptions.InvalidServerJson();
         }
 
-        throw new JsonException("Invalid JSON in server configuration");
+        throw Exceptions.InvalidServerJson();
 
         void ReadProperty(ref Utf8JsonReader reader)
         {
@@ -140,7 +140,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
             {
                 reader.Read();
                 if (propertyName is Property.Command)
-                    command = reader.GetString() ?? throw new JsonException("Missing required server property: command");
+                    command = reader.GetString() ?? throw Exceptions.MissingRequiredServerProperty(Property.Command);
                 else if (propertyName is Property.WorkDir)
                     workingDirectory = reader.GetString();
                 else if (propertyName is Property.EnvFile)
@@ -148,7 +148,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 else if (propertyName is Property.ShutdownTimeout)
                     shutdownTimeout = TimeSpan.FromSeconds(reader.GetInt32());
                 else
-                    throw new JsonException($"Unknown server property: {propertyName}");
+                    throw Exceptions.UnknownServerProperty(propertyName);
             }
         }
     }
@@ -167,7 +167,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
         {
             if (reader.TokenType is JsonTokenType.PropertyName)
             {
-                propertyName = reader.GetString() ?? throw new JsonException("Invalid JSON in server configuration");
+                propertyName = reader.GetString() ?? throw Exceptions.InvalidServerJson();
                 ReadProperty(ref reader);
                 continue;
             }
@@ -176,7 +176,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
             {
                 return new SseServer
                 {
-                    Url = url ?? throw new JsonException("Missing required server property: url"),
+                    Url = url ?? throw Exceptions.MissingRequiredServerProperty(Property.Url),
                     Headers = headers,
                     ConnectionTimeout = connectionTimeout,
                     MaxReconnectAttempts = maxReconnectAttempts,
@@ -184,10 +184,10 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 };
             }
 
-            throw new JsonException("Invalid JSON in server configuration");
+            throw Exceptions.InvalidServerJson();
         }
 
-        throw new JsonException("Invalid JSON in server configuration");
+        throw Exceptions.InvalidServerJson();
 
         void ReadProperty(ref Utf8JsonReader reader)
         {
@@ -198,8 +198,9 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 reader.Read();
                 if (propertyName is Property.Url)
                 {
-                    if (!Uri.TryCreate(reader.GetString(), UriKind.Absolute, out url))
-                        throw new JsonException("Invalid URL for required server property: url");
+                    var urlString = reader.GetString();
+                    if (!Uri.TryCreate(urlString, UriKind.Absolute, out url))
+                        throw Exceptions.InvalidValueForServerProperty(Property.Url, urlString);
                 }
                 else if (propertyName is Property.ConnectionTimeout)
                     connectionTimeout = TimeSpan.FromSeconds(reader.GetInt32());
@@ -208,7 +209,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 else if (propertyName is Property.ReconnectDelay)
                     reconnectDelay = TimeSpan.FromSeconds(reader.GetInt32());
                 else
-                    throw new JsonException($"Unknown server property: {propertyName}");
+                    throw Exceptions.UnknownServerProperty(propertyName);
             }
         }
     }
@@ -220,7 +221,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
         else if (server is SseServer sseServer)
             Write(writer, sseServer);
         else
-            throw new JsonException($"Unknown server type: {server.GetType().Name}");
+            throw Exceptions.UnknownServerType(server.GetType());
     }
 
     private static readonly SearchValues<char> commandDelimiters = SearchValues.Create(' ', '\"', '\'');
@@ -306,5 +307,15 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
             writer.WriteEndObject();
         }
+    }
+
+    private static class Exceptions
+    {
+        public static JsonException InvalidServerJson() => throw new JsonException("Invalid JSON in server configuration");
+        public static JsonException InvalidServerStringValue() => throw new JsonException("Invalid string value for server configuration");
+        public static JsonException InvalidValueForServerProperty(string propertyName, string? propertyValue) => throw new JsonException($"Invalid value for server property: {propertyName} = {propertyValue}");
+        public static JsonException MissingRequiredServerProperty(string propertyName) => throw new JsonException($"Missing required server property: {propertyName}");
+        public static JsonException UnknownServerProperty(string propertyName) => throw new JsonException($"Unknown server property: {propertyName}");
+        public static JsonException UnknownServerType(Type serverType) => throw new JsonException($"Unknown server type: {serverType.Name}");
     }
 }
