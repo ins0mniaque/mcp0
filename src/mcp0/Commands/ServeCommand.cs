@@ -27,11 +27,11 @@ internal sealed class ServeCommand : ProxyCommand
         AddArgument(PathsArgument);
     }
 
-    private static Option<string> HostOption { get; } = new("--host", () => "http://localhost:7890", "IP/host addresses and ports to listen to");
-    private static Option<string> OriginsOption { get; } = new("--origins", "Allowed origins for cross-origin requests [default: <host>]");
-    private static Option<string> ApiKeyOption { get; } = new("--api-key", "API key to use for authentication");
-    private static Option<string> SslCertFileOption { get; } = new("--ssl-cert-file", "Path to PEM-encoded SSL certificate");
-    private static Option<string> SslKeyFileOption { get; } = new("--ssl-key-file", "Path to PEM-encoded SSL private key");
+    private static Option<string> HostOption { get; } = new("--host", () => "http://localhost:7890", "IP/host addresses and ports to listen to\n[env: MCP0_HOST]");
+    private static Option<string> OriginsOption { get; } = new("--origins", "Allowed origins for cross-origin requests\n[env: MCP0_ORIGINS] [default: <host>]");
+    private static Option<string> ApiKeyOption { get; } = new("--api-key", "API key to use for authentication\n[env: MCP0_API_KEY]");
+    private static Option<string> SslCertFileOption { get; } = new("--ssl-cert-file", "Path to PEM-encoded SSL certificate\n[env: MCP0_SSL_CERT_FILE]");
+    private static Option<string> SslKeyFileOption { get; } = new("--ssl-key-file", "Path to PEM-encoded SSL private key\n[env: MCP0_SSL_KEY_FILE]");
 
     protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {

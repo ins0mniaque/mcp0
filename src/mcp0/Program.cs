@@ -42,5 +42,5 @@ void Customize(HelpContext context)
 
     context.HelpBuilder.CustomizeSymbol(logLevelOption,
         firstColumnText: "--loglevel <level>",
-        secondColumnText: "Minimum severity logging level: <Trace|Debug|Information|Warning|Error|Critical|None>");
+        secondColumnText: "Minimum severity logging level\n<level: Trace|Debug|Information|Warning|Error|Critical|None>");
 }
