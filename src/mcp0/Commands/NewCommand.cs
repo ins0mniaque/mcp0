@@ -66,7 +66,8 @@ internal sealed class NewCommand : CancellableCommand
                 },
                 ["stdio"] = new StdioServer
                 {
-                    Command = "command", Arguments = ["arg1", "arg2", "arg3"],
+                    Command = "command",
+                    Arguments = ["arg1", "arg2", "arg3"],
                     WorkingDirectory = "~/workdir",
                     Environment = new(StringComparer.Ordinal) { ["NAME"] = "VALUE" },
                     EnvironmentFile = "~/secrets.env",
