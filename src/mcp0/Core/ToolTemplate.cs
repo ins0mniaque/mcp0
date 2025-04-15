@@ -28,7 +28,7 @@ internal static class ToolTemplate
 
         KeyValuePair<string, JsonNode?> CreateArgument(string name, string? type, string? description, bool required)
         {
-            var argument = new JsonObject { ["type"] = type ?? "string" };
+            var argument = new JsonObject { ["type"] = TypeAlias.ToJsonSchema(type) };
 
             if (description is not null)
                 argument["description"] = description;

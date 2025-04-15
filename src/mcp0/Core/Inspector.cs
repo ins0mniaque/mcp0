@@ -167,7 +167,7 @@ internal static class Inspector
             }
         }
         else if (node is JsonSchemaPrimitiveType primitiveType)
-            Terminal.Write(primitiveType.Name, PrimitiveTypeColor);
+            Terminal.Write(TypeAlias.FromJsonSchema(primitiveType.Name), PrimitiveTypeColor);
         else if (node is JsonSchemaSymbol symbol)
             Terminal.Write(symbol.Name, SymbolColor);
         else
