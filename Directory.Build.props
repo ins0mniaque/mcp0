@@ -1,5 +1,7 @@
 <Project>
 
+  <Import Project="$(MSBuildThisFileDirectory)Directory.Version.props" />
+
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <Features>strict</Features>
