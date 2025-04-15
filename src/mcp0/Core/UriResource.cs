@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
 
+using Microsoft.AspNetCore.StaticFiles;
+
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Types;
 
@@ -11,6 +13,8 @@ internal static partial class UriResource
     private static partial Regex GenerateDataUriParser();
     private static readonly Regex dataUriParser = GenerateDataUriParser();
 
+    private static readonly FileExtensionContentTypeProvider mimeTypeProvider = new();
+
     public static Resource Create(string name, string uri)
     {
         return new()
@@ -18,7 +22,7 @@ internal static partial class UriResource
             Name = name,
             Description = ParseDescription(ref uri),
             Uri = uri,
-            MimeType = MimeType.FromExtension(Path.GetExtension(uri))
+            MimeType = mimeTypeProvider.TryGetContentType(uri, out var mimeType) ? mimeType : null
         };
     }
 
