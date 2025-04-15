@@ -18,6 +18,10 @@ internal static class Terminal
         public static void Move(int row, int column) => Console.SetCursorPosition(column, row);
     }
 
+    public static Stream OpenStdIn() => Console.OpenStandardInput();
+    public static Stream OpenStdErr() => Console.OpenStandardError();
+    public static Stream OpenStdOut() => Console.OpenStandardOutput();
+
     public static ConsoleKeyInfo ReadKey(bool intercept = false) => Console.ReadKey(intercept);
 
     public static string ReadLine(
