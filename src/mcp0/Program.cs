@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 var rootCommand = new RootCommand
 {
     new InspectCommand(),
+    new NewCommand(),
     new RunCommand(),
     new ServeCommand(),
     new ShellCommand()
