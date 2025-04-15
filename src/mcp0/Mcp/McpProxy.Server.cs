@@ -35,15 +35,13 @@ internal sealed partial class McpProxy
     {
         NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, CancellationToken, Task>>(StringComparer.Ordinal)
         {
+            [NotificationMethods.RootsUpdatedNotification] = async (_, cancellationToken) =>
             {
-                NotificationMethods.RootsUpdatedNotification, async (_, cancellationToken) =>
-                {
-                    var notifyTasks = new List<Task>(Clients.Count);
-                    foreach (var client in Clients)
-                        notifyTasks.Add(client.SendNotificationAsync(NotificationMethods.RootsUpdatedNotification, cancellationToken));
+                var notifyTasks = new List<Task>(Clients.Count);
+                foreach (var client in Clients)
+                    notifyTasks.Add(client.SendNotificationAsync(NotificationMethods.RootsUpdatedNotification, cancellationToken));
 
-                    await Task.WhenAll(notifyTasks);
-                }
+                await Task.WhenAll(notifyTasks);
             }
         },
         Logging = new()

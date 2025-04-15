@@ -70,8 +70,8 @@ public sealed class PromptTemplateTests
 
         var actual = Template.Render(template, new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            { "argument", "value" },
-            { "optional", "option" }
+            ["argument"] = "value",
+            ["optional"] = "option"
         });
 
         var expected =

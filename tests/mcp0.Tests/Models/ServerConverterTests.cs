@@ -43,7 +43,7 @@ public sealed class ServerConverterTests
             Command = "npx",
             Arguments = ["-y", "@modelcontextprotocol/server-everything"],
             WorkingDirectory = "/home/user",
-            Environment = new(StringComparer.Ordinal) { { "KEY", "VALUE" } },
+            Environment = new(StringComparer.Ordinal) { ["KEY"] = "VALUE" },
             ShutdownTimeout = TimeSpan.FromSeconds(60)
         };
 
@@ -82,7 +82,7 @@ public sealed class ServerConverterTests
         var expected = new SseServer
         {
             Url = new Uri("http://localhost:8080/server-everything"),
-            Headers = new(StringComparer.Ordinal) { { "Authorization", "TOKEN" } },
+            Headers = new(StringComparer.Ordinal) { ["Authorization"] = "TOKEN" },
             ConnectionTimeout = TimeSpan.FromSeconds(30),
             MaxReconnectAttempts = 10,
             ReconnectDelay = TimeSpan.FromSeconds(60)
@@ -114,7 +114,7 @@ public sealed class ServerConverterTests
             Command = "npx",
             Arguments = ["-y", "@modelcontextprotocol/server-everything"],
             WorkingDirectory = "/home/user",
-            Environment = new(StringComparer.Ordinal) { { "KEY", "VALUE" } },
+            Environment = new(StringComparer.Ordinal) { ["KEY"] = "VALUE" },
             ShutdownTimeout = TimeSpan.FromSeconds(60)
         };
 
@@ -144,7 +144,7 @@ public sealed class ServerConverterTests
         var expected = new SseServer
         {
             Url = new Uri("http://localhost:8080/server-everything"),
-            Headers = new(StringComparer.Ordinal) { { "Authorization", "TOKEN" } },
+            Headers = new(StringComparer.Ordinal) { ["Authorization"] = "TOKEN" },
             ConnectionTimeout = TimeSpan.FromSeconds(30),
             MaxReconnectAttempts = 10,
             ReconnectDelay = TimeSpan.FromSeconds(60)

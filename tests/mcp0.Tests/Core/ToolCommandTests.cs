@@ -8,7 +8,7 @@ public sealed class ToolCommandTests
     {
         var commandLine = ToolCommand.Parse("bc -e {{expression}}", new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            { "expression", "2 + 2" }
+            ["expression"] = "2 + 2"
         });
 
         Assert.AreEqual(3, commandLine.Length);
@@ -22,8 +22,8 @@ public sealed class ToolCommandTests
     {
         var commandLine = ToolCommand.Parse("ollama run {{model}} \"Help me with this task: {{task}}\"", new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            { "model", "deepseek-r1" },
-            { "task", "Write a story about a cat" }
+            ["model"] = "deepseek-r1",
+            ["task"] = "Write a story about a cat"
         });
 
         Assert.AreEqual(4, commandLine.Length);
@@ -38,7 +38,7 @@ public sealed class ToolCommandTests
     {
         var commandLine = ToolCommand.Parse("BC_ENV_ARGS=~/.bcrc bc -e {{expression}}", new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            { "expression", "2 + 2" }
+            ["expression"] = "2 + 2"
         });
 
         Assert.AreEqual(4, commandLine.Length);
@@ -60,7 +60,7 @@ public sealed class ToolCommandTests
     {
         var commandLine = ToolCommand.Parse("BC_ENV_ARGS=\"~/s p a c e/bcrc\" bc -e {{expression}}", new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            { "expression", "2 + 2" }
+            ["expression"] = "2 + 2"
         });
 
         Assert.AreEqual(4, commandLine.Length);
