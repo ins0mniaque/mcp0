@@ -40,7 +40,9 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
     public McpClientRegistry<McpClientTool> Tools { get; }
 
     public LoggingLevel? LoggingLevel => runningServer?.LoggingLevel;
-    public IServiceProvider? Services => runningServer?.Services ?? serviceProvider ?? this;
+    public IServiceProvider? Services => runningServer?.Services ??
+                                         serviceProvider ??
+                                         (loggerFactory is null ? null : this);
 
     object? IServiceProvider.GetService(Type serviceType)
     {
