@@ -62,6 +62,4 @@ internal static class ToolCommand
 
         return (stdout, stderr, process.ExitCode);
     }
-
-
 }
