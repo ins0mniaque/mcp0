@@ -4,4 +4,4 @@ using System.Text.Json.Serialization;
 namespace mcp0.Core;
 
 [JsonSerializable(typeof(JsonElement))]
-internal sealed partial class JsonSchemaContext : JsonSerializerContext { }
+internal sealed partial class JsonSchemaContext : JsonSerializerContext;

@@ -102,7 +102,7 @@ internal static class JsonSchema
     }
 }
 
-internal interface IJsonSchemaNode { }
+internal interface IJsonSchemaNode;
 internal abstract record JsonSchemaType(bool Required) : IJsonSchemaNode;
 internal sealed record JsonSchemaSymbol(string Name) : IJsonSchemaNode;
 internal sealed record JsonSchemaPrimitiveType(string Name, bool Required) : JsonSchemaType(Required);
