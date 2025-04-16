@@ -21,7 +21,7 @@ internal static partial class UriResource
         {
             Name = name,
             Description = ParseDescription(ref uri),
-            Uri = uri,
+            Uri = Uri.IsWellFormedUriString(uri, UriKind.Absolute) ? uri : new Uri(uri).AbsoluteUri,
             MimeType = mimeTypeProvider.TryGetContentType(uri, out var mimeType) ? mimeType : null
         };
     }
