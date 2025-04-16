@@ -1,14 +1,26 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Builder;
-using System.CommandLine.Help;
-using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 
 using mcp0.Commands;
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
+var configuration = new ConfigurationBuilder().AddInMemoryCollection().Build();
 var services = new ServiceCollection();
+
+services.AddSingleton(configuration);
+services.AddSingleton<IConfiguration>(configuration);
+
+services.AddLogging(logging =>
+{
+    logging.AddConfiguration(configuration);
+
+    // Send all logs to standard error because MCP uses standard output
+    logging.AddConsole(static options => options.LogToStandardErrorThreshold = LogLevel.Trace);
+});
 
 services.AddSingleton<RootCommand, Root>();
 services.AddSingleton(Root.ConfigureCommandLine);

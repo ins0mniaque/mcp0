@@ -6,6 +6,8 @@ using mcp0.Core;
 using mcp0.Mcp;
 using mcp0.Models;
 
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
@@ -29,16 +31,18 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
     {
         var noReload = NoReloadOption.GetValue(context);
 
+        var serviceProvider = context.BindingContext.GetService<IServiceProvider>();
+        var configurationRoot = serviceProvider?.GetService<IConfigurationRoot>();
+
+        configurationRoot?.TrySetLogLevel(logLevel);
+
         var proxyOptions = new McpProxyOptions
         {
-            LoggingLevel = Log.Level?.ToLoggingLevel(),
-            SetLoggingLevelCallback = static level => Log.Level = level.ToLogLevel()
+            LoggingLevel = configurationRoot?.GetLogLevel()?.ToLoggingLevel(),
+            SetLoggingLevelCallback = level => configurationRoot?.SetLogLevel(level.ToLogLevel())
         };
 
-        Log.Level ??= logLevel;
-
-        using var loggerFactory = Log.CreateLoggerFactory();
-
+        var loggerFactory = serviceProvider?.GetService<ILoggerFactory>();
         var configuration = await Configuration.Load(paths, cancellationToken);
         var serverOptions = configuration.ToMcpServerOptions();
         var serverName = proxyOptions.ServerInfo?.Name ??
@@ -49,7 +53,7 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
         await using var serverTask = serverOptions is null ? null : new DisposableTask(async ct =>
         {
             // ReSharper disable once AccessToDisposedClosure
-            await using var server = McpServerFactory.Create(transport!.ServerTransport, serverOptions);
+            await using var server = McpServerFactory.Create(transport!.ServerTransport, serverOptions, loggerFactory, serviceProvider);
 
             await server.RunAsync(ct);
         }, cancellationToken);
@@ -60,7 +64,7 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
 
         proxyOptions.ServerInfo = ServerInfo.Create(clientTransports);
 
-        await using var proxy = new McpProxy(proxyOptions, loggerFactory);
+        await using var proxy = new McpProxy(proxyOptions, loggerFactory, serviceProvider);
 
         using var watchers = new CompositeDisposable<FileSystemWatcher>(noReload ? [] : paths.Select(CreateWatcher));
         foreach (var watcher in watchers)
@@ -77,13 +81,13 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
         await Run(proxy, context, cancellationToken);
     }
 
-    private static async Task Reload(McpProxy proxy, string[] paths, IClientTransport? clientTransport, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
+    private static async Task Reload(McpProxy proxy, string[] paths, IClientTransport? clientTransport, ILoggerFactory? loggerFactory, CancellationToken cancellationToken)
     {
-        var logger = loggerFactory.CreateLogger<RunCommand>();
+        var logger = loggerFactory?.CreateLogger<RunCommand>();
 
         try
         {
-            logger.ConfigurationReloading(paths);
+            logger?.ConfigurationReloading(paths);
 
             var configuration = await Configuration.Load(paths, cancellationToken);
 
@@ -97,11 +101,11 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
 
             await proxy.ConnectAsync(clients, cancellationToken);
 
-            logger.ConfigurationReloaded(paths);
+            logger?.ConfigurationReloaded(paths);
         }
         catch (Exception exception) when (exception is IOException or JsonException or McpException)
         {
-            logger.ConfigurationReloadFailed(exception, paths);
+            logger?.ConfigurationReloadFailed(exception, paths);
         }
     }
 

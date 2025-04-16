@@ -7,32 +7,6 @@ namespace mcp0;
 
 internal static partial class Log
 {
-    private static readonly Configuration configuration = new();
-    private static readonly IConfigurationRoot configurationRoot = new ConfigurationBuilder().Add(configuration).Build();
-
-    private static LogLevel? level;
-    public static LogLevel? Level
-    {
-        get => level;
-        set
-        {
-            level = value;
-            configuration.SetMinimumLevel(level);
-            configurationRoot.Reload();
-        }
-    }
-
-    public static ILoggerFactory CreateLoggerFactory()
-    {
-        return LoggerFactory.Create(static logging =>
-        {
-            logging.AddConfiguration(configurationRoot);
-
-            // Send all logs to standard error because MCP uses standard output
-            logging.AddConsole(static options => options.LogToStandardErrorThreshold = LogLevel.Trace);
-        });
-    }
-
     [LoggerMessage(Level = LogLevel.Information, Message = "Reloading configuration: {Paths}")]
     public static partial void ConfigurationReloading(this ILogger logger, string[] paths);
 
@@ -42,10 +16,21 @@ internal static partial class Log
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to reload configuration: {Paths}")]
     public static partial void ConfigurationReloadFailed(this ILogger logger, Exception exception, string[] paths);
 
-    private sealed class Configuration : ConfigurationProvider, IConfigurationSource
+    public static LogLevel? GetLogLevel(this IConfiguration configuration)
     {
-        public IConfigurationProvider Build(IConfigurationBuilder builder) => this;
-        public void SetMinimumLevel(LogLevel? level) => Data["LogLevel:Default"] = level?.ToString();
+        return Enum.TryParse<LogLevel>(configuration["LogLevel:Default"], out var logLevel) ? logLevel : null;
+    }
+
+    public static void SetLogLevel(this IConfigurationRoot configurationRoot, LogLevel? logLevel)
+    {
+        configurationRoot["LogLevel:Default"] = logLevel?.ToString();
+        configurationRoot.Reload();
+    }
+
+    public static void TrySetLogLevel(this IConfigurationRoot configurationRoot, LogLevel? logLevel)
+    {
+        if (configurationRoot["LogLevel:Default"] is null)
+            configurationRoot.SetLogLevel(logLevel);
     }
 
     public static LogLevel ToLogLevel(this LoggingLevel loggingLevel) => loggingLevel switch

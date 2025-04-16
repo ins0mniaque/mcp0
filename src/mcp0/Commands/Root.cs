@@ -3,6 +3,8 @@ using System.CommandLine.Builder;
 using System.CommandLine.Help;
 using System.CommandLine.Invocation;
 
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace mcp0.Commands;
@@ -27,7 +29,10 @@ internal sealed class Root : RootCommand
 
     private static async Task LogLevelMiddleware(InvocationContext context, Func<InvocationContext, Task> next)
     {
-        Log.Level = context.ParseResult.GetValueForOption(LogLevelOption);
+        var serviceProvider = context.BindingContext.GetService<IServiceProvider>();
+        var configurationRoot = serviceProvider?.GetService<IConfigurationRoot>();
+
+        configurationRoot?.SetLogLevel(context.ParseResult.GetValueForOption(LogLevelOption));
 
         await next(context);
     }
