@@ -32,6 +32,12 @@ internal sealed class ShellCommand : ProxyCommand
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
     {
         var history = new List<string>();
+        var hints = new List<string>(proxy.Prompts.Count + proxy.Resources.Count + proxy.Tools.Count);
+
+        hints.AddRange(proxy.Prompts.Select(static prompt => prompt.Name + '('));
+        hints.AddRange(proxy.Resources.Select(static resource => resource.Uri));
+        hints.AddRange(proxy.Tools.Select(static tool => tool.Name + '('));
+        hints.Sort(StringComparer.Ordinal);
 
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -63,24 +69,29 @@ internal sealed class ShellCommand : ProxyCommand
             if (line.Length is 0)
                 return "help";
 
-            var tool = proxy.Tools.FirstOrDefault(tool => tool.Name.Length >= line.Length && tool.Name.StartsWith(line, StringComparison.OrdinalIgnoreCase));
-            if (tool is not null)
-                return tool.Name + "(";
-
-            var prompt = proxy.Prompts.FirstOrDefault(prompt => prompt.Name.Length >= line.Length && prompt.Name.StartsWith(line, StringComparison.OrdinalIgnoreCase));
-            if (prompt is not null)
-                return prompt.Name + "(";
-
-            var resource = proxy.Resources.FirstOrDefault(resource => resource.Uri.Length > line.Length && resource.Uri.StartsWith(line, StringComparison.OrdinalIgnoreCase));
-            if (resource is not null)
-                return resource.Uri;
-
-            return null;
+            return BinaryPrefixSearch(hints, line);
         }
 
         string? History(int index)
         {
             return index < 0 || index >= history.Count ? null : history[^(index + 1)];
         }
+    }
+
+    private static string? BinaryPrefixSearch(List<string> list, string prefix)
+    {
+        if (list.Count is 0)
+            return null;
+
+        var index = list.BinarySearch(prefix, StringComparer.Ordinal);
+        index = index < 0 ? ~index : index + 1;
+        if (index >= list.Count)
+            return null;
+
+        var element = list[index];
+        if (!element.StartsWith(prefix, StringComparison.Ordinal))
+            return null;
+
+        return element;
     }
 }
