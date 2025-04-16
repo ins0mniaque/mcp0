@@ -7,6 +7,8 @@ namespace mcp0;
 
 internal static class Terminal
 {
+    public const ConsoleColor DefaultColor = (ConsoleColor)(-1);
+
     public static int Rows => Console.WindowHeight;
     public static int Columns => Console.WindowWidth;
 
@@ -325,7 +327,13 @@ internal static class Terminal
     {
         public InterpolatedStringHandler(int literalLength, int formattedCount) { }
 
-        public void AppendLiteral(string s) => Write(s);
-        public void AppendFormatted<T>(T t) => Write(t?.ToString());
+        public void AppendLiteral(string text) => Write(text);
+        public void AppendFormatted<T>(T typed)
+        {
+            if (typed is ConsoleColor color)
+                Console.ForegroundColor = color;
+            else
+                Write(typed?.ToString());
+        }
     }
 }
