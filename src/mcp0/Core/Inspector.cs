@@ -255,7 +255,13 @@ internal static class Inspector
     {
         if (proxy.Resources.TryFind(uri) is { } resource)
         {
-            var result = await resource.Client.ReadResourceAsync(resource.Item.Uri, cancellationToken);
+            var result = await resource.Client.ReadResourceAsync(uri, cancellationToken);
+            foreach (var content in result.Contents)
+                WriteResourceContents(content);
+        }
+        else if (proxy.ResourceTemplates.TryMatch(uri) is { } resourceTemplate)
+        {
+            var result = await resourceTemplate.Client.ReadResourceAsync(uri, cancellationToken);
             foreach (var content in result.Contents)
                 WriteResourceContents(content);
         }
@@ -265,7 +271,7 @@ internal static class Inspector
 
     private static void WriteResourceContents(ResourceContents contents)
     {
-        if(contents.MimeType is not null)
+        if (contents.MimeType is not null)
             Terminal.WriteLine(contents.MimeType);
 
         if (contents is TextResourceContents text)

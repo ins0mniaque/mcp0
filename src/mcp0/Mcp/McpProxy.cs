@@ -36,7 +36,7 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
     public IReadOnlyList<IMcpClient> Clients { get; private set; } = [];
     public McpClientRegistry<McpClientPrompt> Prompts { get; }
     public McpClientRegistry<Resource> Resources { get; }
-    public McpClientRegistry<ResourceTemplate> ResourceTemplates { get; }
+    public McpClientTemplateRegistry<ResourceTemplate> ResourceTemplates { get; }
     public McpClientRegistry<McpClientTool> Tools { get; }
 
     public LoggingLevel? LoggingLevel => runningServer?.LoggingLevel;

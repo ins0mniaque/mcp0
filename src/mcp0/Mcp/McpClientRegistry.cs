@@ -5,29 +5,26 @@ using ModelContextProtocol.Client;
 
 namespace mcp0.Mcp;
 
-internal sealed class McpClientRegistry<T>(string itemType, Func<T, string> keySelector) : IEnumerable<T>
+internal class McpClientRegistry<T>(string itemType, Func<T, string> keySelector) : IEnumerable<T>
 {
-    private readonly Dictionary<string, (IMcpClient Client, T Item)> registry = new(StringComparer.Ordinal);
+    protected readonly Dictionary<string, (IMcpClient Client, T Item)> registry = new(StringComparer.Ordinal);
 
     public int Count => registry.Count;
 
-    public (IMcpClient Client, T Item) Find(string? name)
+    public (IMcpClient Client, T Item) Find(string? key)
     {
-        if (name is null)
-            throw new McpException($"Missing {itemType} name");
+        if (TryFind(key) is not { } found)
+            throw NotFoundException(key);
 
-        if (!registry.TryGetValue(name, out var item))
-            throw new McpException($"Unknown {itemType}: '{name}'");
-
-        return item;
+        return found;
     }
 
-    public (IMcpClient Client, T Item)? TryFind(string? name)
+    public (IMcpClient Client, T Item)? TryFind(string? key)
     {
-        if (name is null || !registry.TryGetValue(name, out var item))
+        if (key is null || !registry.TryGetValue(key, out var found))
             return null;
 
-        return item;
+        return found;
     }
 
     internal async Task Register(IReadOnlyList<IMcpClient> clients, Func<IMcpClient, Task<IList<T>>> task)
@@ -46,8 +43,16 @@ internal sealed class McpClientRegistry<T>(string itemType, Func<T, string> keyS
         }
     }
 
-    internal void Clear() => registry.Clear();
+    internal virtual void Clear() => registry.Clear();
 
     public IEnumerator<T> GetEnumerator() => registry.Select(static entry => entry.Value.Item).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    protected McpException NotFoundException(string? key)
+    {
+        if (key is null)
+            throw new McpException($"Missing {itemType} request parameter");
+
+        return new McpException($"Unknown {itemType}: '{key}'");
+    }
 }
