@@ -63,15 +63,15 @@ internal sealed class ShellCommand : ProxyCommand
             if (line.Length is 0)
                 return "help";
 
-            var tool = proxy.Tools.FirstOrDefault(tool => tool.Name.StartsWith(line, StringComparison.OrdinalIgnoreCase));
+            var tool = proxy.Tools.FirstOrDefault(tool => tool.Name.Length >= line.Length && tool.Name.StartsWith(line, StringComparison.OrdinalIgnoreCase));
             if (tool is not null)
                 return tool.Name + "(";
 
-            var prompt = proxy.Prompts.FirstOrDefault(prompt => prompt.Name.StartsWith(line, StringComparison.OrdinalIgnoreCase));
+            var prompt = proxy.Prompts.FirstOrDefault(prompt => prompt.Name.Length >= line.Length && prompt.Name.StartsWith(line, StringComparison.OrdinalIgnoreCase));
             if (prompt is not null)
                 return prompt.Name + "(";
 
-            var resource = proxy.Resources.FirstOrDefault(resource => resource.Uri.StartsWith(line, StringComparison.OrdinalIgnoreCase));
+            var resource = proxy.Resources.FirstOrDefault(resource => resource.Uri.Length > line.Length && resource.Uri.StartsWith(line, StringComparison.OrdinalIgnoreCase));
             if (resource is not null)
                 return resource.Uri;
 
