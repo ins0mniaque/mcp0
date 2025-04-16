@@ -33,7 +33,7 @@ internal sealed partial class McpProxy
 
     private ServerCapabilities GetServerCapabilities() => new()
     {
-        NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, CancellationToken, Task>>(StringComparer.Ordinal)
+        NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, CancellationToken, ValueTask>>(StringComparer.Ordinal)
         {
             [NotificationMethods.RootsUpdatedNotification] = async (_, cancellationToken) =>
             {
@@ -60,7 +60,7 @@ internal sealed partial class McpProxy
         },
         Prompts = new()
         {
-            ListPromptsHandler = (_, _) => listPromptsResultTask,
+            ListPromptsHandler = (_, _) => ValueTask.FromResult(listPromptsResult),
             GetPromptHandler = async (request, cancellationToken) =>
             {
                 var (_, prompt) = Prompts.Find(request.Params?.Name);
@@ -74,8 +74,8 @@ internal sealed partial class McpProxy
         },
         Resources = new()
         {
-            ListResourcesHandler = (_, _) => listResourcesResultTask,
-            ListResourceTemplatesHandler = (_, _) => listResourceTemplatesResultTask,
+            ListResourcesHandler = (_, _) => ValueTask.FromResult(listResourcesResult),
+            ListResourceTemplatesHandler = (_, _) => ValueTask.FromResult(listResourceTemplatesResult),
             ReadResourceHandler = async (request, cancellationToken) =>
             {
                 if (request.Params?.Uri is not { } uri)
@@ -116,7 +116,7 @@ internal sealed partial class McpProxy
         },
         Tools = new()
         {
-            ListToolsHandler = (_, _) => listToolsResultTask,
+            ListToolsHandler = (_, _) => ValueTask.FromResult(listToolsResult),
             CallToolHandler = async (request, cancellationToken) =>
             {
                 var (client, tool) = Tools.Find(request.Params?.Name);

@@ -53,14 +53,14 @@ internal static class Configurator
             },
             StringComparer.Ordinal);
 
-        var listPromptsResultTask = Task.FromResult(new ListPromptsResult
+        var listPromptsResult = new ListPromptsResult
         {
             Prompts = prompts.Select(entry => entry.Value.Prompt).ToList()
-        });
+        };
 
         return new()
         {
-            ListPromptsHandler = (_, _) => listPromptsResultTask,
+            ListPromptsHandler = (_, _) => ValueTask.FromResult(listPromptsResult),
             GetPromptHandler = async (request, _) =>
             {
                 if (request.Params?.Name is not { } name || !prompts.TryGetValue(name, out var prompt))
@@ -87,14 +87,14 @@ internal static class Configurator
             .Select(entry => UriResource.Create(entry.Key, Posix.ExpandPath(entry.Value)))
             .ToDictionary(resource => resource.Uri, StringComparer.Ordinal);
 
-        var listResourcesResultTask = Task.FromResult(new ListResourcesResult
+        var listResourcesResult = new ListResourcesResult
         {
             Resources = resources.Select(entry => entry.Value).ToList()
-        });
+        };
 
         return new()
         {
-            ListResourcesHandler = (_, _) => listResourcesResultTask,
+            ListResourcesHandler = (_, _) => ValueTask.FromResult(listResourcesResult),
             ReadResourceHandler = async (request, cancellationToken) =>
             {
                 if (request.Params?.Uri is not { } uri || !resources.TryGetValue(uri, out var resource))
@@ -129,14 +129,14 @@ internal static class Configurator
             },
             StringComparer.Ordinal);
 
-        var listToolsResultTask = Task.FromResult(new ListToolsResult
+        var listToolsResult = new ListToolsResult
         {
             Tools = tools.Select(entry => entry.Value.Tool).ToList()
-        });
+        };
 
         return new()
         {
-            ListToolsHandler = (_, _) => listToolsResultTask,
+            ListToolsHandler = (_, _) => ValueTask.FromResult(listToolsResult),
             CallToolHandler = async (request, cancellationToken) =>
             {
                 if (request.Params?.Name is not { } name || !tools.TryGetValue(name, out var tool))
@@ -197,9 +197,7 @@ internal static class Configurator
             Name = serverName,
             Endpoint = server.Url,
             AdditionalHeaders = server.Headers,
-            ConnectionTimeout = server.ConnectionTimeout ?? defaultSseServer.ConnectionTimeout,
-            MaxReconnectAttempts = server.MaxReconnectAttempts ?? defaultSseServer.MaxReconnectAttempts,
-            ReconnectDelay = server.ReconnectDelay ?? defaultSseServer.ReconnectDelay
+            ConnectionTimeout = server.ConnectionTimeout ?? defaultSseServer.ConnectionTimeout
         };
     }
 

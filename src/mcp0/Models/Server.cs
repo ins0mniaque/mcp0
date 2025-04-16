@@ -30,6 +30,4 @@ internal sealed partial record SseServer : Server
     [UnorderedEquality]
     public Dictionary<string, string>? Headers { get; init; }
     public TimeSpan? ConnectionTimeout { get; init; }
-    public int? MaxReconnectAttempts { get; init; }
-    public TimeSpan? ReconnectDelay { get; init; }
 }

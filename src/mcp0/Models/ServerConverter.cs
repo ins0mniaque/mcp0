@@ -19,8 +19,6 @@ internal sealed class ServerConverter : JsonConverter<Server>
         public const string Url = "url";
         public const string Headers = "headers";
         public const string ConnectionTimeout = "connectionTimeout";
-        public const string MaxReconnectAttempts = "maxReconnectAttempts";
-        public const string ReconnectDelay = "reconnectDelay";
 
         public static bool IsStdioServerProperty(string propertyName)
         {
@@ -29,7 +27,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
         public static bool IsSseServerProperty(string propertyName)
         {
-            return propertyName is Url or Headers or ConnectionTimeout or MaxReconnectAttempts or ReconnectDelay;
+            return propertyName is Url or Headers or ConnectionTimeout;
         }
     }
 
@@ -158,8 +156,6 @@ internal sealed class ServerConverter : JsonConverter<Server>
         var url = (Uri?)null;
         var headers = (Dictionary<string, string>?)null;
         var connectionTimeout = (TimeSpan?)null;
-        var maxReconnectAttempts = (int?)null;
-        var reconnectDelay = (TimeSpan?)null;
 
         ReadProperty(ref reader);
 
@@ -178,9 +174,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 {
                     Url = url ?? throw Exceptions.MissingRequiredServerProperty(Property.Url),
                     Headers = headers,
-                    ConnectionTimeout = connectionTimeout,
-                    MaxReconnectAttempts = maxReconnectAttempts,
-                    ReconnectDelay = reconnectDelay
+                    ConnectionTimeout = connectionTimeout
                 };
             }
 
@@ -204,10 +198,6 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 }
                 else if (propertyName is Property.ConnectionTimeout)
                     connectionTimeout = TimeSpan.FromSeconds(reader.GetInt32());
-                else if (propertyName is Property.MaxReconnectAttempts)
-                    maxReconnectAttempts = reader.GetInt32();
-                else if (propertyName is Property.ReconnectDelay)
-                    reconnectDelay = TimeSpan.FromSeconds(reader.GetInt32());
                 else
                     throw Exceptions.UnknownServerProperty(propertyName);
             }
@@ -276,9 +266,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
     private static void Write(Utf8JsonWriter writer, SseServer server)
     {
         var stringFormattable = server.Headers is null &&
-                                server.ConnectionTimeout is null &&
-                                server.MaxReconnectAttempts is null &&
-                                server.ReconnectDelay is null;
+                                server.ConnectionTimeout is null;
 
         if (stringFormattable)
         {
@@ -298,12 +286,6 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
             if (server.ConnectionTimeout is not null)
                 writer.WriteNumber(Property.ConnectionTimeout, server.ConnectionTimeout.Value.TotalSeconds);
-
-            if (server.MaxReconnectAttempts is not null)
-                writer.WriteNumber(Property.MaxReconnectAttempts, server.MaxReconnectAttempts.Value);
-
-            if (server.ReconnectDelay is not null)
-                writer.WriteNumber(Property.ReconnectDelay, server.ReconnectDelay.Value.TotalSeconds);
 
             writer.WriteEndObject();
         }

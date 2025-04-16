@@ -72,9 +72,7 @@ public sealed class ServerConverterTests
         {
           "url": "http://localhost:8080/server-everything",
           "headers": { "Authorization": "TOKEN" },
-          "connectionTimeout": 30,
-          "maxReconnectAttempts": 10,
-          "reconnectDelay": 60
+          "connectionTimeout": 30
         }
         """;
 
@@ -83,9 +81,7 @@ public sealed class ServerConverterTests
         {
             Url = new Uri("http://localhost:8080/server-everything"),
             Headers = new(StringComparer.Ordinal) { ["Authorization"] = "TOKEN" },
-            ConnectionTimeout = TimeSpan.FromSeconds(30),
-            MaxReconnectAttempts = 10,
-            ReconnectDelay = TimeSpan.FromSeconds(60)
+            ConnectionTimeout = TimeSpan.FromSeconds(30)
         };
 
         Assert.AreEqual(expected, actual);
@@ -145,9 +141,7 @@ public sealed class ServerConverterTests
         {
             Url = new Uri("http://localhost:8080/server-everything"),
             Headers = new(StringComparer.Ordinal) { ["Authorization"] = "TOKEN" },
-            ConnectionTimeout = TimeSpan.FromSeconds(30),
-            MaxReconnectAttempts = 10,
-            ReconnectDelay = TimeSpan.FromSeconds(60)
+            ConnectionTimeout = TimeSpan.FromSeconds(30)
         };
 
         var json = JsonSerializer.Serialize(expected, ModelContext.Default.Server);

@@ -16,10 +16,10 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
     private readonly IServiceProvider? serviceProvider;
     private IMcpServer? runningServer;
 
-    private Task<ListPromptsResult> listPromptsResultTask = Task.FromResult(new ListPromptsResult());
-    private Task<ListResourcesResult> listResourcesResultTask = Task.FromResult(new ListResourcesResult());
-    private Task<ListResourceTemplatesResult> listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult());
-    private Task<ListToolsResult> listToolsResultTask = Task.FromResult(new ListToolsResult());
+    private ListPromptsResult listPromptsResult = new();
+    private ListResourcesResult listResourcesResult = new();
+    private ListResourceTemplatesResult listResourceTemplatesResult = new();
+    private ListToolsResult listToolsResult = new();
 
     public McpProxy(McpProxyOptions? proxyOptions = null, ILoggerFactory? loggerFactory = null, IServiceProvider? serviceProvider = null)
     {
@@ -109,10 +109,10 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
 
         await Prompts.Register(clients, client => client.SafeListPromptsAsync(cancellationToken));
 
-        listPromptsResultTask = Task.FromResult(new ListPromptsResult
+        listPromptsResult = new()
         {
             Prompts = Prompts.Select(static prompt => prompt.ProtocolPrompt).ToList()
-        });
+        };
 
         if (runningServer is { } server)
             await server.SendNotificationAsync(NotificationMethods.PromptListChangedNotification, cancellationToken);
@@ -127,15 +127,15 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
             Resources.Register(clients, client => client.SafeListResourcesAsync(cancellationToken)),
             ResourceTemplates.Register(clients, client => client.SafeListResourceTemplatesAsync(cancellationToken)));
 
-        listResourcesResultTask = Task.FromResult(new ListResourcesResult
+        listResourcesResult = new()
         {
             Resources = Resources.ToList()
-        });
+        };
 
-        listResourceTemplatesResultTask = Task.FromResult(new ListResourceTemplatesResult
+        listResourceTemplatesResult = new()
         {
             ResourceTemplates = ResourceTemplates.ToList()
-        });
+        };
 
         if (runningServer is { } server)
             await server.SendNotificationAsync(NotificationMethods.ResourceListChangedNotification, cancellationToken);
@@ -147,10 +147,10 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
 
         await Tools.Register(clients, client => client.SafeListToolsAsync(null, cancellationToken));
 
-        listToolsResultTask = Task.FromResult(new ListToolsResult
+        listToolsResult = new()
         {
             Tools = Tools.Select(static tool => tool.ProtocolTool).ToList()
-        });
+        };
 
         if (runningServer is { } server)
             await server.SendNotificationAsync(NotificationMethods.ToolListChangedNotification, cancellationToken);

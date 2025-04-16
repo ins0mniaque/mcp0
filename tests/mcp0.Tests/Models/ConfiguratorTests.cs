@@ -37,9 +37,7 @@ public sealed class ConfiguratorTests
         {
             Url = new Uri("http://localhost:8080/server-everything"),
             Headers = new(StringComparer.Ordinal) { ["Authorization"] = "TOKEN" },
-            ConnectionTimeout = TimeSpan.FromSeconds(30),
-            MaxReconnectAttempts = 10,
-            ReconnectDelay = TimeSpan.FromSeconds(60)
+            ConnectionTimeout = TimeSpan.FromSeconds(30)
         };
 
         var actualOptions = server.ToClientTransportOptions("mcp0");
@@ -47,9 +45,7 @@ public sealed class ConfiguratorTests
         {
             Endpoint = server.Url,
             AdditionalHeaders = new(StringComparer.Ordinal) { ["Authorization"] = "TOKEN" },
-            ConnectionTimeout = TimeSpan.FromSeconds(30),
-            MaxReconnectAttempts = 10,
-            ReconnectDelay = TimeSpan.FromSeconds(60)
+            ConnectionTimeout = TimeSpan.FromSeconds(30)
         };
 
         AreEqual(expectedOptions, actualOptions);
@@ -76,8 +72,6 @@ public sealed class ConfiguratorTests
     private static void AreEqual(SseClientTransportOptions expected, SseClientTransportOptions actual)
     {
         Assert.AreEqual(expected.ConnectionTimeout, actual.ConnectionTimeout);
-        Assert.AreEqual(expected.MaxReconnectAttempts, actual.MaxReconnectAttempts);
-        Assert.AreEqual(expected.MaxReconnectAttempts, actual.MaxReconnectAttempts);
 
         if (expected.AdditionalHeaders is not null)
         {

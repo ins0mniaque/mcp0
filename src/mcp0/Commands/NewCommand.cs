@@ -83,9 +83,7 @@ internal sealed class NewCommand : CancellableCommand
                 {
                     Url = new Uri("https://mcp.example.com/sse"),
                     Headers = new(StringComparer.Ordinal) { ["Authorization"] = "Bearer SECRETTOKEN" },
-                    ConnectionTimeout = TimeSpan.FromSeconds(30),
-                    MaxReconnectAttempts = 3,
-                    ReconnectDelay = TimeSpan.FromSeconds(5)
+                    ConnectionTimeout = TimeSpan.FromSeconds(30)
                 }
             }
         };
