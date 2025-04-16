@@ -31,13 +31,13 @@ internal static partial class UriResource
         return CommandLine.ParseComment(ref uri);
     }
 
-    public static async Task<(byte[] Data, string? MimeType)> Download(this Resource resource, CancellationToken cancellationToken)
+    public static async Task<(byte[] Data, string? MimeType)> Download(this Resource resource, IHttpClientFactory httpClientFactory, CancellationToken cancellationToken)
     {
         var uri = new Uri(resource.Uri);
 
         if (uri.Scheme is "http" or "https")
         {
-            using var client = new HttpClient();
+            using var client = httpClientFactory.CreateClient();
             using var result = await client.GetAsync(uri, cancellationToken);
 
             if (result.IsSuccessStatusCode)

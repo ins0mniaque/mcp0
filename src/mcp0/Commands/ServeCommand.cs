@@ -61,8 +61,8 @@ internal sealed class ServeCommand : ProxyCommand
                     httpsOptions.ServerCertificate = LoadCertificate(sslCertFile, sslKeyFile));
         });
 
-        var serviceProvider = context.BindingContext.GetService<IServiceProvider>();
-        if (serviceProvider?.GetService<ILoggerFactory>() is { } loggerFactory)
+        var serviceProvider = context.BindingContext.GetRequiredService<IServiceProvider>();
+        if (serviceProvider.GetService<ILoggerFactory>() is { } loggerFactory)
             builder.Services.AddSingleton(loggerFactory);
 
         builder.Services.AddCors();

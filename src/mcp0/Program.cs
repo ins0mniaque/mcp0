@@ -22,6 +22,8 @@ services.AddLogging(logging =>
     logging.AddConsole(static options => options.LogToStandardErrorThreshold = LogLevel.Trace);
 });
 
+services.AddHttpClient();
+
 services.AddSingleton<RootCommand, Root>();
 services.AddSingleton(Root.ConfigureCommandLine);
 services.AddSingleton<Command, InspectCommand>();

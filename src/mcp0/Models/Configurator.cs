@@ -3,6 +3,8 @@ using System.Text.Json;
 
 using mcp0.Core;
 
+using Microsoft.Extensions.DependencyInjection;
+
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
@@ -12,10 +14,10 @@ namespace mcp0.Models;
 
 internal static class Configurator
 {
-    public static McpServerOptions? ToMcpServerOptions(this Configuration configuration)
+    public static McpServerOptions? ToMcpServerOptions(this Configuration configuration, IServiceProvider serviceProvider)
     {
         var prompts = configuration.ToPromptsCapability();
-        var resources = configuration.ToResourcesCapability();
+        var resources = configuration.ToResourcesCapability(serviceProvider);
         var tools = configuration.ToToolsCapability();
         if (prompts is null && resources is null && tools is null)
             return null;
@@ -78,7 +80,7 @@ internal static class Configurator
         };
     }
 
-    private static ResourcesCapability? ToResourcesCapability(this Configuration configuration)
+    private static ResourcesCapability? ToResourcesCapability(this Configuration configuration, IServiceProvider serviceProvider)
     {
         if (configuration.Resources is null)
             return null;
@@ -92,6 +94,8 @@ internal static class Configurator
             Resources = resources.Select(entry => entry.Value).ToList()
         };
 
+        var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+
         return new()
         {
             ListResourcesHandler = (_, _) => ValueTask.FromResult(listResourcesResult),
@@ -100,7 +104,7 @@ internal static class Configurator
                 if (request.Params?.Uri is not { } uri || !resources.TryGetValue(uri, out var resource))
                     throw new McpException($"Unknown resource: {request.Params?.Uri}");
 
-                var (data, mimetype) = await resource.Download(cancellationToken);
+                var (data, mimetype) = await resource.Download(httpClientFactory, cancellationToken);
                 var contents = await resource.ToResourceContents(data, mimetype, cancellationToken);
 
                 return new() { Contents = [contents] };

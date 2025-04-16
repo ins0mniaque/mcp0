@@ -31,8 +31,8 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
     {
         var noReload = NoReloadOption.GetValue(context);
 
-        var serviceProvider = context.BindingContext.GetService<IServiceProvider>();
-        var configurationRoot = serviceProvider?.GetService<IConfigurationRoot>();
+        var serviceProvider = context.BindingContext.GetRequiredService<IServiceProvider>();
+        var configurationRoot = serviceProvider.GetService<IConfigurationRoot>();
 
         configurationRoot?.TrySetLogLevel(logLevel);
 
@@ -42,9 +42,9 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
             SetLoggingLevelCallback = level => configurationRoot?.SetLogLevel(level.ToLogLevel())
         };
 
-        var loggerFactory = serviceProvider?.GetService<ILoggerFactory>();
+        var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
         var configuration = await Configuration.Load(paths, cancellationToken);
-        var serverOptions = configuration.ToMcpServerOptions();
+        var serverOptions = configuration.ToMcpServerOptions(serviceProvider);
         var serverName = proxyOptions.ServerInfo?.Name ??
                          serverOptions?.ServerInfo?.Name ??
                          ServerInfo.Default.Name;
