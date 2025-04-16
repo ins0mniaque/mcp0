@@ -7,11 +7,11 @@ namespace mcp0.Mcp;
 
 internal sealed class McpClientRegistry<T>(string itemType, Func<T, string> keySelector) : IEnumerable<T>
 {
-    private readonly Dictionary<string, (IMcpClient, T)> registry = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (IMcpClient Client, T Item)> registry = new(StringComparer.Ordinal);
 
     public int Count => registry.Count;
 
-    public (IMcpClient Client, T) Find(string? name)
+    public (IMcpClient Client, T Item) Find(string? name)
     {
         if (name is null)
             throw new McpException($"Missing {itemType} name");
@@ -22,7 +22,7 @@ internal sealed class McpClientRegistry<T>(string itemType, Func<T, string> keyS
         return item;
     }
 
-    public (IMcpClient Client, T)? TryFind(string? name)
+    public (IMcpClient Client, T Item)? TryFind(string? name)
     {
         if (name is null || !registry.TryGetValue(name, out var item))
             return null;
@@ -48,6 +48,6 @@ internal sealed class McpClientRegistry<T>(string itemType, Func<T, string> keyS
 
     internal void Clear() => registry.Clear();
 
-    public IEnumerator<T> GetEnumerator() => registry.Select(static entry => entry.Value.Item2).GetEnumerator();
+    public IEnumerator<T> GetEnumerator() => registry.Select(static entry => entry.Value.Item).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
