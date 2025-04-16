@@ -3,7 +3,7 @@ using System.Reflection;
 using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 
-namespace mcp0;
+namespace mcp0.Models;
 
 internal static class ServerInfo
 {

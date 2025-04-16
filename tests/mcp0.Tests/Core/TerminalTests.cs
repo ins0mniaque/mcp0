@@ -1,4 +1,4 @@
-﻿namespace mcp0;
+﻿namespace mcp0.Core;
 
 [TestClass]
 public sealed class TerminalTests

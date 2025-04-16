@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace mcp0;
+namespace mcp0.Core;
 
 internal static class Terminal
 {
