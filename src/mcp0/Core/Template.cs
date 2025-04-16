@@ -15,8 +15,8 @@ internal static partial class Template
 
         T CreateArgument(Match match) => factory(
             match.Groups["name"].Value,
-            match.Groups["type"].Length is 0 ? null : match.Groups["type"].Value,
-            match.Groups["description"].Length is 0 ? null : match.Groups["description"].Value,
+            NullIfEmpty(match.Groups["type"].Value),
+            NullIfEmpty(match.Groups["description"].Value),
             match.Groups["required"].Length is 0);
     }
 
@@ -36,4 +36,6 @@ internal static partial class Template
             return string.Empty;
         }
     }
+
+    private static string? NullIfEmpty(string text) => text.Length is 0 ? null : text;
 }
