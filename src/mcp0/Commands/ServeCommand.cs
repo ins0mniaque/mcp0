@@ -65,7 +65,7 @@ internal sealed class ServeCommand : ProxyCommand
             builder.Services.AddSingleton(loggerFactory);
 
         builder.Services.AddCors();
-        builder.Services.AddMcpServer(proxy.ConfigureServerOptions);
+        builder.Services.AddMcpServer(proxy.ConfigureServerOptions).WithHttpTransport();
 
         var app = builder.Build();
 
