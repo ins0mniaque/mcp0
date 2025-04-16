@@ -32,10 +32,14 @@ internal sealed class ShellCommand : ProxyCommand
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
     {
         var history = new List<string>();
-        var hints = new List<string>(proxy.Prompts.Count + proxy.Resources.Count + proxy.Tools.Count);
+        var hints = new List<string>(proxy.Prompts.Count +
+                                     proxy.Resources.Count +
+                                     proxy.ResourceTemplates.Count +
+                                     proxy.Tools.Count);
 
         hints.AddRange(proxy.Prompts.Select(static prompt => prompt.Name + '('));
         hints.AddRange(proxy.Resources.Select(static resource => resource.Uri));
+        hints.AddRange(proxy.ResourceTemplates.Select(static resourceTemplate => resourceTemplate.UriTemplate));
         hints.AddRange(proxy.Tools.Select(static tool => tool.Name + '('));
         hints.Sort(StringComparer.Ordinal);
 
