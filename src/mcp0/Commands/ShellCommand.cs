@@ -32,14 +32,12 @@ internal sealed class ShellCommand : ProxyCommand
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
     {
         var history = new List<string>();
-        var hist = (int index) => index < 0 || index >= history.Count ? null : history[^(index + 1)];
-        var hint = (string line) => line.Length is 0 ? "help" : null;
 
         while (!cancellationToken.IsCancellationRequested)
         {
             Terminal.Write("> ");
 
-            var line = Terminal.ReadLine(hist, hint).Trim();
+            var line = Terminal.ReadLine(History, Hint).Trim();
             if (line is "exit")
                 break;
 
@@ -58,6 +56,25 @@ internal sealed class ShellCommand : ProxyCommand
                 history.Add(line);
         }
 
-        await Task.CompletedTask;
+        string? Hint(string line)
+        {
+            if (line.Length is 0)
+                return "help";
+
+            var tool = proxy.Tools.FirstOrDefault(tool => tool.Name.StartsWith(line, StringComparison.OrdinalIgnoreCase));
+            if (tool is not null)
+                return tool.Name + "(";
+
+            var prompt = proxy.Prompts.FirstOrDefault(prompt => prompt.Name.StartsWith(line, StringComparison.OrdinalIgnoreCase));
+            if (prompt is not null)
+                return prompt.Name + "(";
+
+            return null;
+        }
+
+        string? History(int index)
+        {
+            return index < 0 || index >= history.Count ? null : history[^(index + 1)];
+        }
     }
 }
