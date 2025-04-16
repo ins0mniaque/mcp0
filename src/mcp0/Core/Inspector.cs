@@ -46,7 +46,6 @@ internal static class Inspector
                 Terminal.Write(Indentation);
                 Terminal.Write(prompt.Name, HeaderColor);
                 WritePromptArguments(prompt);
-                Terminal.Write(": ");
                 WriteDescription(prompt.Description, width);
             }
         }
@@ -61,6 +60,7 @@ internal static class Inspector
                 Terminal.Write(Indentation);
                 Terminal.Write(resource.Name, HeaderColor);
                 Terminal.Write(": ");
+                Terminal.Write(resource.Uri);
                 WriteDescription(resource.Description, width);
             }
         }
@@ -75,6 +75,7 @@ internal static class Inspector
                 Terminal.Write(Indentation);
                 Terminal.Write(resourceTemplate.Name, HeaderColor);
                 Terminal.Write(": ");
+                Terminal.Write(resourceTemplate.UriTemplate);
                 WriteDescription(resourceTemplate.Description, width);
             }
         }
@@ -90,7 +91,7 @@ internal static class Inspector
                 Terminal.Write(tool.Name, HeaderColor);
                 Terminal.Write("(");
                 WriteJsonSchema(JsonSchema.Parse(tool.ProtocolTool.InputSchema), asArguments: true);
-                Terminal.Write("): ");
+                Terminal.Write(")");
                 WriteDescription(tool.Description, width);
             }
         }
@@ -119,10 +120,12 @@ internal static class Inspector
         if (width > 16 && description?.Length > width / 2)
         {
             Terminal.WriteLine();
-            Terminal.WriteLine(Terminal.WordWrap(Buffer, description, width - 4, 4));
+            Terminal.WriteLine(Terminal.WordWrap(Buffer, description, width - 4, 4), ConsoleColor.DarkGray);
         }
+        else if (description?.Length > 0)
+            Terminal.WriteLine($"{ConsoleColor.DarkGray}  # {description}{Terminal.DefaultColor}");
         else
-            Terminal.WriteLine(description);
+            Terminal.WriteLine();
     }
 
     private static void WriteJsonSchema(IJsonSchemaNode node, bool asArguments = false)
