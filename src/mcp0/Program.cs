@@ -1,47 +1,26 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Help;
+using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 
-using mcp0;
 using mcp0.Commands;
 
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
-var rootCommand = new RootCommand
-{
-    new InspectCommand(),
-    new NewCommand(),
-    new RunCommand(),
-    new ServeCommand(),
-    new ShellCommand()
-};
+var services = new ServiceCollection();
 
-var logLevelOption = new Option<LogLevel?>("--loglevel");
+services.AddSingleton<RootCommand, Root>();
+services.AddSingleton(Root.ConfigureCommandLine);
+services.AddSingleton<Command, InspectCommand>();
+services.AddSingleton<Command, NewCommand>();
+services.AddSingleton<Command, RunCommand>();
+services.AddSingleton<Command, ServeCommand>();
+services.AddSingleton<Command, ShellCommand>();
 
-rootCommand.AddGlobalOption(logLevelOption);
+await using var serviceProvider = services.BuildServiceProvider();
 
-var parser = new CommandLineBuilder(rootCommand)
-    .UseDefaults()
-    .UseHelp(Customize)
-    .Build();
+var rootCommand = serviceProvider.GetRequiredService<RootCommand>();
+var commandLine = new CommandLineBuilder(rootCommand).UseServiceProvider(serviceProvider);
 
-var parsed = parser.Parse(args);
-
-Log.Level = parsed.GetValueForOption(logLevelOption);
-
-return await parsed.InvokeAsync();
-
-void Customize(HelpContext context)
-{
-    const string Banner = "mcp0 - Secure MCP (Model Context Protocol) servers configurator/inspector/proxy";
-
-    context.HelpBuilder.CustomizeLayout(static context =>
-        HelpBuilder.Default.GetLayout()
-            .Skip(string.IsNullOrEmpty(context.Command.Description) ? 1 : 0)
-            .Prepend(static _ => Terminal.WriteLine(Banner)));
-
-    context.HelpBuilder.CustomizeSymbol(logLevelOption,
-        firstColumnText: "--loglevel <level>",
-        secondColumnText: "Minimum severity logging level\n<level: Trace|Debug|Information|Warning|Error|Critical|None>");
-}
+return await commandLine.Build().InvokeAsync(args);
