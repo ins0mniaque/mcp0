@@ -325,7 +325,9 @@ internal static class Terminal
     [SuppressMessage("Microsoft.Performance", "CA1822:Mark member as static", Justification = "InterpolatedStringHandler")]
     internal struct InterpolatedStringHandler
     {
+        // ReSharper disable UnusedParameter.Local
         public InterpolatedStringHandler(int literalLength, int formattedCount) { }
+        // ReSharper restore UnusedParameter.Local
 
         public void AppendLiteral(string text) => Write(text);
         public void AppendFormatted<T>(T typed)
