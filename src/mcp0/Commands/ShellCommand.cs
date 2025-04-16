@@ -47,6 +47,8 @@ internal sealed class ShellCommand : ProxyCommand
 
             if (FunctionCall.TryParse(line, out var function, out var arguments))
                 await Inspector.Call(proxy, function, arguments, cancellationToken);
+            else if (Uri.IsWellFormedUriString(line, UriKind.Absolute))
+                await Inspector.Read(proxy, line, cancellationToken);
             else if (command is "i" or "inspect")
                 Inspector.Inspect(proxy);
             else
@@ -68,6 +70,10 @@ internal sealed class ShellCommand : ProxyCommand
             var prompt = proxy.Prompts.FirstOrDefault(prompt => prompt.Name.StartsWith(line, StringComparison.OrdinalIgnoreCase));
             if (prompt is not null)
                 return prompt.Name + "(";
+
+            var resource = proxy.Resources.FirstOrDefault(resource => resource.Uri.StartsWith(line, StringComparison.OrdinalIgnoreCase));
+            if (resource is not null)
+                return resource.Uri;
 
             return null;
         }

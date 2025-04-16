@@ -250,4 +250,27 @@ internal static class Inspector
         return names?.Select((name, index) => KeyValuePair.Create(name, (object?)arguments.ElementAtOrDefault(index)))
                      .ToDictionary(StringComparer.Ordinal);
     }
+
+    public static async Task Read(McpProxy proxy, string uri, CancellationToken cancellationToken)
+    {
+        if (proxy.Resources.TryFind(uri) is { } resource)
+        {
+            var result = await resource.Client.ReadResourceAsync(resource.Item.Uri, cancellationToken);
+            foreach (var content in result.Contents)
+                WriteResourceContents(content);
+        }
+        else
+            Terminal.WriteLine($"Could not find resource {uri}");
+    }
+
+    private static void WriteResourceContents(ResourceContents contents)
+    {
+        if(contents.MimeType is not null)
+            Terminal.WriteLine(contents.MimeType);
+
+        if (contents is TextResourceContents text)
+            Terminal.WriteLine(text.Text);
+        else if (contents is BlobResourceContents blob)
+            Terminal.WriteLine(blob.Blob);
+    }
 }
