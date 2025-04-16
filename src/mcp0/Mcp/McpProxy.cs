@@ -9,12 +9,11 @@ using ModelContextProtocol.Server;
 
 namespace mcp0.Mcp;
 
-internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
+internal sealed partial class McpProxy : IAsyncDisposable
 {
     private readonly McpProxyOptions proxyOptions;
     private readonly ILoggerFactory? loggerFactory;
     private readonly IServiceProvider? serviceProvider;
-    private IMcpServer? runningServer;
 
     private ListPromptsResult listPromptsResult = new();
     private ListResourcesResult listResourcesResult = new();
@@ -33,21 +32,12 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
         this.serviceProvider = serviceProvider;
     }
 
+    public IMcpServer? Server { get; private set; }
     public IReadOnlyList<IMcpClient> Clients { get; private set; } = [];
     public McpClientRegistry<McpClientPrompt> Prompts { get; }
     public McpClientRegistry<Resource> Resources { get; }
     public McpClientTemplateRegistry<ResourceTemplate> ResourceTemplates { get; }
     public McpClientRegistry<McpClientTool> Tools { get; }
-
-    public LoggingLevel? LoggingLevel => runningServer?.LoggingLevel;
-    public IServiceProvider? Services => runningServer?.Services ??
-                                         serviceProvider ??
-                                         (loggerFactory is null ? null : this);
-
-    object? IServiceProvider.GetService(Type serviceType)
-    {
-        return serviceType == typeof(ILoggerFactory) ? loggerFactory : null;
-    }
 
     public async Task ConnectAsync(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
     {
@@ -71,7 +61,7 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        if (runningServer is not null)
+        if (Server is not null)
             throw new InvalidOperationException("Server is already running");
 
         var serverOptions = GetServerOptions();
@@ -84,20 +74,20 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
 
         try
         {
-            runningServer = server;
+            Server = server;
 
             await server.RunAsync(cancellationToken);
         }
         finally
         {
-            runningServer = null;
+            Server = null;
         }
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (runningServer is not null)
-            await runningServer.DisposeAsync();
+        if (Server is not null)
+            await Server.DisposeAsync();
 
         foreach (var client in Clients)
             await client.DisposeAsync();
@@ -114,7 +104,7 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
             Prompts = Prompts.Select(static prompt => prompt.ProtocolPrompt).ToList()
         };
 
-        if (runningServer is { } server)
+        if (Server is { } server)
             await server.SendNotificationAsync(NotificationMethods.PromptListChangedNotification, cancellationToken);
     }
 
@@ -137,7 +127,7 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
             ResourceTemplates = ResourceTemplates.ToList()
         };
 
-        if (runningServer is { } server)
+        if (Server is { } server)
             await server.SendNotificationAsync(NotificationMethods.ResourceListChangedNotification, cancellationToken);
     }
 
@@ -152,7 +142,7 @@ internal sealed partial class McpProxy : IServiceProvider, IAsyncDisposable
             Tools = Tools.Select(static tool => tool.ProtocolTool).ToList()
         };
 
-        if (runningServer is { } server)
+        if (Server is { } server)
             await server.SendNotificationAsync(NotificationMethods.ToolListChangedNotification, cancellationToken);
     }
 

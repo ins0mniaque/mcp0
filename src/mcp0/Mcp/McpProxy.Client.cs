@@ -34,10 +34,10 @@ internal sealed partial class McpProxy
             {
                 ArgumentNullException.ThrowIfNull(request);
 
-                if (runningServer is null)
+                if (Server is null)
                     throw new McpException("Server is not running");
 
-                return await runningServer.RequestSamplingAsync(request, cancellationToken);
+                return await Server.RequestSamplingAsync(request, cancellationToken);
             }
         },
         Roots = new()
@@ -47,10 +47,10 @@ internal sealed partial class McpProxy
             {
                 ArgumentNullException.ThrowIfNull(request);
 
-                if (runningServer is null)
+                if (Server is null)
                     throw new McpException("Server is not running");
 
-                return await runningServer.RequestRootsAsync(request, cancellationToken);
+                return await Server.RequestRootsAsync(request, cancellationToken);
             }
         }
     };
