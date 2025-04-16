@@ -1,4 +1,6 @@
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace mcp0;
@@ -194,7 +196,9 @@ internal static class Terminal
         return offset is -1 ? line.Length : cursor + offset;
     }
 
+    public static void Write(InterpolatedStringHandler text) { }
     public static void Write(ReadOnlySpan<char> text) => Console.Out.Write(text);
+
     public static void Write(ReadOnlySpan<char> text, ConsoleColor color)
     {
         var currentColor = Console.ForegroundColor;
@@ -204,7 +208,9 @@ internal static class Terminal
     }
 
     public static void WriteLine() => Console.Out.WriteLine();
+    public static void WriteLine(InterpolatedStringHandler text) => Console.Out.WriteLine();
     public static void WriteLine(ReadOnlySpan<char> text) => Console.Out.WriteLine(text);
+
     public static void WriteLine(ReadOnlySpan<char> text, ConsoleColor color)
     {
         var currentColor = Console.ForegroundColor;
@@ -311,5 +317,15 @@ internal static class Terminal
     {
         var wraps = text.Length / (width - 1) + 1;
         return text.Length + wraps * (leftPad + 1);
+    }
+
+    [InterpolatedStringHandler]
+    [SuppressMessage("Microsoft.Performance", "CA1822:Mark member as static", Justification = "InterpolatedStringHandler")]
+    internal struct InterpolatedStringHandler
+    {
+        public InterpolatedStringHandler(int literalLength, int formattedCount) { }
+
+        public void AppendLiteral(string s) => Write(s);
+        public void AppendFormatted<T>(T t) => Write(t?.ToString());
     }
 }
