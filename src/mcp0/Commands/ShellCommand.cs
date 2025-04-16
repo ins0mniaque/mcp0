@@ -47,7 +47,9 @@ internal sealed class ShellCommand : ProxyCommand
             if (command is null)
                 continue;
 
-            if (command is "i" or "inspect")
+            if (FunctionCall.TryParse(line, out var function, out var arguments))
+                await Inspector.Call(proxy, function, arguments, cancellationToken);
+            else if (command is "i" or "inspect")
                 Inspector.Inspect(proxy);
             else
                 Terminal.WriteLine($"command not found: {command}");

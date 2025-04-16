@@ -1,7 +1,9 @@
 using System.Text;
+using System.Text.Json;
 
 using mcp0.Mcp;
 
+using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Types;
 
@@ -172,5 +174,77 @@ internal static class Inspector
             Terminal.Write(symbol.Name, SymbolColor);
         else
             throw new ArgumentException($"Unknown JSON schema node: {node.GetType().Name}", nameof(node));
+    }
+
+    public static async Task Call(McpProxy proxy, string function, JsonElement[] arguments, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (proxy.Tools.TryFind(function) is { } tool)
+                await CallTool(tool.Client, tool.Item, arguments, cancellationToken);
+            else if (proxy.Prompts.TryFind(function) is { } prompt)
+                await CallPrompt(prompt.Client, prompt.Item, arguments, cancellationToken);
+            else
+                Terminal.WriteLine($"Could not find a tool or prompt named: {function}");
+        }
+        catch (McpException) { }
+    }
+
+    private static async Task CallPrompt(IMcpClient client, McpClientPrompt prompt, JsonElement[] arguments, CancellationToken cancellationToken)
+    {
+        var promptArguments = arguments.ToNamedArguments(prompt.ProtocolPrompt.Arguments?.Select(static argument => argument.Name));
+        var promptResult = await client.GetPromptAsync(prompt.Name, promptArguments, null, cancellationToken);
+        if (promptResult.Description is not null)
+        {
+            Terminal.Write("Description: ");
+            Terminal.WriteLine(promptResult.Description);
+        }
+
+        foreach (var message in promptResult.Messages)
+        {
+            Terminal.Write(message.Role.ToString());
+            Terminal.Write(": ");
+            WriteContent(message.Content);
+        }
+    }
+
+    private static async Task CallTool(IMcpClient client, McpClientTool tool, JsonElement[] arguments, CancellationToken cancellationToken)
+    {
+        var schemaNode = JsonSchema.Parse(tool.JsonSchema);
+        if (schemaNode is not JsonSchemaObjectType objectType)
+        {
+            Terminal.Write("Error: ", ConsoleColor.Red);
+            Terminal.Write("Invalid tool input schema");
+            return;
+        }
+
+        var toolArguments = arguments.ToNamedArguments(objectType.Properties.Select(static property => property.Name));
+        var toolResponse = await client.CallToolAsync(tool.Name, toolArguments, null, cancellationToken);
+        if (toolResponse.IsError)
+            Terminal.Write("Error: ", ConsoleColor.Red);
+
+        foreach (var content in toolResponse.Content)
+            WriteContent(content);
+    }
+
+    private static void WriteContent(Content content)
+    {
+        if (content.MimeType is { } mimeType)
+            Terminal.WriteLine(mimeType);
+
+        if (content.Resource is { } resource)
+            Terminal.WriteLine(resource.Uri);
+
+        if (content.Text is { } text)
+            Terminal.WriteLine(text);
+
+        if (content.Data is { } data)
+            Terminal.WriteLine(data);
+    }
+
+    private static Dictionary<string, object?>? ToNamedArguments(this JsonElement[] arguments, IEnumerable<string>? names)
+    {
+        return names?.Select((name, index) => KeyValuePair.Create(name, (object?)arguments.ElementAtOrDefault(index)))
+                     .ToDictionary(StringComparer.Ordinal);
     }
 }
