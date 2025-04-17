@@ -6,7 +6,7 @@ namespace mcp0.Mcp;
 
 internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, string> keySelector) : McpProxyRegistry<T>(itemType, keySelector) where T : notnull
 {
-    private readonly Dictionary<Uri, UriTemplateMatcher> matchers = new();
+    private readonly Dictionary<string, UriTemplateMatcher> matchers = new(StringComparer.Ordinal);
 
     public T Match(string? key, out IMcpClient client)
     {
@@ -27,8 +27,7 @@ internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, st
         var uri = new Uri(key, UriKind.Absolute);
         foreach (var entry in registry)
         {
-            var uriTemplate = new Uri(entry.Key, UriKind.Absolute);
-            var matcher = GetMatcher(uriTemplate);
+            var matcher = GetMatcher(entry.Key);
             if (matcher.Match(uri))
             {
                 client = entry.Value.Client;
@@ -46,10 +45,10 @@ internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, st
         matchers.Clear();
     }
 
-    private UriTemplateMatcher GetMatcher(Uri uriTemplate)
+    private UriTemplateMatcher GetMatcher(string key)
     {
-        if (!matchers.TryGetValue(uriTemplate, out var matcher))
-            matchers[uriTemplate] = matcher = new UriTemplateMatcher(uriTemplate);
+        if (!matchers.TryGetValue(key, out var matcher))
+            matchers[key] = matcher = new UriTemplateMatcher(new Uri(key, UriKind.Absolute));
 
         return matcher;
     }
