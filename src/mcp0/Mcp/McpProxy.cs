@@ -34,10 +34,10 @@ internal sealed partial class McpProxy : IAsyncDisposable
 
     public IMcpServer? Server { get; private set; }
     public IReadOnlyList<IMcpClient> Clients { get; private set; } = [];
-    public McpClientRegistry<McpClientPrompt> Prompts { get; }
-    public McpClientRegistry<Resource> Resources { get; }
-    public McpClientTemplateRegistry<ResourceTemplate> ResourceTemplates { get; }
-    public McpClientRegistry<McpClientTool> Tools { get; }
+    public McpProxyRegistry<McpClientPrompt> Prompts { get; }
+    public McpProxyRegistry<Resource> Resources { get; }
+    public McpProxyUriTemplateRegistry<ResourceTemplate> ResourceTemplates { get; }
+    public McpProxyRegistry<McpClientTool> Tools { get; }
 
     public async Task ConnectAsync(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
     {

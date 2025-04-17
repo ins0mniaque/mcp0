@@ -6,7 +6,7 @@ using ModelContextProtocol.Client;
 
 namespace mcp0.Mcp;
 
-internal class McpClientRegistry<T>(string itemType, Func<T, string> keySelector) : IEnumerable<T> where T : notnull
+internal class McpProxyRegistry<T>(string itemType, Func<T, string> keySelector) : IEnumerable<T> where T : notnull
 {
     protected readonly Dictionary<string, (IMcpClient Client, T Item)> registry = new(StringComparer.Ordinal);
 

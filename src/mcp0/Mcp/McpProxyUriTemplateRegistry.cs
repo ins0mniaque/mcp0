@@ -4,7 +4,7 @@ using ModelContextProtocol.Client;
 
 namespace mcp0.Mcp;
 
-internal sealed class McpClientTemplateRegistry<T>(string itemType, Func<T, string> keySelector) : McpClientRegistry<T>(itemType, keySelector) where T : notnull
+internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, string> keySelector) : McpProxyRegistry<T>(itemType, keySelector) where T : notnull
 {
     private readonly Dictionary<Uri, UriTemplateMatcher> matchers = new();
 
@@ -37,25 +37,6 @@ internal sealed class McpClientTemplateRegistry<T>(string itemType, Func<T, stri
             }
         }
 
-        return false;
-    }
-
-    private bool TryMatch2(Uri uri, out IMcpClient client, [NotNullWhen(true)] out T item)
-    {
-        foreach (var entry in registry)
-        {
-            var uriTemplate = new Uri(entry.Key, UriKind.Absolute);
-            var matcher = GetMatcher(uriTemplate);
-            if (matcher.Match(uri))
-            {
-                client = entry.Value.Client;
-                item = entry.Value.Item;
-                return true;
-            }
-        }
-
-        client = null!;
-        item = default!;
         return false;
     }
 
