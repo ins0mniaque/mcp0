@@ -1,4 +1,3 @@
-using System.CommandLine;
 using System.CommandLine.Invocation;
 
 using mcp0.Core;
@@ -13,20 +12,11 @@ internal sealed class ShellCommand : ProxyCommand
     public ShellCommand() : base("shell", "Run an interactive shell on the MCP server built from one or more configuration files")
     {
         AddAlias("sh");
-        AddOption(NoReloadOption);
-        AddArgument(PathsArgument);
     }
 
-    private static new Argument<string[]> PathsArgument { get; } = new(ProxyCommand.PathsArgument.Name, ProxyCommand.PathsArgument.Description)
+    protected override Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {
-        Arity = ArgumentArity.ZeroOrMore
-    };
-
-    protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
-    {
-        var paths = PathsArgument.GetValue(context);
-
-        await ConnectAndRun(context, paths, LogLevel.Warning, cancellationToken);
+        return ConnectAndRun(context, LogLevel.Warning, cancellationToken);
     }
 
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)

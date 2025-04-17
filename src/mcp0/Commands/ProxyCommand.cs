@@ -16,20 +16,29 @@ using ModelContextProtocol.Server;
 
 namespace mcp0.Commands;
 
-internal abstract class ProxyCommand(string name, string? description = null) : CancellableCommand(name, description)
+internal abstract class ProxyCommand : CancellableCommand
 {
+    protected ProxyCommand(string name, string? description = null) : base(name, description)
+    {
+        AddOption(NoReloadOption);
+        AddArgument(PathsArgument);
+    }
+
     protected static Option<bool> NoReloadOption { get; } = new("--no-reload", "Do not reload when context configuration files change");
 
     protected static Argument<string[]> PathsArgument { get; } = new("files", "The configuration files to build an MCP server from")
     {
-        Arity = ArgumentArity.OneOrMore
+        Arity = ArgumentArity.ZeroOrMore
     };
 
     protected abstract Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken);
 
-    protected async Task ConnectAndRun(InvocationContext context, string[] paths, LogLevel logLevel, CancellationToken cancellationToken)
+    protected async Task ConnectAndRun(InvocationContext context, LogLevel logLevel, CancellationToken cancellationToken)
     {
+        var paths = PathsArgument.GetValue(context);
         var noReload = NoReloadOption.GetValue(context);
+
+        var configuration = await Configuration.Load(paths, cancellationToken);
 
         var serviceProvider = context.BindingContext.GetRequiredService<IServiceProvider>();
         var configurationRoot = serviceProvider.GetService<IConfigurationRoot>();
@@ -43,7 +52,6 @@ internal abstract class ProxyCommand(string name, string? description = null) : 
         };
 
         var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
-        var configuration = await Configuration.Load(paths, cancellationToken);
         var serverOptions = configuration.ToMcpServerOptions(serviceProvider);
         var serverName = proxyOptions.ServerInfo?.Name ??
                          serverOptions?.ServerInfo?.Name ??

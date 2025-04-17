@@ -12,14 +12,11 @@ internal sealed class InspectCommand : ProxyCommand
     public InspectCommand() : base("inspect", "Inspect an MCP server built from one or more configuration files")
     {
         AddAlias("i");
-        AddArgument(PathsArgument);
     }
 
-    protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
+    protected override Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {
-        var paths = PathsArgument.GetValue(context);
-
-        await ConnectAndRun(context, paths, LogLevel.Warning, cancellationToken);
+        return ConnectAndRun(context, LogLevel.Warning, cancellationToken);
     }
 
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)

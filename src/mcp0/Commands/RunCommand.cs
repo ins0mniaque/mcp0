@@ -8,17 +8,11 @@ namespace mcp0.Commands;
 
 internal sealed class RunCommand : ProxyCommand
 {
-    public RunCommand() : base("run", "Run an MCP server over STDIO built from one or more configuration files")
-    {
-        AddOption(NoReloadOption);
-        AddArgument(PathsArgument);
-    }
+    public RunCommand() : base("run", "Run an MCP server over STDIO built from one or more configuration files") { }
 
-    protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
+    protected override Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {
-        var paths = PathsArgument.GetValue(context);
-
-        await ConnectAndRun(context, paths, LogLevel.Information, cancellationToken);
+        return ConnectAndRun(context, LogLevel.Information, cancellationToken);
     }
 
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)

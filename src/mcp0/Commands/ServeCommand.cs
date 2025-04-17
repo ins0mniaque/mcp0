@@ -23,8 +23,6 @@ internal sealed class ServeCommand : ProxyCommand
         AddOption(ApiKeyOption);
         AddOption(SslCertFileOption);
         AddOption(SslKeyFileOption);
-        AddOption(NoReloadOption);
-        AddArgument(PathsArgument);
     }
 
     private static Option<string> HostOption { get; } = new("--host", () => "http://localhost:7890", "IP/host addresses and ports to listen to\n[env: MCP0_HOST]");
@@ -33,11 +31,9 @@ internal sealed class ServeCommand : ProxyCommand
     private static Option<string> SslCertFileOption { get; } = new("--ssl-cert-file", "Path to PEM-encoded SSL certificate\n[env: MCP0_SSL_CERT_FILE]");
     private static Option<string> SslKeyFileOption { get; } = new("--ssl-key-file", "Path to PEM-encoded SSL private key\n[env: MCP0_SSL_KEY_FILE]");
 
-    protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
+    protected override Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {
-        var paths = PathsArgument.GetValue(context);
-
-        await ConnectAndRun(context, paths, LogLevel.Information, cancellationToken);
+        return ConnectAndRun(context, LogLevel.Information, cancellationToken);
     }
 
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
