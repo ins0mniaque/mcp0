@@ -19,22 +19,15 @@ internal static class Inspector
     {
         const ConsoleColor SectionColor = ConsoleColor.Magenta;
         const ConsoleColor HeaderColor = ConsoleColor.Green;
-        const ConsoleColor ErrorColor = ConsoleColor.Red;
 
-        var width = Terminal.Columns;
+        var columns = Terminal.Columns;
 
         foreach (var client in proxy.Clients)
         {
-            if (client.ServerInfo is not { } info)
-            {
-                Terminal.Write("server", ErrorColor);
-                Terminal.WriteLine(" (no information)");
-                continue;
-            }
-
-            Terminal.Write(info.Name, HeaderColor);
+            Terminal.Write(client.ServerInfo.Name, HeaderColor);
             Terminal.Write(" ");
-            Terminal.WriteLine(info.Version);
+            Terminal.Write(client.ServerInfo.Version);
+            WriteItemCounts(proxy, client);
         }
 
         if (proxy.Prompts.Count is not 0)
@@ -47,7 +40,7 @@ internal static class Inspector
                 Terminal.Write(Indentation);
                 Terminal.Write(prompt.Name, HeaderColor);
                 WritePromptArguments(prompt);
-                WriteDescription(prompt.Description, width);
+                WriteDescription(prompt.Description, columns);
             }
         }
 
@@ -62,7 +55,7 @@ internal static class Inspector
                 Terminal.Write(resource.Name, HeaderColor);
                 Terminal.Write(": ");
                 Terminal.Write(resource.Uri);
-                WriteDescription(resource.Description, width);
+                WriteDescription(resource.Description, columns);
             }
         }
 
@@ -77,7 +70,7 @@ internal static class Inspector
                 Terminal.Write(resourceTemplate.Name, HeaderColor);
                 Terminal.Write(": ");
                 Terminal.Write(resourceTemplate.UriTemplate);
-                WriteDescription(resourceTemplate.Description, width);
+                WriteDescription(resourceTemplate.Description, columns);
             }
         }
 
@@ -93,9 +86,52 @@ internal static class Inspector
                 Terminal.Write("(");
                 WriteJsonSchema(JsonSchema.Parse(tool.ProtocolTool.InputSchema), asArguments: true);
                 Terminal.Write(")");
-                WriteDescription(tool.Description, width);
+                WriteDescription(tool.Description, columns);
             }
         }
+    }
+
+    private static void WriteItemCounts(McpProxy proxy, IMcpClient client)
+    {
+        var prompts = proxy.Prompts[client].Count();
+        var resources = proxy.Resources[client].Count();
+        var resourceTemplates = proxy.ResourceTemplates[client].Count();
+        var tools = proxy.Tools[client].Count();
+
+        Terminal.Write($"{ConsoleColor.DarkGray}  # ");
+
+        var index = 0;
+        WriteItemCount(prompts, "prompt", "prompts", ref index);
+        WriteItemCount(resources, "resource", "resources", ref index);
+        WriteItemCount(resourceTemplates, "resource template", "resource templates", ref index);
+        WriteItemCount(tools, "tool", "tools", ref index);
+
+        if (prompts is 0 && resources is 0 && resourceTemplates is 0 && tools is 0)
+            Terminal.Write("No prompts, resources or tools");
+
+        Terminal.WriteLine($"{Terminal.DefaultColor}");
+
+        static void WriteItemCount(int count, string item, string items, ref int index)
+        {
+            if (count is 0)
+                return;
+
+            Terminal.Write(index++ is 0 ? string.Empty : ", ");
+            Terminal.Write($"{count} {(count is 1 ? item : items)}");
+        }
+    }
+
+    private static void WriteDescription(string? description, int columns)
+    {
+        if (columns > 16 && description?.Length > columns / 2)
+        {
+            Terminal.WriteLine();
+            Terminal.WriteLine(Terminal.WordWrap(Buffer, description, columns - 4, 4), ConsoleColor.DarkGray);
+        }
+        else if (description?.Length > 0)
+            Terminal.WriteLine($"{ConsoleColor.DarkGray}  # {description}{Terminal.DefaultColor}");
+        else
+            Terminal.WriteLine();
     }
 
     private static void WritePromptArguments(McpClientPrompt prompt)
@@ -114,19 +150,6 @@ internal static class Inspector
         {
             return new(argument.Name, new JsonSchemaPrimitiveType("string", argument.Required is true));
         }
-    }
-
-    private static void WriteDescription(string? description, int width)
-    {
-        if (width > 16 && description?.Length > width / 2)
-        {
-            Terminal.WriteLine();
-            Terminal.WriteLine(Terminal.WordWrap(Buffer, description, width - 4, 4), ConsoleColor.DarkGray);
-        }
-        else if (description?.Length > 0)
-            Terminal.WriteLine($"{ConsoleColor.DarkGray}  # {description}{Terminal.DefaultColor}");
-        else
-            Terminal.WriteLine();
     }
 
     private static void WriteJsonSchema(IJsonSchemaNode node, bool asArguments = false)
