@@ -166,14 +166,14 @@ internal static class Configurator
         return configuration.Servers?.Select(static entry => entry.Value.ToClientTransport(entry.Key)).ToArray() ?? [];
     }
 
-    public static IClientTransport ToClientTransport(this Server server, string serverName) => server switch
+    public static IClientTransport ToClientTransport(this Server server, string? serverName = null) => server switch
     {
         StdioServer stdioServer => new StdioClientTransport(stdioServer.ToClientTransportOptions(serverName)),
         SseServer sseServer => new SseClientTransport(sseServer.ToClientTransportOptions(serverName)),
         _ => throw new ArgumentException($"Unknown server type: {server.GetType().Name}", nameof(server))
     };
 
-    public static StdioClientTransportOptions ToClientTransportOptions(this StdioServer server, string serverName)
+    internal static StdioClientTransportOptions ToClientTransportOptions(this StdioServer server, string? serverName)
     {
         var environment = server.Environment?.ToDictionary(StringComparer.Ordinal);
         if (server.EnvironmentFile is { } environmentFile)
@@ -194,7 +194,7 @@ internal static class Configurator
         };
     }
 
-    public static SseClientTransportOptions ToClientTransportOptions(this SseServer server, string serverName)
+    internal static SseClientTransportOptions ToClientTransportOptions(this SseServer server, string? serverName)
     {
         return new()
         {
@@ -206,5 +206,5 @@ internal static class Configurator
     }
 
     private static readonly StdioClientTransportOptions defaultStdioServer = new() { Command = "_" };
-    private static readonly SseClientTransportOptions defaultSseServer = new() { Endpoint = new Uri("http://_/") };
+    private static readonly SseClientTransportOptions defaultSseServer = new() { Endpoint = new Uri("https://_/") };
 }
