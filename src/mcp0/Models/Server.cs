@@ -42,7 +42,7 @@ internal sealed partial record StdioServer : Server
         if (command is null)
             return null;
 
-        return new StdioServer
+        return new()
         {
             Command = command,
             Arguments = arguments,
@@ -65,6 +65,6 @@ internal sealed partial record SseServer : Server
         if (!Uri.IsWellFormedUriString(text, UriKind.Absolute))
             return null;
 
-        return new SseServer { Url = new Uri(text) };
+        return new() { Url = new Uri(text) };
     }
 }
