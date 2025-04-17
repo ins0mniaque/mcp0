@@ -8,8 +8,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <NoWarn>$(NoWarn),CA1303</NoWarn> <!-- Disable localization warnings -->
-    <NoWarn>$(NoWarn),CA2007</NoWarn> <!-- Disable ConfigureAwait warning -->
+    <NoWarn>$(NoWarn),CA2007</NoWarn> <!-- Disable ConfigureAwait warnings -->
   </PropertyGroup>
 
   <ItemGroup>
