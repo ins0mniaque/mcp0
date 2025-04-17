@@ -25,8 +25,16 @@ internal sealed class Root : RootCommand
     public static void ConfigureCommandLine(CommandLineBuilder commandLine, IServiceProvider serviceProvider)
     {
         commandLine.AddMiddleware(LogLevelMiddleware)
-                   .UseDefaults()
-                   .UseHelp(Help);
+                   .CancelOnProcessTermination()
+                   .RegisterWithDotnetSuggest()
+                   .UseEnvironmentVariableDirective()
+                   .UseExceptionHandler(HandleException)
+                   .UseHelp(Help)
+                   .UseParseDirective()
+                   .UseParseErrorReporting()
+                   .UseSuggestDirective()
+                   .UseTypoCorrections()
+                   .UseVersionOption();
     }
 
     private static async Task LogLevelMiddleware(InvocationContext context, Func<InvocationContext, Task> next)
@@ -51,5 +59,13 @@ internal sealed class Root : RootCommand
         context.HelpBuilder.CustomizeSymbol(LogLevelOption,
             firstColumnText: "--loglevel <level>",
             secondColumnText: "Minimum severity logging level\n<level: Trace|Debug|Information|Warning|Error|Critical|None>");
+    }
+
+    private static void HandleException(Exception exception, InvocationContext context)
+    {
+        if (exception is not OperationCanceledException)
+            Terminal.WriteLine(exception.Message, ConsoleColor.Red);
+
+        context.ExitCode = 1;
     }
 }
