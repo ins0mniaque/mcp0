@@ -63,7 +63,7 @@ internal sealed partial class McpProxy
             ListPromptsHandler = (_, _) => ValueTask.FromResult(listPromptsResult),
             GetPromptHandler = async (request, cancellationToken) =>
             {
-                var (_, prompt) = Prompts.Find(request.Params?.Name);
+                var prompt = Prompts.Find(request.Params?.Name, out _);
                 var arguments = request.Params?.Arguments?.ToDictionary(
                     static entry => entry.Key,
                     static entry => (object?)entry.Value,
@@ -81,9 +81,9 @@ internal sealed partial class McpProxy
                 if (request.Params?.Uri is not { } uri)
                     throw new McpException("Missing resource or resource template uri");
 
-                var client = Resources.TryFind(uri)?.Client ??
-                             ResourceTemplates.TryMatch(uri)?.Client ??
-                             throw new McpException($"Unknown resource or resource template: '{uri}'");
+                if (!Resources.TryFind(uri, out var client, out _) &&
+                   !ResourceTemplates.TryFind(uri, out client, out _))
+                    throw new McpException($"Unknown resource or resource template: '{uri}'");
 
                 return await client.ReadResourceAsync(uri, cancellationToken);
             },
@@ -92,9 +92,9 @@ internal sealed partial class McpProxy
                 if (request.Params?.Uri is not { } uri)
                     throw new McpException("Missing resource or resource template uri");
 
-                var client = Resources.TryFind(uri)?.Client ??
-                             ResourceTemplates.TryMatch(uri)?.Client ??
-                             throw new McpException($"Unknown resource or resource template: '{uri}'");
+                if (!Resources.TryFind(uri, out var client, out _) &&
+                   !ResourceTemplates.TryFind(uri, out client, out _))
+                    throw new McpException($"Unknown resource or resource template: '{uri}'");
 
                 await client.SafeSubscribeToResourceAsync(uri, cancellationToken);
 
@@ -105,9 +105,9 @@ internal sealed partial class McpProxy
                 if (request.Params?.Uri is not { } uri)
                     throw new McpException("Missing resource or resource template uri");
 
-                var client = Resources.TryFind(uri)?.Client ??
-                             ResourceTemplates.TryMatch(uri)?.Client ??
-                             throw new McpException($"Unknown resource or resource template: '{uri}'");
+                if (!Resources.TryFind(uri, out var client, out _) &&
+                   !ResourceTemplates.TryFind(uri, out client, out _))
+                    throw new McpException($"Unknown resource or resource template: '{uri}'");
 
                 await client.SafeUnsubscribeFromResourceAsync(uri, cancellationToken);
 
@@ -119,7 +119,7 @@ internal sealed partial class McpProxy
             ListToolsHandler = (_, _) => ValueTask.FromResult(listToolsResult),
             CallToolHandler = async (request, cancellationToken) =>
             {
-                var (client, tool) = Tools.Find(request.Params?.Name);
+                var tool = Tools.Find(request.Params?.Name, out var client);
                 var arguments = request.Params?.Arguments?.ToDictionary(
                     static entry => entry.Key,
                     static entry => (object?)entry.Value,
@@ -135,12 +135,12 @@ internal sealed partial class McpProxy
                 IMcpClient client;
                 if (request.Params?.Ref.Uri is { } resourceUri)
                 {
-                    client = Resources.TryFind(resourceUri)?.Client ??
-                             ResourceTemplates.TryMatch(resourceUri)?.Client ??
-                             throw new McpException($"Unknown resource or resource template: '{resourceUri}'");
+                    if (!Resources.TryFind(resourceUri, out client, out _) &&
+                       !ResourceTemplates.TryFind(resourceUri, out client, out _))
+                        throw new McpException($"Unknown resource or resource template: '{resourceUri}'");
                 }
                 else if (request.Params?.Ref.Name is { } promptName)
-                    client = Prompts.Find(promptName).Client;
+                    _ = Prompts.Find(promptName, out client);
                 else
                     throw new McpException("Missing completion request parameters");
 

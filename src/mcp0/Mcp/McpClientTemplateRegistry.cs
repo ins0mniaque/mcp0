@@ -1,23 +1,28 @@
+using System.Diagnostics.CodeAnalysis;
+
 using ModelContextProtocol.Client;
 
 namespace mcp0.Mcp;
 
-internal sealed class McpClientTemplateRegistry<T>(string itemType, Func<T, string> keySelector) : McpClientRegistry<T>(itemType, keySelector)
+internal sealed class McpClientTemplateRegistry<T>(string itemType, Func<T, string> keySelector) : McpClientRegistry<T>(itemType, keySelector) where T : notnull
 {
     private readonly Dictionary<Uri, UriTemplateMatcher> matchers = new();
 
-    public (IMcpClient Client, T Item) Match(string? key)
+    public T Match(string? key, out IMcpClient client)
     {
-        if (TryMatch(key) is not { } match)
+        if (!TryMatch(key, out client, out var item))
             throw NotFoundException(key);
 
-        return match;
+        return item;
     }
 
-    public (IMcpClient Client, T Item)? TryMatch(string? key)
+    public bool TryMatch(string? key, out IMcpClient client, [NotNullWhen(true)] out T item)
     {
+        client = null!;
+        item = default!;
+
         if (key is null)
-            return null;
+            return false;
 
         var uri = new Uri(key, UriKind.Absolute);
         foreach (var entry in registry)
@@ -25,10 +30,33 @@ internal sealed class McpClientTemplateRegistry<T>(string itemType, Func<T, stri
             var uriTemplate = new Uri(entry.Key, UriKind.Absolute);
             var matcher = GetMatcher(uriTemplate);
             if (matcher.Match(uri))
-                return entry.Value;
+            {
+                client = entry.Value.Client;
+                item = entry.Value.Item;
+                return true;
+            }
         }
 
-        return null;
+        return false;
+    }
+
+    private bool TryMatch2(Uri uri, out IMcpClient client, [NotNullWhen(true)] out T item)
+    {
+        foreach (var entry in registry)
+        {
+            var uriTemplate = new Uri(entry.Key, UriKind.Absolute);
+            var matcher = GetMatcher(uriTemplate);
+            if (matcher.Match(uri))
+            {
+                client = entry.Value.Client;
+                item = entry.Value.Item;
+                return true;
+            }
+        }
+
+        client = null!;
+        item = default!;
+        return false;
     }
 
     internal override void Clear()

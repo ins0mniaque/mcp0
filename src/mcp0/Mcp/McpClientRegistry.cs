@@ -1,30 +1,36 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 
 namespace mcp0.Mcp;
 
-internal class McpClientRegistry<T>(string itemType, Func<T, string> keySelector) : IEnumerable<T>
+internal class McpClientRegistry<T>(string itemType, Func<T, string> keySelector) : IEnumerable<T> where T : notnull
 {
     protected readonly Dictionary<string, (IMcpClient Client, T Item)> registry = new(StringComparer.Ordinal);
 
     public int Count => registry.Count;
 
-    public (IMcpClient Client, T Item) Find(string? key)
+    public T Find(string? key, out IMcpClient client)
     {
-        if (TryFind(key) is not { } found)
+        if (!TryFind(key, out client, out var item))
             throw NotFoundException(key);
 
-        return found;
+        return item;
     }
 
-    public (IMcpClient Client, T Item)? TryFind(string? key)
+    public bool TryFind(string? key, out IMcpClient client, [NotNullWhen(true)] out T item)
     {
-        if (key is null || !registry.TryGetValue(key, out var found))
-            return null;
+        client = null!;
+        item = default!;
 
-        return found;
+        if (key is null || !registry.TryGetValue(key, out var found))
+            return false;
+
+        client = found.Client;
+        item = found.Item;
+        return true;
     }
 
     internal async Task Register(IReadOnlyList<IMcpClient> clients, Func<IMcpClient, Task<IList<T>>> task)

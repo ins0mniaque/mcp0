@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 
@@ -179,14 +180,15 @@ internal static class Inspector
             throw new ArgumentException($"Unknown JSON schema node: {node.GetType().Name}", nameof(node));
     }
 
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "False positive")]
     public static async Task Call(McpProxy proxy, string function, JsonElement[] arguments, CancellationToken cancellationToken)
     {
         try
         {
-            if (proxy.Tools.TryFind(function) is { } tool)
-                await CallTool(tool.Client, tool.Item, arguments, cancellationToken);
-            else if (proxy.Prompts.TryFind(function) is { } prompt)
-                await CallPrompt(prompt.Client, prompt.Item, arguments, cancellationToken);
+            if (proxy.Tools.TryFind(function, out var client, out var tool))
+                await CallTool(client, tool, arguments, cancellationToken);
+            else if (proxy.Prompts.TryFind(function, out client, out var prompt))
+                await CallPrompt(client, prompt, arguments, cancellationToken);
             else
                 Terminal.WriteLine($"Could not find a tool or prompt named: {function}");
         }
@@ -251,17 +253,18 @@ internal static class Inspector
                      .ToDictionary(StringComparer.Ordinal);
     }
 
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "False positive")]
     public static async Task Read(McpProxy proxy, string uri, CancellationToken cancellationToken)
     {
-        if (proxy.Resources.TryFind(uri) is { } resource)
+        if (proxy.Resources.TryFind(uri, out var client, out _))
         {
-            var result = await resource.Client.ReadResourceAsync(uri, cancellationToken);
+            var result = await client.ReadResourceAsync(uri, cancellationToken);
             foreach (var content in result.Contents)
                 WriteResourceContents(content);
         }
-        else if (proxy.ResourceTemplates.TryMatch(uri) is { } resourceTemplate)
+        else if (proxy.ResourceTemplates.TryMatch(uri, out client, out _))
         {
-            var result = await resourceTemplate.Client.ReadResourceAsync(uri, cancellationToken);
+            var result = await client.ReadResourceAsync(uri, cancellationToken);
             foreach (var content in result.Contents)
                 WriteResourceContents(content);
         }
