@@ -2,8 +2,6 @@ using System.Buffers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using mcp0.Core;
-
 namespace mcp0.Models;
 
 internal sealed class ServerConverter : JsonConverter<Server>
@@ -37,28 +35,8 @@ internal sealed class ServerConverter : JsonConverter<Server>
     {
         if (reader.TokenType is JsonTokenType.String)
         {
-            var commandOrUrl = reader.GetString();
-            if (Uri.IsWellFormedUriString(commandOrUrl, UriKind.Absolute))
-                return new SseServer { Url = new Uri(commandOrUrl) };
-
-            if (!string.IsNullOrWhiteSpace(commandOrUrl))
-            {
-                var environment = new Dictionary<string, string>(StringComparer.Ordinal);
-
-                CommandLine.Split(commandOrUrl, out var command, out var arguments, environment);
-
-                if (command is not null)
-                {
-                    return new StdioServer
-                    {
-                        Command = command,
-                        Arguments = arguments,
-                        Environment = environment.Count is 0 ? null : environment
-                    };
-                }
-            }
-
-            throw Exceptions.InvalidServerStringValue();
+            return Server.FromString(reader.GetString() ?? throw Exceptions.InvalidServerJson()) ??
+                   throw Exceptions.InvalidServerStringValue();
         }
 
         if (reader.TokenType is not JsonTokenType.StartObject)
@@ -101,11 +79,11 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
             if (reader.TokenType is JsonTokenType.EndObject)
             {
-                if (command is not null && arguments is null)
+                if (command is not null && arguments is null && StdioServer.FromString(command) is { } server)
                 {
-                    environment ??= new(StringComparer.Ordinal);
-
-                    CommandLine.Split(command, out command, out arguments, environment);
+                    command = server.Command;
+                    arguments = server.Arguments;
+                    environment = Dictionary.Merge(environment, server.Environment);
                 }
 
                 return new StdioServer

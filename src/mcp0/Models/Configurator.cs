@@ -161,9 +161,9 @@ internal static class Configurator
         };
     }
 
-    public static IClientTransport[] ToClientTransports(this Configuration configuration)
+    public static IEnumerable<IClientTransport> ToClientTransports(this Configuration configuration)
     {
-        return configuration.Servers?.Select(static entry => entry.Value.ToClientTransport(entry.Key)).ToArray() ?? [];
+        return configuration.Servers?.Select(static entry => entry.Value.ToClientTransport(entry.Key)) ?? [];
     }
 
     public static IClientTransport ToClientTransport(this Server server, string? serverName = null) => server switch

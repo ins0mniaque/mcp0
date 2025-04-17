@@ -23,22 +23,10 @@ internal sealed partial record Configuration
 
     public void Merge(Configuration configuration)
     {
-        Prompts = Merge(Prompts, configuration.Prompts);
-        Resources = Merge(Resources, configuration.Resources);
-        Tools = Merge(Tools, configuration.Tools);
-        Servers = Merge(Servers, configuration.Servers);
-    }
-
-    private static Dictionary<string, T>? Merge<T>(Dictionary<string, T>? dictionary, Dictionary<string, T>? with)
-    {
-        if (with is null)
-            return dictionary;
-
-        dictionary ??= new(with.Count, StringComparer.Ordinal);
-        foreach (var entry in with)
-            dictionary[entry.Key] = entry.Value;
-
-        return dictionary;
+        Prompts = Dictionary.Merge(Prompts, configuration.Prompts);
+        Resources = Dictionary.Merge(Resources, configuration.Resources);
+        Tools = Dictionary.Merge(Tools, configuration.Tools);
+        Servers = Dictionary.Merge(Servers, configuration.Servers);
     }
 
     public static async Task<Configuration> Load(string[] paths, CancellationToken cancellationToken)
