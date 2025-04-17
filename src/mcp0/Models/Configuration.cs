@@ -21,12 +21,16 @@ internal sealed partial record Configuration
     [UnorderedEquality]
     public Dictionary<string, Server>? Servers { get; set; }
 
+    [UnorderedEquality]
+    public Dictionary<string, Patch>? Patch { get; set; }
+
     public void Merge(Configuration configuration)
     {
         Prompts = Dictionary.Merge(Prompts, configuration.Prompts);
         Resources = Dictionary.Merge(Resources, configuration.Resources);
         Tools = Dictionary.Merge(Tools, configuration.Tools);
         Servers = Dictionary.Merge(Servers, configuration.Servers);
+        Patch = Dictionary.Merge(Patch, configuration.Patch);
     }
 
     public static async Task<Configuration> Load(string[] paths, CancellationToken cancellationToken)

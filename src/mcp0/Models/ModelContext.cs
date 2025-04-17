@@ -7,6 +7,7 @@ namespace mcp0.Models;
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     WriteIndented = true)]
 [JsonSerializable(typeof(Configuration))]
+[JsonSerializable(typeof(Patch))]
 [JsonSerializable(typeof(Server))]
 [JsonSerializable(typeof(StdioServer))]
 [JsonSerializable(typeof(SseServer))]
