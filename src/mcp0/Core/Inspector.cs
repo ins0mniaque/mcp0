@@ -22,8 +22,11 @@ internal static class Inspector
 
         var columns = Terminal.Columns;
 
+        Terminal.WriteLine("Servers", SectionColor);
+
         foreach (var client in proxy.Clients)
         {
+            Terminal.Write(Indentation);
             Terminal.Write(client.ServerInfo.Name, HeaderColor);
             Terminal.Write(" ");
             Terminal.Write(client.ServerInfo.Version);
