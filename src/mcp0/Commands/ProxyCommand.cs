@@ -20,13 +20,15 @@ internal abstract class ProxyCommand : CancellableCommand
 {
     protected ProxyCommand(string name, string? description = null) : base(name, description)
     {
+        AddOption(ServerOption);
         AddOption(NoReloadOption);
         AddArgument(PathsArgument);
     }
 
-    protected static Option<bool> NoReloadOption { get; } = new("--no-reload", "Do not reload when context configuration files change");
+    private static Option<string[]> ServerOption { get; } = new("--server", "Additional MCP server command or URI to add to the MCP server");
+    private static Option<bool> NoReloadOption { get; } = new("--no-reload", "Do not reload when context configuration files change");
 
-    protected static Argument<string[]> PathsArgument { get; } = new("files", "The configuration files to build an MCP server from")
+    private static Argument<string[]> PathsArgument { get; } = new("files", "The configuration files to build an MCP server from")
     {
         Arity = ArgumentArity.ZeroOrMore
     };
@@ -36,20 +38,26 @@ internal abstract class ProxyCommand : CancellableCommand
     protected async Task ConnectAndRun(InvocationContext context, LogLevel logLevel, CancellationToken cancellationToken)
     {
         var paths = PathsArgument.GetValue(context);
+        var servers = ServerOption.GetValue(context);
         var noReload = NoReloadOption.GetValue(context);
-
-        var configuration = await Configuration.Load(paths, cancellationToken);
 
         var serviceProvider = context.BindingContext.GetRequiredService<IServiceProvider>();
         var configurationRoot = serviceProvider.GetService<IConfigurationRoot>();
-
-        configurationRoot?.TrySetLogLevel(logLevel);
 
         var proxyOptions = new McpProxyOptions
         {
             LoggingLevel = configurationRoot?.GetLogLevel()?.ToLoggingLevel(),
             SetLoggingLevelCallback = level => configurationRoot?.SetLogLevel(level.ToLogLevel())
         };
+
+        configurationRoot?.TrySetLogLevel(logLevel);
+
+        var configuration = await Configuration.Load(paths, cancellationToken);
+        var clientTransports = configuration.ToClientTransports().ToList();
+
+        foreach (var server in servers ?? [])
+            clientTransports.Add(Server.FromString(server)?.ToClientTransport() ??
+                                 throw new InvalidOperationException($"Invalid server: {server}"));
 
         var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
         var serverOptions = configuration.ToMcpServerOptions(serviceProvider);
@@ -66,9 +74,8 @@ internal abstract class ProxyCommand : CancellableCommand
             await server.RunAsync(ct);
         }, cancellationToken);
 
-        var clientTransports = configuration.ToClientTransports();
         if (transport?.ClientTransport is { } clientTransport)
-            clientTransports = clientTransports.Append(clientTransport).ToArray();
+            clientTransports.Add(clientTransport);
 
         proxyOptions.ServerInfo = ServerInfo.Create(clientTransports);
 
