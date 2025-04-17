@@ -51,6 +51,9 @@ internal class McpProxyRegistry<T>(string itemType, Func<T, string> keySelector)
 
     internal virtual void Clear() => registry.Clear();
 
+    public IEnumerable<T> this[IMcpClient client] => registry.Where(entry => entry.Value.Client == client)
+                                                             .Select(static entry => entry.Value.Item);
+
     public IEnumerator<T> GetEnumerator() => registry.Select(static entry => entry.Value.Item).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
