@@ -11,8 +11,8 @@ internal abstract record Server
 {
     public static Server? FromString(string text)
     {
-        return SseServer.FromString(text) ??
-               (Server?)StdioServer.FromString(text);
+        return (Server?)SseServer.FromString(text) ??
+               StdioServer.FromString(text);
     }
 }
 
