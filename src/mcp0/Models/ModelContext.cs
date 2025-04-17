@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace mcp0.Models;
@@ -5,6 +6,7 @@ namespace mcp0.Models;
 [JsonSourceGenerationOptions(
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    ReadCommentHandling = JsonCommentHandling.Skip,
     WriteIndented = true)]
 [JsonSerializable(typeof(Configuration))]
 [JsonSerializable(typeof(Patch))]
