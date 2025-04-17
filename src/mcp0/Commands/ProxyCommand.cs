@@ -41,7 +41,7 @@ internal abstract class ProxyCommand : CancellableCommand
         var servers = ServerOption.GetValue(context);
         var noReload = NoReloadOption.GetValue(context);
 
-        var serviceProvider = context.BindingContext.GetRequiredService<IServiceProvider>();
+        var serviceProvider = context.GetServiceProvider();
         var configurationRoot = serviceProvider.GetService<IConfigurationRoot>();
 
         var proxyOptions = new McpProxyOptions

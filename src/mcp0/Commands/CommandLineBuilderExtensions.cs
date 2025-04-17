@@ -16,4 +16,9 @@ internal static class CommandLineBuilderExtensions
 
         return builder;
     }
+
+    public static IServiceProvider GetServiceProvider(this InvocationContext context)
+    {
+        return context.BindingContext.GetRequiredService<IServiceProvider>();
+    }
 }

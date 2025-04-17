@@ -31,7 +31,7 @@ internal sealed class Root : RootCommand
 
     private static async Task LogLevelMiddleware(InvocationContext context, Func<InvocationContext, Task> next)
     {
-        var serviceProvider = context.BindingContext.GetRequiredService<IServiceProvider>();
+        var serviceProvider = context.GetServiceProvider();
         var configurationRoot = serviceProvider.GetService<IConfigurationRoot>();
 
         configurationRoot?.SetLogLevel(context.ParseResult.GetValueForOption(LogLevelOption));
