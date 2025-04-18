@@ -76,53 +76,49 @@ internal sealed class UriTemplate
         Ampersand
     }
 
-    private static void ValidateLiteral(char c, int column)
+    private static void ValidateLiteral(char character, int column)
     {
-        if (c is '+' or '#' or '/' or ';' or '?' or '&' or ' ' or '!' or '=' or '$' or '|' or '*' or ':' or '~' or '-')
-            throw new FormatException($"Invalid character '{c}' in token at column {column}");
+        if (character is '+' or '#' or '/' or ';' or '?' or '&' or ' ' or '!' or '=' or '$' or '|' or '*' or ':' or '~' or '-')
+            throw new FormatException($"Invalid character '{character}' in token at column {column}");
     }
 
     private static int GetMaxTokenLength(StringBuilder buffer, int column)
     {
-        if (buffer.Length < 1)
+        if (buffer.Length is 0)
             return -1;
 
-        var maxLength = buffer.ToString();
-        try
-        {
-            return int.Parse(maxLength, CultureInfo.InvariantCulture);
-        }
-        catch (FormatException)
-        {
-            throw new FormatException($"Invalid maximum token length '{maxLength}' at column {column}");
-        }
+        var maxTokenLength = buffer.ToString();
+        if (int.TryParse(maxTokenLength, CultureInfo.InvariantCulture, out var length))
+            return length;
+
+        throw new FormatException($"Invalid maximum token length '{maxTokenLength}' at column {column}");
     }
 
-    private static Operator GetOperator(char c, StringBuilder token, int column)
+    private static Operator GetOperator(char character, StringBuilder token, int column)
     {
-        if (c is '+')
+        if (character is '+')
             return Operator.Plus;
-        if (c is '#')
+        if (character is '#')
             return Operator.Hash;
-        if (c is '.')
+        if (character is '.')
             return Operator.Dot;
-        if (c is '/')
+        if (character is '/')
             return Operator.Slash;
-        if (c is ';')
+        if (character is ';')
             return Operator.Semicolon;
-        if (c is '?')
+        if (character is '?')
             return Operator.QuestionMark;
-        if (c is '&')
+        if (character is '&')
             return Operator.Ampersand;
 
-        ValidateLiteral(c, column);
-        token.Append(c);
+        ValidateLiteral(character, column);
+        token.Append(character);
         return Operator.NoOp;
     }
 
-    private static string Expand(string str, Func<Operator, string, object?> replaceToken, bool escape)
+    private static string Expand(string uri, Func<Operator, string, object?> replaceToken, bool escape)
     {
-        var result = new StringBuilder(str.Length * 2);
+        var result = new StringBuilder(uri.Length * 2);
 
         var insideToken = false;
         var token = new StringBuilder();
@@ -133,9 +129,9 @@ internal sealed class UriTemplate
         var maxTokenLengthBuffer = new StringBuilder(3);
         var firstToken = true;
 
-        for (var i = 0; i < str.Length; i++)
+        for (var i = 0; i < uri.Length; i++)
         {
-            var character = str[i];
+            var character = uri[i];
 
             if (character is '{')
             {
@@ -241,14 +237,19 @@ internal sealed class UriTemplate
             result.Append('&');
     }
 
-    private static char GetSeparator(Operator op) => op switch
+    private static void AddSeparator(Operator op, StringBuilder result)
     {
-        Operator.Dot => '.',
-        Operator.Slash => '/',
-        Operator.Semicolon => ';',
-        Operator.QuestionMark or Operator.Ampersand => '&',
-        _ => ','
-    };
+        if (op is Operator.Dot)
+            result.Append('.');
+        else if (op is Operator.Slash)
+            result.Append('/');
+        else if (op is Operator.Semicolon)
+            result.Append(';');
+        else if (op is Operator.QuestionMark or Operator.Ampersand)
+            result.Append('&');
+        else
+            result.Append(',');
+    }
 
     private static void AddValue(Operator op, string token, object value, StringBuilder result, int maxTokenLength, bool escape)
     {
@@ -277,16 +278,16 @@ internal sealed class UriTemplate
             AddExpandedValue(null, value, result, maxTokenLength, true, escape);
     }
 
-    private static bool IsPrivateUse(char cp)
+    private static bool IsPrivateUse(char character)
     {
-        return char.IsBetween(cp, (char)0xE000, (char)0xF8FF);
+        return char.IsBetween(character, (char)0xE000, (char)0xF8FF);
     }
 
-    private static bool IsUcs(char cp)
+    private static bool IsUcs(char character)
     {
-        return char.IsBetween(cp, (char)0xA0, (char)0xD7FF)
-               || char.IsBetween(cp, (char)0xF900, (char)0xFDCF)
-               || char.IsBetween(cp, (char)0xFDF0, (char)0xFFEF);
+        return char.IsBetween(character, (char)0xA0, (char)0xD7FF)
+               || char.IsBetween(character, (char)0xF900, (char)0xFDCF)
+               || char.IsBetween(character, (char)0xFDF0, (char)0xFFEF);
     }
 
     private static void AddExpandedValue(string? prefix, object value, StringBuilder result, int maxTokenLength, bool replaceReserved, bool escape)
@@ -295,7 +296,7 @@ internal sealed class UriTemplate
         var max = (maxTokenLength != -1) ? Math.Min(maxTokenLength, stringValue.Length) : stringValue.Length;
         result.EnsureCapacity(max * 2);
         var toReserved = false;
-        StringBuilder reservedBuffer = new(3);
+        var reservedBuffer = new StringBuilder(3);
 
         if (max > 0 && prefix != null)
             result.Append(prefix);
@@ -412,7 +413,7 @@ internal sealed class UriTemplate
         if (firstToken)
             AddPrefix(op, result, escape);
         else
-            result.Append(GetSeparator(op));
+            AddSeparator(op, result);
 
         if (value is string or bool or int or long or float or double or decimal)
             AddStringValue(op, token, value, result, maxTokenLength, escape);
@@ -445,7 +446,7 @@ internal sealed class UriTemplate
             {
                 if (composite)
                 {
-                    result.Append(GetSeparator(op));
+                    AddSeparator(op, result);
                     AddValue(op, token, element, result, maxTokenLength, escape);
                 }
                 else
@@ -468,7 +469,7 @@ internal sealed class UriTemplate
             if (composite)
             {
                 if (!first)
-                    result.Append(GetSeparator(op));
+                    AddSeparator(op, result);
                 AddValueElement(op, (string)entry.Key, result, maxTokenLength, escape);
                 result.Append('=');
             }
