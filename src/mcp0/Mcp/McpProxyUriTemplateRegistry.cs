@@ -4,9 +4,9 @@ using ModelContextProtocol.Client;
 
 namespace mcp0.Mcp;
 
-internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, string> keySelector) : McpProxyRegistry<T>(itemType, keySelector) where T : notnull
+internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, string> keySelector, UriTemplateCache? cache = null) : McpProxyRegistry<T>(itemType, keySelector) where T : notnull
 {
-    private readonly UriTemplateCache uriTemplateCache = new();
+    private readonly UriTemplateCache uriTemplateCache = cache ?? new();
 
     public T Match(string? uri, out IMcpClient client)
     {

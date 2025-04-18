@@ -2,15 +2,15 @@ namespace mcp0.Mcp;
 
 internal sealed class UriTemplateCache
 {
-    private readonly Dictionary<string, UriTemplate> matchers = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, UriTemplate> cache = new(StringComparer.Ordinal);
 
-    public UriTemplate GetUriTemplate(string uriTemplate)
+    public UriTemplate GetUriTemplate(string template)
     {
-        if (!matchers.TryGetValue(uriTemplate, out var matcher))
-            matchers[uriTemplate] = matcher = new UriTemplate(uriTemplate);
+        if (!cache.TryGetValue(template, out var uriTemplate))
+            cache[template] = uriTemplate = new UriTemplate(template);
 
-        return matcher;
+        return uriTemplate;
     }
 
-    public void Clear() => matchers.Clear();
+    public void Clear() => cache.Clear();
 }

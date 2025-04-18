@@ -30,7 +30,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
     {
         Prompts = new("prompt", static prompt => prompt.Name);
         Resources = new("resource", static resource => resource.Uri);
-        ResourceTemplates = new("resource template", static resourceTemplate => resourceTemplate.UriTemplate);
+        ResourceTemplates = new("resource template", static resourceTemplate => resourceTemplate.UriTemplate, uriTemplateCache);
         Tools = new("tool", static tool => tool.Name);
 
         this.proxyOptions = proxyOptions;
