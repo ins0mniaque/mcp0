@@ -100,19 +100,19 @@ internal sealed class UriTemplate
 
     private static Operator GetOperator(char c, StringBuilder token, int column)
     {
-        if (c == '+')
+        if (c is '+')
             return Operator.Plus;
-        if (c == '#')
+        if (c is '#')
             return Operator.Hash;
-        if (c == '.')
+        if (c is '.')
             return Operator.Dot;
-        if (c == '/')
+        if (c is '/')
             return Operator.Slash;
-        if (c == ';')
+        if (c is ';')
             return Operator.Semicolon;
-        if (c == '?')
+        if (c is '?')
             return Operator.QuestionMark;
-        if (c == '&')
+        if (c is '&')
             return Operator.Ampersand;
 
         ValidateLiteral(c, column);
@@ -136,85 +136,82 @@ internal sealed class UriTemplate
         for (var i = 0; i < str.Length; i++)
         {
             var character = str[i];
-            switch (character)
+
+            if (character is '{')
             {
-                case '{':
-                    insideToken = true;
-                    token.Clear();
-                    firstToken = true;
-                    break;
-                case '}':
-                    if (insideToken)
-                    {
-                        var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, i), firstToken, replaceToken, result, i, escape);
-                        if (expanded && firstToken)
-                            firstToken = false;
-
-                        insideToken = false;
-                        token.Clear();
-                        op = Operator.None;
-                        composite = false;
-                        insideMaxTokenLength = false;
-                        maxTokenLengthBuffer.Clear();
-                    }
-                    else
-                        throw new FormatException($"Invalid character '{character}' in template at column {i}");
-
-                    break;
-                case ',':
-                    if (insideToken)
-                    {
-                        var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, i), firstToken, replaceToken, result, i, escape);
-                        if (expanded && firstToken)
-                            firstToken = false;
-
-                        token.Clear();
-                        composite = false;
-                        insideMaxTokenLength = false;
-                        maxTokenLengthBuffer.Clear();
-                        break;
-                    }
-
-                    goto default;
-                default:
-                    if (insideToken)
-                    {
-                        if (op is Operator.None)
-                        {
-                            op = GetOperator(character, token, i);
-                        }
-                        else if (insideMaxTokenLength)
-                        {
-                            if (char.IsDigit(character))
-                                maxTokenLengthBuffer.Append(character);
-                            else
-                                throw new FormatException($"Invalid character '{character}' in token at column {i}");
-                        }
-                        else
-                        {
-                            if (character == ':')
-                            {
-                                insideMaxTokenLength = true;
-                                maxTokenLengthBuffer.Clear();
-                            }
-                            else if (character == '*')
-                            {
-                                composite = true;
-                            }
-                            else
-                            {
-                                ValidateLiteral(character, i);
-                                token.Append(character);
-                            }
-                        }
-                    }
-                    else if (escape)
-                        result.Append(character);
-                    else
-                        result.Append(Regex.Escape(character.ToString()));
-
-                    break;
+                insideToken = true;
+                token.Clear();
+                firstToken = true;
+                continue;
             }
+
+            if (character is '}')
+            {
+                if (!insideToken)
+                    throw new FormatException($"Invalid character '{character}' in template at column {i}");
+
+                var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, i), firstToken, replaceToken, result, i, escape);
+                if (expanded && firstToken)
+                    firstToken = false;
+
+                insideToken = false;
+                token.Clear();
+                op = Operator.None;
+                composite = false;
+                insideMaxTokenLength = false;
+                maxTokenLengthBuffer.Clear();
+
+                continue;
+            }
+
+            if (character is ',' && insideToken)
+            {
+                var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, i), firstToken, replaceToken, result, i, escape);
+                if (expanded && firstToken)
+                    firstToken = false;
+
+                token.Clear();
+                composite = false;
+                insideMaxTokenLength = false;
+                maxTokenLengthBuffer.Clear();
+                continue;
+            }
+
+            if (insideToken)
+            {
+                if (op is Operator.None)
+                {
+                    op = GetOperator(character, token, i);
+                }
+                else if (insideMaxTokenLength)
+                {
+                    if (char.IsDigit(character))
+                        maxTokenLengthBuffer.Append(character);
+                    else
+                        throw new FormatException($"Invalid character '{character}' in maximum token length at column {i}");
+                }
+                else
+                {
+                    if (character is ':')
+                    {
+                        insideMaxTokenLength = true;
+                        maxTokenLengthBuffer.Clear();
+                    }
+                    else if (character is '*')
+                    {
+                        composite = true;
+                    }
+                    else
+                    {
+                        ValidateLiteral(character, i);
+                        token.Append(character);
+                    }
+                }
+            }
+            else if (escape)
+                result.Append(character);
+            else
+                result.Append(Regex.Escape(character.ToString()));
         }
 
         if (!insideToken)
@@ -225,22 +222,22 @@ internal sealed class UriTemplate
 
     private static void AddPrefix(Operator op, StringBuilder result, bool escape)
     {
-        if (op == Operator.Hash)
+        if (op is Operator.Hash)
             result.Append('#');
-        else if (op == Operator.Dot)
+        else if (op is Operator.Dot)
             result.Append('.');
-        else if (op == Operator.Slash)
+        else if (op is Operator.Slash)
             result.Append('/');
-        else if (op == Operator.Semicolon)
+        else if (op is Operator.Semicolon)
             result.Append(';');
-        else if (op == Operator.QuestionMark)
+        else if (op is Operator.QuestionMark)
         {
             if (escape)
                 result.Append('?');
             else
                 result.Append("\\?");
         }
-        else if (op == Operator.Ampersand)
+        else if (op is Operator.Ampersand)
             result.Append('&');
     }
 
@@ -313,7 +310,7 @@ internal sealed class UriTemplate
         {
             var character = stringValue[i];
 
-            if (character == '%' && !replaceReserved)
+            if (character is '%' && !replaceReserved)
             {
                 toReserved = true;
                 reservedBuffer.Clear();
@@ -349,9 +346,9 @@ internal sealed class UriTemplate
             }
             else
             {
-                if (character == ' ')
+                if (character is ' ')
                     result.Append("%20");
-                else if (character == '%')
+                else if (character is '%')
                     result.Append("%25");
                 else
                     result.Append(toAppend);
@@ -372,9 +369,9 @@ internal sealed class UriTemplate
         if (value is string or bool or int or long or float or double or decimal)
             return false;
         if (value is IList list)
-            return list.Count == 0;
+            return list.Count is 0;
         if (value is IDictionary dictionary)
-            return dictionary.Count == 0;
+            return dictionary.Count is 0;
 
         return true;
     }
