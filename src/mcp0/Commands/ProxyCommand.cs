@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Transport;
+using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
 namespace mcp0.Commands;
@@ -78,6 +79,19 @@ internal abstract class ProxyCommand : CancellableCommand
             clientTransports.Add(clientTransport);
 
         proxyOptions.ServerInfo = ServerInfo.Create(clientTransports);
+
+        if (configuration.Patch?.Count > 0)
+        {
+            var patcher = new Patcher(configuration.Patch);
+
+            proxyOptions.Maps = new()
+            {
+                Prompt = patcher.Patch,
+                Resource = patcher.Patch,
+                ResourceTemplate = patcher.Patch,
+                Tool = patcher.Patch
+            };
+        }
 
         await using var proxy = new McpProxy(proxyOptions, loggerFactory, serviceProvider);
 

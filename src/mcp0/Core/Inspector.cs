@@ -87,7 +87,7 @@ internal static class Inspector
                 Terminal.Write(Indentation);
                 Terminal.Write(tool.Name, HeaderColor);
                 Terminal.Write("(");
-                WriteJsonSchema(JsonSchema.Parse(tool.ProtocolTool.InputSchema), asArguments: true);
+                WriteJsonSchema(JsonSchema.Parse(tool.InputSchema), asArguments: true);
                 Terminal.Write(")");
                 WriteDescription(tool.Description, columns);
             }
@@ -137,9 +137,9 @@ internal static class Inspector
             Terminal.WriteLine();
     }
 
-    private static void WritePromptArguments(McpClientPrompt prompt)
+    private static void WritePromptArguments(Prompt prompt)
     {
-        if (prompt.ProtocolPrompt.Arguments is not { } arguments)
+        if (prompt.Arguments is not { } arguments)
             return;
 
         var properties = arguments.Select(ToJsonSchema).ToArray();
@@ -212,19 +212,19 @@ internal static class Inspector
         try
         {
             if (proxy.Tools.TryFind(function, out var client, out var tool))
-                await CallTool(client, tool, arguments, cancellationToken);
+                await CallTool(proxy, client, tool, arguments, cancellationToken);
             else if (proxy.Prompts.TryFind(function, out client, out var prompt))
-                await CallPrompt(client, prompt, arguments, cancellationToken);
+                await CallPrompt(proxy, client, prompt, arguments, cancellationToken);
             else
                 Terminal.WriteLine($"Could not find a tool or prompt named: {function}");
         }
         catch (McpException) { }
     }
 
-    private static async Task CallPrompt(IMcpClient client, McpClientPrompt prompt, JsonElement[] arguments, CancellationToken cancellationToken)
+    private static async Task CallPrompt(McpProxy proxy, IMcpClient client, Prompt prompt, JsonElement[] arguments, CancellationToken cancellationToken)
     {
-        var promptArguments = arguments.ToNamedArguments(prompt.ProtocolPrompt.Arguments?.Select(static argument => argument.Name));
-        var promptResult = await client.GetPromptAsync(prompt.Name, promptArguments, null, cancellationToken);
+        var promptArguments = arguments.ToNamedArguments(prompt.Arguments?.Select(static argument => argument.Name));
+        var promptResult = await client.GetPromptAsync(proxy.Map(prompt), promptArguments, null, cancellationToken);
         if (promptResult.Description is not null)
         {
             Terminal.Write("Description: ");
@@ -239,9 +239,9 @@ internal static class Inspector
         }
     }
 
-    private static async Task CallTool(IMcpClient client, McpClientTool tool, JsonElement[] arguments, CancellationToken cancellationToken)
+    private static async Task CallTool(McpProxy proxy, IMcpClient client, Tool tool, JsonElement[] arguments, CancellationToken cancellationToken)
     {
-        var schemaNode = JsonSchema.Parse(tool.JsonSchema);
+        var schemaNode = JsonSchema.Parse(tool.InputSchema);
         if (schemaNode is not JsonSchemaObjectType objectType)
         {
             Terminal.Write("Error: ", ConsoleColor.Red);
@@ -250,7 +250,7 @@ internal static class Inspector
         }
 
         var toolArguments = arguments.ToNamedArguments(objectType.Properties.Select(static property => property.Name));
-        var toolResponse = await client.CallToolAsync(tool.Name, toolArguments, null, cancellationToken);
+        var toolResponse = await client.CallToolAsync(proxy.Map(tool), toolArguments, null, cancellationToken);
         if (toolResponse.IsError)
             Terminal.Write("Error: ", ConsoleColor.Red);
 
@@ -282,15 +282,15 @@ internal static class Inspector
     [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "False positive")]
     public static async Task Read(McpProxy proxy, string uri, CancellationToken cancellationToken)
     {
-        if (proxy.Resources.TryFind(uri, out var client, out _))
+        if (proxy.Resources.TryFind(uri, out var client, out var resource))
         {
-            var result = await client.ReadResourceAsync(uri, cancellationToken);
+            var result = await client.ReadResourceAsync(proxy.Map(resource), cancellationToken);
             foreach (var content in result.Contents)
                 WriteResourceContents(content);
         }
-        else if (proxy.ResourceTemplates.TryMatch(uri, out client, out _))
+        else if (proxy.ResourceTemplates.TryMatch(uri, out client, out var resourceTemplate))
         {
-            var result = await client.ReadResourceAsync(uri, cancellationToken);
+            var result = await client.ReadResourceAsync(proxy.Map(resourceTemplate, uri), cancellationToken);
             foreach (var content in result.Contents)
                 WriteResourceContents(content);
         }

@@ -40,8 +40,8 @@ internal static class Configurator
             return null;
 
         var prompts = configuration.Prompts.ToDictionary(
-            entry => entry.Key,
-            entry =>
+            static entry => entry.Key,
+            static entry =>
             {
                 var arguments = PromptTemplate.Parse(entry.Value);
                 var prompt = new Prompt
@@ -57,7 +57,7 @@ internal static class Configurator
 
         var listPromptsResult = new ListPromptsResult
         {
-            Prompts = prompts.Select(entry => entry.Value.Prompt).ToList()
+            Prompts = prompts.Select(static entry => entry.Value.Prompt).ToList()
         };
 
         return new()
@@ -87,11 +87,11 @@ internal static class Configurator
 
         var resources = configuration.Resources
             .Select(entry => UriResource.Create(entry.Key, Posix.ExpandPath(entry.Value)))
-            .ToDictionary(resource => resource.Uri, StringComparer.Ordinal);
+            .ToDictionary(static resource => resource.Uri, StringComparer.Ordinal);
 
         var listResourcesResult = new ListResourcesResult
         {
-            Resources = resources.Select(entry => entry.Value).ToList()
+            Resources = resources.Select(static entry => entry.Value).ToList()
         };
 
         var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
@@ -118,8 +118,8 @@ internal static class Configurator
             return null;
 
         var tools = configuration.Tools.ToDictionary(
-            entry => entry.Key,
-            entry =>
+            static entry => entry.Key,
+            static entry =>
             {
                 var template = entry.Value;
                 var tool = new Tool
@@ -135,7 +135,7 @@ internal static class Configurator
 
         var listToolsResult = new ListToolsResult
         {
-            Tools = tools.Select(entry => entry.Value.Tool).ToList()
+            Tools = tools.Select(static entry => entry.Value.Tool).ToList()
         };
 
         return new()
