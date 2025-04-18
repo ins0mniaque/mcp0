@@ -339,7 +339,7 @@ internal sealed class UriTemplate
                     else
                     {
                         result.Append("%25");
-                        result.Append(reservedBuffer.ToString(1, 2));
+                        result.Append(Uri.EscapeDataString(reservedBuffer.ToString(1, 2)));
                     }
                     toReserved = false;
                     reservedBuffer.Clear();
