@@ -113,7 +113,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
         var renamedUriTemplate = uriTemplateCache.GetUriTemplate(renamedTemplate);
 
         if (uriTemplate.Parse(uri) is { } values)
-            return renamedUriTemplate.Expand(values) ?? uri;
+            return renamedUriTemplate.Expand(values);
 
         return uri;
     }
