@@ -57,7 +57,7 @@ internal sealed class UriTemplate
         return new Regex(string.Concat('^', pattern, '$'), options, TimeSpan.FromSeconds(1));
     }
 
-    private static string GetParserSeparator(Operator? op) => op switch
+    private static string GetParserSeparator(Operator op) => op switch
     {
         Operator.QuestionMark or Operator.Ampersand => "&",
         _ => "/?"
@@ -65,6 +65,7 @@ internal sealed class UriTemplate
 
     private enum Operator
     {
+        None,
         NoOp,
         Plus,
         Hash,
@@ -119,17 +120,17 @@ internal sealed class UriTemplate
         return Operator.NoOp;
     }
 
-    private static string Expand(string str, Func<Operator?, string, object?> replaceToken, bool escape)
+    private static string Expand(string str, Func<Operator, string, object?> replaceToken, bool escape)
     {
-        StringBuilder result = new(str.Length * 2);
+        var result = new StringBuilder(str.Length * 2);
 
-        var toToken = false;
-        StringBuilder token = new();
+        var insideToken = false;
+        var token = new StringBuilder();
 
-        Operator? op = null;
+        var op = Operator.None;
         var composite = false;
-        var toMaxTokenLengthBuffer = false;
-        StringBuilder maxTokenLengthBuffer = new(3);
+        var insideMaxTokenLength = false;
+        var maxTokenLengthBuffer = new StringBuilder(3);
         var firstToken = true;
 
         for (var i = 0; i < str.Length; i++)
@@ -138,22 +139,22 @@ internal sealed class UriTemplate
             switch (character)
             {
                 case '{':
-                    toToken = true;
+                    insideToken = true;
                     token.Clear();
                     firstToken = true;
                     break;
                 case '}':
-                    if (toToken)
+                    if (insideToken)
                     {
                         var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, i), firstToken, replaceToken, result, i, escape);
                         if (expanded && firstToken)
                             firstToken = false;
 
-                        toToken = false;
+                        insideToken = false;
                         token.Clear();
-                        op = null;
+                        op = Operator.None;
                         composite = false;
-                        toMaxTokenLengthBuffer = false;
+                        insideMaxTokenLength = false;
                         maxTokenLengthBuffer.Clear();
                     }
                     else
@@ -161,7 +162,7 @@ internal sealed class UriTemplate
 
                     break;
                 case ',':
-                    if (toToken)
+                    if (insideToken)
                     {
                         var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, i), firstToken, replaceToken, result, i, escape);
                         if (expanded && firstToken)
@@ -169,20 +170,20 @@ internal sealed class UriTemplate
 
                         token.Clear();
                         composite = false;
-                        toMaxTokenLengthBuffer = false;
+                        insideMaxTokenLength = false;
                         maxTokenLengthBuffer.Clear();
                         break;
                     }
 
                     goto default;
                 default:
-                    if (toToken)
+                    if (insideToken)
                     {
-                        if (op == null)
+                        if (op is Operator.None)
                         {
                             op = GetOperator(character, token, i);
                         }
-                        else if (toMaxTokenLengthBuffer)
+                        else if (insideMaxTokenLength)
                         {
                             if (char.IsDigit(character))
                                 maxTokenLengthBuffer.Append(character);
@@ -193,7 +194,7 @@ internal sealed class UriTemplate
                         {
                             if (character == ':')
                             {
-                                toMaxTokenLengthBuffer = true;
+                                insideMaxTokenLength = true;
                                 maxTokenLengthBuffer.Clear();
                             }
                             else if (character == '*')
@@ -216,13 +217,13 @@ internal sealed class UriTemplate
             }
         }
 
-        if (!toToken)
+        if (!insideToken)
             return result.ToString();
 
         throw new FormatException("Unterminated token");
     }
 
-    private static void AddPrefix(Operator? op, StringBuilder result, bool escape)
+    private static void AddPrefix(Operator op, StringBuilder result, bool escape)
     {
         if (op == Operator.Hash)
             result.Append('#');
@@ -243,7 +244,7 @@ internal sealed class UriTemplate
             result.Append('&');
     }
 
-    private static char GetSeparator(Operator? op) => op switch
+    private static char GetSeparator(Operator op) => op switch
     {
         Operator.Dot => '.',
         Operator.Slash => '/',
@@ -252,7 +253,7 @@ internal sealed class UriTemplate
         _ => ','
     };
 
-    private static void AddValue(Operator? op, string token, object value, StringBuilder result, int maxTokenLength, bool escape)
+    private static void AddValue(Operator op, string token, object value, StringBuilder result, int maxTokenLength, bool escape)
     {
         if (op is Operator.QuestionMark or Operator.Ampersand)
         {
@@ -271,7 +272,7 @@ internal sealed class UriTemplate
             AddExpandedValue(null, value, result, maxTokenLength, true, escape);
     }
 
-    private static void AddValueElement(Operator? op, object value, StringBuilder result, int maxTokenLength, bool escape)
+    private static void AddValueElement(Operator op, object value, StringBuilder result, int maxTokenLength, bool escape)
     {
         if (op is Operator.Plus or Operator.Hash)
             AddExpandedValue(null, value, result, maxTokenLength, false, escape);
@@ -394,12 +395,12 @@ internal sealed class UriTemplate
     }
 
     private static bool ExpandToken(
-            Operator? op,
+            Operator op,
             string token,
             bool composite,
             int maxTokenLength,
             bool firstToken,
-            Func<Operator?, string, object?> replaceToken,
+            Func<Operator, string, object?> replaceToken,
             StringBuilder result,
             int column,
             bool escape)
@@ -428,12 +429,12 @@ internal sealed class UriTemplate
         return true;
     }
 
-    private static void AddStringValue(Operator? op, string token, object value, StringBuilder result, int maxTokenLength, bool escape)
+    private static void AddStringValue(Operator op, string token, object value, StringBuilder result, int maxTokenLength, bool escape)
     {
         AddValue(op, token, value, result, maxTokenLength, escape);
     }
 
-    private static void AddListValue(Operator? op, string token, IList value, StringBuilder result, int maxTokenLength, bool composite, bool escape)
+    private static void AddListValue(Operator op, string token, IList value, StringBuilder result, int maxTokenLength, bool composite, bool escape)
     {
         var first = true;
         foreach (var element in value)
@@ -459,7 +460,7 @@ internal sealed class UriTemplate
         }
     }
 
-    private static void AddDictionaryValue(Operator? op, string token, IDictionary value, StringBuilder result, int maxTokenLength, bool composite, bool escape)
+    private static void AddDictionaryValue(Operator op, string token, IDictionary value, StringBuilder result, int maxTokenLength, bool composite, bool escape)
     {
         var first = true;
         if (maxTokenLength != -1)
