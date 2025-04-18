@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Transport;
-using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
 namespace mcp0.Commands;

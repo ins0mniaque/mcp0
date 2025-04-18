@@ -20,7 +20,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
     private ListResourceTemplatesResult listResourceTemplatesResult = new();
     private ListToolsResult listToolsResult = new();
 
-    private readonly UriTemplateMatcherCache uriTemplateMatchers = new();
+    private readonly UriTemplateCache uriTemplateCache = new();
     private readonly Dictionary<string, string> renamedPrompts = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> renamedResources = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> renamedResourceTemplates = new(StringComparer.Ordinal);
@@ -104,15 +104,16 @@ internal sealed partial class McpProxy : IAsyncDisposable
     internal string Map(ResourceTemplate resourceTemplate, string uri) => MapResourceTemplate(resourceTemplate.UriTemplate, uri);
     internal string Map(Tool tool) => renamedTools.GetValueOrDefault(tool.Name, tool.Name);
 
-    private string MapResourceTemplate(string uriTemplate, string uri)
+    private string MapResourceTemplate(string template, string uri)
     {
-        if (!renamedResourceTemplates.TryGetValue(uriTemplate, out var renamedUriTemplate))
+        if (!renamedResourceTemplates.TryGetValue(template, out var renamedTemplate))
             return uri;
 
-        var matcher = uriTemplateMatchers.GetMatcher(uriTemplate);
-        var renamedMatcher = uriTemplateMatchers.GetMatcher(renamedUriTemplate);
+        var uriTemplate = uriTemplateCache.GetUriTemplate(template);
+        var renamedUriTemplate = uriTemplateCache.GetUriTemplate(renamedTemplate);
 
-        // TODO: Parse uri with uriTemplate and fill out renamedTemplate
+        if (uriTemplate.Parse(uri) is { } values)
+            return renamedUriTemplate.Expand(values) ?? uri;
 
         return uri;
     }
