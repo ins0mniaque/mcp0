@@ -6,9 +6,20 @@ namespace mcp0.Models;
 public sealed class PatchConverterTests
 {
     [TestMethod]
-    public void DeserializesRemovePatchCorrectly()
+    public void DeserializesRemovePatchFromNullCorrectly()
     {
         var json = "null";
+
+        var actual = JsonSerializer.Deserialize<Patch>(json);
+        var expected = Patch.Remove;
+
+        Assert.AreEqual(expected, actual);
+    }
+
+    [TestMethod]
+    public void DeserializesRemovePatchCorrectly()
+    {
+        var json = "false";
 
         var actual = JsonSerializer.Deserialize<Patch>(json);
         var expected = Patch.Remove;
@@ -66,6 +77,16 @@ public sealed class PatchConverterTests
         };
 
         Assert.AreEqual(expected, actual);
+    }
+
+    [TestMethod]
+    public void SerializesRemovePatchToFalseCorrectly()
+    {
+        var expected = Patch.Remove;
+
+        var json = JsonSerializer.Serialize(expected, ModelContext.Default.Patch);
+
+        Assert.AreEqual(json, "false");
     }
 
     [TestMethod]
