@@ -275,7 +275,8 @@ internal static class Inspector
 
     private static Dictionary<string, object?>? ToNamedArguments(this JsonElement[] arguments, IEnumerable<string>? names)
     {
-        return names?.Select((name, index) => KeyValuePair.Create(name, (object?)arguments.ElementAtOrDefault(index)))
+        return names?.Take(arguments.Length)
+                     .Select((name, index) => KeyValuePair.Create(name, (object?)arguments[index]))
                      .ToDictionary(StringComparer.Ordinal);
     }
 
