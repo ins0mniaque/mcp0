@@ -10,7 +10,7 @@ public sealed class ServerConverterTests
     {
         var json = "\"npx -y @modelcontextprotocol/server-everything\"";
 
-        var actual = JsonSerializer.Deserialize<Server>(json);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Server);
         var expected = new StdioServer
         {
             Command = "npx",
@@ -37,7 +37,7 @@ public sealed class ServerConverterTests
         }
         """;
 
-        var actual = JsonSerializer.Deserialize<Server>(json);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Server);
         var expected = new StdioServer
         {
             Command = "npx",
@@ -55,7 +55,7 @@ public sealed class ServerConverterTests
     {
         var json = "\"http://localhost:8080/server-everything\"";
 
-        var actual = JsonSerializer.Deserialize<Server>(json);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Server);
         var expected = new SseServer
         {
             Url = new Uri("http://localhost:8080/server-everything")
@@ -76,7 +76,7 @@ public sealed class ServerConverterTests
         }
         """;
 
-        var actual = JsonSerializer.Deserialize<Server>(json);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Server);
         var expected = new SseServer
         {
             Url = new Uri("http://localhost:8080/server-everything"),

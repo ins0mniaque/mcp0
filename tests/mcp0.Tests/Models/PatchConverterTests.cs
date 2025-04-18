@@ -10,7 +10,7 @@ public sealed class PatchConverterTests
     {
         var json = "null";
 
-        var actual = JsonSerializer.Deserialize<Patch>(json);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Patch);
         var expected = Patch.Remove;
 
         Assert.AreEqual(expected, actual);
@@ -21,7 +21,7 @@ public sealed class PatchConverterTests
     {
         var json = "false";
 
-        var actual = JsonSerializer.Deserialize<Patch>(json);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Patch);
         var expected = Patch.Remove;
 
         Assert.AreEqual(expected, actual);
@@ -32,7 +32,7 @@ public sealed class PatchConverterTests
     {
         var json = "\"new-name\"";
 
-        var actual = JsonSerializer.Deserialize<Patch>(json);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Patch);
         var expected = new Patch { Name = "new-name" };
 
         Assert.AreEqual(expected, actual);
@@ -43,7 +43,7 @@ public sealed class PatchConverterTests
     {
         var json = "\"# New description\"";
 
-        var actual = JsonSerializer.Deserialize<Patch>(json);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Patch);
         var expected = new Patch { Description = "New description" };
 
         Assert.AreEqual(expected, actual);
@@ -54,7 +54,7 @@ public sealed class PatchConverterTests
     {
         var json = "\"new-name  # New description\"";
 
-        var actual = JsonSerializer.Deserialize<Patch>(json);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Patch);
         var expected = new Patch
         {
             Name = "new-name",
@@ -69,7 +69,7 @@ public sealed class PatchConverterTests
     {
         var json = "{ \"name\": \"new-name\", \"description\": \"New description\" }";
 
-        var actual = JsonSerializer.Deserialize<Patch>(json);
+        var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Patch);
         var expected = new Patch
         {
             Name = "new-name",
