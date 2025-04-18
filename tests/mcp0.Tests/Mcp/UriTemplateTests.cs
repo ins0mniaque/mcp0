@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
 
 using Microsoft.AspNetCore.Routing;
 
@@ -53,5 +52,14 @@ public sealed class UriTemplateTests
         var values = new RouteValueDictionary { ["id"] = "1", ["page"] = "search", ["query"] = "test" };
 
         Assert.AreEqual("http://localhost:8080/dir/1/search?query=test", uriTemplate.Expand(values));
+    }
+
+    [TestMethod]
+    public void ExpandEscapesCorrectly()
+    {
+        var uriTemplate = new UriTemplate("http://localhost:8080/dir/{id}/{page}{?query}{#fragment}");
+        var values = new RouteValueDictionary { ["id"] = "\uD83D\uDE03", ["page"] = "100% AND %25", ["query"] = "❤️", ["fragment"] = "100% AND %25" };
+
+        Assert.AreEqual("http://localhost:8080/dir/%F0%9F%98%83/100%25%20AND%20%2525?query=%E2%9D%A4%EF%B8%8F#100%25 AND%20%25", uriTemplate.Expand(values));
     }
 }
