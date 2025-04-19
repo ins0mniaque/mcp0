@@ -99,7 +99,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
 
         await Prompts.Register(clients, async client =>
         {
-            var prompts = await client.SafeListPromptsAsync(cancellationToken).ConfigureAwait(false);
+            var prompts = await client.SafeListPromptsAsync(cancellationToken);
 
             return prompts.Select(static prompt => prompt.ProtocolPrompt).ToList();
         });
