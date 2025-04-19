@@ -111,7 +111,7 @@ internal abstract class ProxyCommand : CancellableCommand
 
     private static async Task Reload(McpProxy proxy, string[] paths, IClientTransport? clientTransport, ILoggerFactory? loggerFactory, CancellationToken cancellationToken)
     {
-        var logger = loggerFactory?.CreateLogger<RunCommand>();
+        var logger = loggerFactory?.CreateLogger<ProxyCommand>();
 
         try
         {
