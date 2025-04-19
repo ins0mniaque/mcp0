@@ -45,7 +45,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
     public McpProxyUriTemplateRegistry<ResourceTemplate> ResourceTemplates { get; }
     public McpProxyRegistry<Tool> Tools { get; }
 
-    public async Task ConnectAsync(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
+    public async Task ConnectAsync(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken = default)
     {
         foreach (var client in Clients)
             await client.DisposeAsync();
@@ -60,12 +60,12 @@ internal sealed partial class McpProxy : IAsyncDisposable
                            InitializeTools(clients, cancellationToken));
     }
 
-    public async Task DisconnectAsync(CancellationToken cancellationToken)
+    public async Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
         await ConnectAsync([], cancellationToken);
     }
 
-    public async Task RunAsync(CancellationToken cancellationToken)
+    public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         if (Server is not null)
             throw new InvalidOperationException("Server is already running");
