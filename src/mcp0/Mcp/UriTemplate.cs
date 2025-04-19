@@ -278,22 +278,14 @@ internal sealed class UriTemplate
             AddExpandedValue(null, value, result, maxTokenLength, true, escape);
     }
 
-    private static bool IsPrivateUse(char character)
-    {
-        return char.IsBetween(character, (char)0xE000, (char)0xF8FF);
-    }
-
-    private static bool IsUcs(char character)
-    {
-        return char.IsBetween(character, (char)0xA0, (char)0xD7FF)
-               || char.IsBetween(character, (char)0xF900, (char)0xFDCF)
-               || char.IsBetween(character, (char)0xFDF0, (char)0xFFEF);
-    }
+    private static ReadOnlySpan<char> Rfc2396UnreservedMarks => "-_.~*'()!";
+    private static bool IsUnreserved(char character) => char.IsAsciiLetterOrDigit(character) ||
+                                                        Rfc2396UnreservedMarks.Contains(character);
 
     private static void AddExpandedValue(string? prefix, object value, StringBuilder result, int maxTokenLength, bool replaceReserved, bool escape)
     {
         var stringValue = Format(value).AsSpan();
-        var length = (maxTokenLength is not -1) ? Math.Min(maxTokenLength, stringValue.Length) : stringValue.Length;
+        var length = maxTokenLength is not -1 ? Math.Min(maxTokenLength, stringValue.Length) : stringValue.Length;
         var insideReserved = false;
         var reservedBuffer = new StringBuilder(3);
         var runeBuffer = (Span<char>)stackalloc char[2];
@@ -326,7 +318,7 @@ internal sealed class UriTemplate
                 Uri.TryEscapeDataString(runeBuffer, buffer[bufferIndex..], out var written);
                 bufferIndex += written;
             }
-            else if (replaceReserved || IsUcs(character) || IsPrivateUse(character))
+            else if (replaceReserved || !IsUnreserved(character))
             {
                 Uri.TryEscapeDataString(stringValue[index..(index + 1)], buffer[bufferIndex..], out var written);
                 bufferIndex += written;
@@ -434,7 +426,7 @@ internal sealed class UriTemplate
         else if (value is IList)
             AddListValue(op, token, (IList)value, result, maxTokenLength, composite, escape);
         else if (value is IDictionary)
-            AddDictionaryValue(op, token, ((IDictionary)value), result, maxTokenLength, composite, escape);
+            AddDictionaryValue(op, token, (IDictionary)value, result, maxTokenLength, composite, escape);
         else
             throw new InvalidOperationException($"Invalid value type {value.GetType().Name} passed as replacement for token '{token}' at column {column}");
 
@@ -484,6 +476,7 @@ internal sealed class UriTemplate
             {
                 if (!first)
                     AddSeparator(op, result);
+
                 AddValueElement(op, (string)entry.Key, result, maxTokenLength, escape);
                 result.Append('=');
             }

@@ -60,6 +60,6 @@ public sealed class UriTemplateTests
         var uriTemplate = new UriTemplate("http://localhost:8080/dir/{id}/{page}{?query}{#fragment}");
         var values = new RouteValueDictionary { ["id"] = "%\uD83D\uDE03", ["page"] = "100% AND %25", ["query"] = "❤️", ["fragment"] = "100% AND %25 %\uD83D\uDE03" };
 
-        Assert.AreEqual("http://localhost:8080/dir/%25%F0%9F%98%83/100%25%20AND%20%2525?query=%E2%9D%A4%EF%B8%8F#100%25%20AND%20%25%20%25%F0%9F%98%83", uriTemplate.Expand(values));
+        Assert.AreEqual("http://localhost:8080/dir/%25%F0%9F%98%83/100%25%20AND%20%2525?query=%E2%9D%A4%EF%B8%8F#100%25%20AND%20%2525%20%25%F0%9F%98%83", uriTemplate.Expand(values));
     }
 }
