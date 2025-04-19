@@ -112,15 +112,13 @@ internal static class McpClientExtensions
             .CatchMethodNotFound(static _ => { });
     }
 
-    private const int MethodNotFoundErrorCode = -32601;
-
     private static async Task CatchMethodNotFound(this Task task, Action<McpException> fallback)
     {
         try
         {
             await task;
         }
-        catch (McpException exception) when (exception.ErrorCode is MethodNotFoundErrorCode)
+        catch (McpException exception) when (exception.ErrorCode is McpErrorCode.MethodNotFound)
         {
             fallback(exception);
         }
@@ -132,7 +130,7 @@ internal static class McpClientExtensions
         {
             return await task;
         }
-        catch (McpException exception) when (exception.ErrorCode is MethodNotFoundErrorCode)
+        catch (McpException exception) when (exception.ErrorCode is McpErrorCode.MethodNotFound)
         {
             return fallback(exception);
         }

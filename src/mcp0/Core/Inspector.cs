@@ -224,7 +224,7 @@ internal static class Inspector
     private static async Task CallPrompt(McpProxy proxy, IMcpClient client, Prompt prompt, JsonElement[] arguments, CancellationToken cancellationToken)
     {
         var promptArguments = arguments.ToNamedArguments(prompt.Arguments?.Select(static argument => argument.Name));
-        var promptResult = await client.GetPromptAsync(proxy.Map(prompt), promptArguments, null, cancellationToken);
+        var promptResult = await client.GetPromptAsync(proxy.Map(prompt), promptArguments, cancellationToken: cancellationToken);
         if (promptResult.Description is not null)
         {
             Terminal.Write("Description: ");
@@ -250,7 +250,7 @@ internal static class Inspector
         }
 
         var toolArguments = arguments.ToNamedArguments(objectType.Properties.Select(static property => property.Name));
-        var toolResponse = await client.CallToolAsync(proxy.Map(tool), toolArguments, null, cancellationToken);
+        var toolResponse = await client.CallToolAsync(proxy.Map(tool), toolArguments, cancellationToken: cancellationToken);
         if (toolResponse.IsError)
             Terminal.Write("Error: ", ConsoleColor.Red);
 

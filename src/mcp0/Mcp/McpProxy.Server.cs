@@ -128,7 +128,7 @@ internal sealed partial class McpProxy
                     static entry => (object?)entry.Value,
                     StringComparer.Ordinal);
 
-                return await client.CallToolAsync(Map(tool), arguments, null, cancellationToken);
+                return await client.CallToolAsync(Map(tool), arguments, cancellationToken: cancellationToken);
             }
         },
         Completions = new()
