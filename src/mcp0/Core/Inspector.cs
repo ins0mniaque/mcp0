@@ -209,16 +209,12 @@ internal static class Inspector
     [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "False positive")]
     public static async Task Call(McpProxy proxy, string function, JsonElement[] arguments, CancellationToken cancellationToken)
     {
-        try
-        {
-            if (proxy.Tools.TryFind(function, out var client, out var tool))
-                await CallTool(proxy, client, tool, arguments, cancellationToken);
-            else if (proxy.Prompts.TryFind(function, out client, out var prompt))
-                await CallPrompt(proxy, client, prompt, arguments, cancellationToken);
-            else
-                Terminal.WriteLine($"Could not find a tool or prompt named: {function}");
-        }
-        catch (McpException) { }
+        if (proxy.Tools.TryFind(function, out var client, out var tool))
+            await CallTool(proxy, client, tool, arguments, cancellationToken);
+        else if (proxy.Prompts.TryFind(function, out client, out var prompt))
+            await CallPrompt(proxy, client, prompt, arguments, cancellationToken);
+        else
+            Terminal.WriteLine($"Could not find a tool or prompt named: {function}");
     }
 
     private static async Task CallPrompt(McpProxy proxy, IMcpClient client, Prompt prompt, JsonElement[] arguments, CancellationToken cancellationToken)

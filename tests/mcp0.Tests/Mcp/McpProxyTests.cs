@@ -65,12 +65,12 @@ public sealed class McpProxyTests
         Assert.AreEqual("Summarize", prompts[0].ProtocolPrompt.Name);
         Assert.AreEqual("Echo", tools[0].ProtocolTool.Name);
 
-        var promptArguments = new Dictionary<string, object?> { ["content"] = "content" };
+        var promptArguments = new Dictionary<string, object?>(StringComparer.Ordinal) { ["content"] = "content" };
         var promptResult = await proxyClient.GetPromptAsync("Summarize", promptArguments, cancellationToken: cancellationToken);
 
         Assert.AreEqual("Please summarize: content", promptResult.Messages[0].Content.Text);
 
-        var toolArguments = new Dictionary<string, object?> { ["message"] = "message" };
+        var toolArguments = new Dictionary<string, object?>(StringComparer.Ordinal) { ["message"] = "message" };
         var toolResponse = await proxyClient.CallToolAsync("Echo", toolArguments, cancellationToken: cancellationToken);
 
         Assert.AreEqual("Echo: message", toolResponse.Content[0].Text);

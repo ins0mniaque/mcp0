@@ -39,7 +39,8 @@ internal sealed class UriTemplate(string template)
         return match.Groups.Cast<Group>()
                            .Where(static group => group.Name is not "0")
                            .ToDictionary(static group => group.Name,
-                                         static group => (object?)group.Value);
+                                         static group => (object?)group.Value,
+                                         StringComparer.Ordinal);
     }
 
     private static Regex CreateParser(string template, RegexOptions options)

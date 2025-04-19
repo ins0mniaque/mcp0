@@ -84,7 +84,7 @@ internal sealed class ServeCommand : ProxyCommand
     private static X509Certificate2 LoadCertificate(string sslCertFile, string sslKeyFile)
     {
         var certificate = X509Certificate2.CreateFromPemFile(sslCertFile, sslKeyFile);
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if (OperatingSystem.IsWindows())
             certificate = X509CertificateLoader.LoadCertificate(certificate.Export(X509ContentType.Pkcs12));
 
         return certificate;

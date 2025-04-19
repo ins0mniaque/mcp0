@@ -162,7 +162,7 @@ internal static class Terminal
 
     private static bool IsCtrlOrAlt(ConsoleKeyInfo input)
     {
-        return (input.Modifiers & (ConsoleModifiers.Alt | ConsoleModifiers.Control)) is not 0;
+        return (input.Modifiers & (ConsoleModifiers.Alt | ConsoleModifiers.Control)) is not ConsoleModifiers.None;
     }
 
     private const string WordChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
