@@ -322,7 +322,7 @@ internal static class Terminal
     }
 
     [InterpolatedStringHandler]
-    [SuppressMessage("Microsoft.Performance", "CA1822:Mark member as static", Justification = "InterpolatedStringHandler")]
+    [SuppressMessage("Performance", "CA1822:Mark member as static", Justification = "InterpolatedStringHandler")]
     internal struct InterpolatedStringHandler
     {
         // ReSharper disable UnusedParameter.Local
