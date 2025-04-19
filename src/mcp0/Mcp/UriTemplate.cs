@@ -6,21 +6,13 @@ using System.Text.RegularExpressions;
 
 namespace mcp0.Mcp;
 
-internal sealed class UriTemplate
+internal sealed class UriTemplate(string template)
 {
-    private readonly Regex parser;
-
-    public UriTemplate(string template)
-    {
-        Template = template;
-        parser = CreateParser(template, RegexOptions.Compiled);
-    }
-
-    public string Template { get; }
+    private readonly Regex parser = CreateParser(template, RegexOptions.Compiled);
 
     public bool Match(string uri) => parser.Match(uri).Success;
     public IReadOnlyDictionary<string, object?>? Parse(string uri) => Parse(parser, uri);
-    public string Expand(IReadOnlyDictionary<string, object?> values) => Expand(Template, values);
+    public string Expand(IReadOnlyDictionary<string, object?> values) => Expand(template, values);
 
     public static bool Match(string template, string uri)
     {
@@ -52,12 +44,12 @@ internal sealed class UriTemplate
 
     private static Regex CreateParser(string template, RegexOptions options)
     {
-        var pattern = Expand(template, static (op, token) => $"(?<{token}>[^{GetParserSeparator(op)}]*)", regex: true);
+        var pattern = Expand(template, static (op, token) => $"(?<{token}>[^{GetParserSeparators(op)}]*)", regex: true);
 
         return new Regex(string.Concat('^', pattern, '$'), options, TimeSpan.FromSeconds(1));
     }
 
-    private static string GetParserSeparator(Operator op) => op switch
+    private static string GetParserSeparators(Operator op) => op switch
     {
         Operator.QuestionMark or Operator.Ampersand => "&",
         _ => "/?"
@@ -96,20 +88,13 @@ internal sealed class UriTemplate
 
     private static Operator GetOperator(char character, StringBuilder token, int column)
     {
-        if (character is '+')
-            return Operator.Plus;
-        if (character is '#')
-            return Operator.Hash;
-        if (character is '.')
-            return Operator.Dot;
-        if (character is '/')
-            return Operator.Slash;
-        if (character is ';')
-            return Operator.Semicolon;
-        if (character is '?')
-            return Operator.QuestionMark;
-        if (character is '&')
-            return Operator.Ampersand;
+        if (character is '+') return Operator.Plus;
+        if (character is '#') return Operator.Hash;
+        if (character is '.') return Operator.Dot;
+        if (character is '/') return Operator.Slash;
+        if (character is ';') return Operator.Semicolon;
+        if (character is '?') return Operator.QuestionMark;
+        if (character is '&') return Operator.Ampersand;
 
         ValidateLiteral(character, column);
         token.Append(character);
@@ -256,32 +241,32 @@ internal sealed class UriTemplate
         {
             result.Append(token);
             result.Append('=');
-            AddExpandedValue(null, value, result, maxTokenLength, true, escape);
+            AddExpandedValue(char.MinValue, value, result, maxTokenLength, true, escape);
         }
         else if (op is Operator.Semicolon)
         {
             result.Append(token);
-            AddExpandedValue("=", value, result, maxTokenLength, true, escape);
+            AddExpandedValue('=', value, result, maxTokenLength, true, escape);
         }
         else if (op is Operator.Plus or Operator.Hash)
-            AddExpandedValue(null, value, result, maxTokenLength, false, escape);
+            AddExpandedValue(char.MinValue, value, result, maxTokenLength, false, escape);
         else if (op is Operator.Dot or Operator.Slash or Operator.NoOp)
-            AddExpandedValue(null, value, result, maxTokenLength, true, escape);
+            AddExpandedValue(char.MinValue, value, result, maxTokenLength, true, escape);
     }
 
     private static void AddValueElement(Operator op, object value, StringBuilder result, int maxTokenLength, bool regex)
     {
         if (op is Operator.Plus or Operator.Hash)
-            AddExpandedValue(null, value, result, maxTokenLength, false, regex);
+            AddExpandedValue(char.MinValue, value, result, maxTokenLength, false, regex);
         else if (op is Operator.QuestionMark or Operator.Ampersand or Operator.Semicolon or Operator.Dot or Operator.Slash or Operator.NoOp)
-            AddExpandedValue(null, value, result, maxTokenLength, true, regex);
+            AddExpandedValue(char.MinValue, value, result, maxTokenLength, true, regex);
     }
 
     private static ReadOnlySpan<char> Rfc2396UnreservedMarks => "-_.~*'()!";
     private static bool IsUnreserved(char character) => char.IsAsciiLetterOrDigit(character) ||
                                                         Rfc2396UnreservedMarks.Contains(character);
 
-    private static void AddExpandedValue(string? prefix, object value, StringBuilder result, int maxTokenLength, bool replaceReserved, bool regex)
+    private static void AddExpandedValue(char prefix, object value, StringBuilder result, int maxTokenLength, bool replaceReserved, bool regex)
     {
         var formatted = Format(value).AsSpan();
         var length = maxTokenLength is not -1 ? Math.Min(maxTokenLength, formatted.Length) : formatted.Length;
@@ -292,7 +277,7 @@ internal sealed class UriTemplate
         var bufferIndex = 0;
 
         result.EnsureCapacity(length * 2);
-        if (length > 0 && prefix != null)
+        if (length > 0 && prefix is not char.MinValue)
             result.Append(prefix);
 
         if (regex)
@@ -368,45 +353,30 @@ internal sealed class UriTemplate
         }
     }
 
-    private static bool IsEmpty([NotNullWhen(false)] object? value)
+    private static bool IsEmpty([NotNullWhen(false)] object? value) => value switch
     {
-        if (value is null)
-            return true;
-        if (value is string or bool or int or long or float or double or decimal)
-            return false;
-        if (value is IList list)
-            return list.Count is 0;
-        if (value is IDictionary dictionary)
-            return dictionary.Count is 0;
+        null => true,
+        string or bool or int or long or float or double or decimal => false,
+        IList list => list.Count is 0,
+        IDictionary dictionary => dictionary.Count is 0,
+        _ => true
+    };
 
-        return true;
-    }
-
-    private static string Format(object value)
+    private static string Format(object value) => value switch
     {
-        return value switch
-        {
-            string str => str,
-            bool boolean => boolean ? "true" : "false",
-            int number => number.ToString(CultureInfo.InvariantCulture),
-            long number => number.ToString(CultureInfo.InvariantCulture),
-            float number => number.ToString(CultureInfo.InvariantCulture),
-            double number => number.ToString(CultureInfo.InvariantCulture),
-            decimal number => number.ToString(CultureInfo.InvariantCulture),
-            _ => throw new ArgumentException($"Type {value.GetType().Name} is not formattable", nameof(value))
-        };
-    }
+        string str => str,
+        bool boolean => boolean ? "true" : "false",
+        int number => number.ToString(CultureInfo.InvariantCulture),
+        long number => number.ToString(CultureInfo.InvariantCulture),
+        float number => number.ToString(CultureInfo.InvariantCulture),
+        double number => number.ToString(CultureInfo.InvariantCulture),
+        decimal number => number.ToString(CultureInfo.InvariantCulture),
+        _ => throw new ArgumentException($"Type {value.GetType().Name} is not formattable", nameof(value))
+    };
 
-    private static bool ExpandToken(
-        Operator op,
-        string token,
-        bool composite,
-        int maxTokenLength,
-        bool firstToken,
-        Func<Operator, string, object?> replaceToken,
-        StringBuilder result,
-        int column,
-        bool regex)
+    private static bool ExpandToken(Operator op, string token, bool composite, int maxTokenLength, bool firstToken,
+                                    Func<Operator, string, object?> replaceToken, StringBuilder result,
+                                    int column, bool regex)
     {
         if (string.IsNullOrEmpty(token))
             throw new FormatException($"Empty token at column {column}");
@@ -422,10 +392,10 @@ internal sealed class UriTemplate
 
         if (value is string or bool or int or long or float or double or decimal)
             AddStringValue(op, token, value, result, maxTokenLength, regex);
-        else if (value is IList)
-            AddListValue(op, token, (IList)value, result, maxTokenLength, composite, regex);
-        else if (value is IDictionary)
-            AddDictionaryValue(op, token, (IDictionary)value, result, maxTokenLength, composite, regex);
+        else if (value is IList list)
+            AddListValue(op, token, list, result, maxTokenLength, composite, regex);
+        else if (value is IDictionary dictionary)
+            AddDictionaryValue(op, token, dictionary, result, maxTokenLength, composite, regex);
         else
             throw new InvalidOperationException($"Invalid value type {value.GetType().Name} passed as replacement for token '{token}' at column {column}");
 
@@ -471,6 +441,9 @@ internal sealed class UriTemplate
 
         foreach (DictionaryEntry entry in value)
         {
+            if (entry.Value is null)
+                throw new InvalidOperationException("Null value is not allowed in dictionaries");
+
             if (composite)
             {
                 if (!first)
@@ -481,20 +454,16 @@ internal sealed class UriTemplate
             }
             else
             {
-                if (first)
-                {
-                    AddValue(op, token, (string)entry.Key, result, maxTokenLength, regex);
-                }
-                else
+                if (!first)
                 {
                     result.Append(',');
                     AddValueElement(op, (string)entry.Key, result, maxTokenLength, regex);
                 }
+                else
+                    AddValue(op, token, (string)entry.Key, result, maxTokenLength, regex);
+
                 result.Append(',');
             }
-
-            if (entry.Value is null)
-                throw new InvalidOperationException("Null value is not allowed in dictionaries");
 
             AddValueElement(op, entry.Value, result, maxTokenLength, regex);
             first = false;
