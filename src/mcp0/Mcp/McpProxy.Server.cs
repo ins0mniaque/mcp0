@@ -139,26 +139,22 @@ internal sealed partial class McpProxy
                     throw new McpException("Missing completion request parameters");
 
                 IMcpClient client;
-                var reference = request.Params.Ref;
-                if (reference.Uri is { } resourceUri)
+                if (request.Params.Ref.Uri is { } uri)
                 {
-                    if (Resources.TryFind(resourceUri, out client, out var resource))
-                        reference = new Reference { Uri = Map(resource) };
-                    else if (ResourceTemplates.TryFind(resourceUri, out client, out var resourceTemplate))
-                        reference = new Reference { Uri = Map(resourceTemplate, resourceUri) };
+                    if (Resources.TryFind(uri, out client, out var resource))
+                        request.Params.Ref.Uri = Map(resource);
+                    else if (ResourceTemplates.TryFind(uri, out client, out var resourceTemplate))
+                        request.Params.Ref.Uri = Map(resourceTemplate, uri);
                     else
-                        throw new McpException($"Unknown resource or resource template: '{resourceUri}'");
+                        throw new McpException($"Unknown resource or resource template: '{uri}'");
                 }
-                else if (reference.Name is { } promptName)
-                {
-                    var prompt = Prompts.Find(promptName, out client);
-                    reference = new Reference { Name = Map(prompt) };
-                }
+                else if (request.Params.Ref.Name is { } name)
+                    request.Params.Ref.Name = Map(Prompts.Find(name, out client));
                 else
                     throw new McpException("Invalid reference type");
 
                 return await client.SafeCompleteAsync(
-                    reference,
+                    request.Params.Ref,
                     request.Params.Argument.Name,
                     request.Params.Argument.Value,
                     cancellationToken);
