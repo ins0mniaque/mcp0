@@ -4,7 +4,6 @@ using System.Text.Json;
 
 using mcp0.Mcp;
 
-using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Types;
 
