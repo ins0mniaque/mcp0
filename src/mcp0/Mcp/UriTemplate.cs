@@ -129,9 +129,9 @@ internal sealed class UriTemplate
         var maxTokenLengthBuffer = new StringBuilder(3);
         var firstToken = true;
 
-        for (var i = 0; i < uri.Length; i++)
+        for (var index = 0; index < uri.Length; index++)
         {
-            var character = uri[i];
+            var character = uri[index];
 
             if (character is '{')
             {
@@ -144,9 +144,9 @@ internal sealed class UriTemplate
             if (character is '}')
             {
                 if (!insideToken)
-                    throw new FormatException($"Invalid character '{character}' in template at column {i}");
+                    throw new FormatException($"Invalid character '{character}' in template at column {index}");
 
-                var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, i), firstToken, replaceToken, result, i, escape);
+                var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, index), firstToken, replaceToken, result, index, escape);
                 if (expanded && firstToken)
                     firstToken = false;
 
@@ -162,7 +162,7 @@ internal sealed class UriTemplate
 
             if (character is ',' && insideToken)
             {
-                var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, i), firstToken, replaceToken, result, i, escape);
+                var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, index), firstToken, replaceToken, result, index, escape);
                 if (expanded && firstToken)
                     firstToken = false;
 
@@ -177,14 +177,14 @@ internal sealed class UriTemplate
             {
                 if (op is Operator.None)
                 {
-                    op = GetOperator(character, token, i);
+                    op = GetOperator(character, token, index);
                 }
                 else if (insideMaxTokenLength)
                 {
                     if (char.IsDigit(character))
                         maxTokenLengthBuffer.Append(character);
                     else
-                        throw new FormatException($"Invalid character '{character}' in maximum token length at column {i}");
+                        throw new FormatException($"Invalid character '{character}' in maximum token length at column {index}");
                 }
                 else
                 {
@@ -199,7 +199,7 @@ internal sealed class UriTemplate
                     }
                     else
                     {
-                        ValidateLiteral(character, i);
+                        ValidateLiteral(character, index);
                         token.Append(character);
                     }
                 }
@@ -292,56 +292,68 @@ internal sealed class UriTemplate
 
     private static void AddExpandedValue(string? prefix, object value, StringBuilder result, int maxTokenLength, bool replaceReserved, bool escape)
     {
-        var stringValue = Format(value);
-        var max = (maxTokenLength != -1) ? Math.Min(maxTokenLength, stringValue.Length) : stringValue.Length;
-        result.EnsureCapacity(max * 2);
-        var toReserved = false;
+        var stringValue = Format(value).AsSpan();
+        var length = (maxTokenLength is not -1) ? Math.Min(maxTokenLength, stringValue.Length) : stringValue.Length;
+        var insideReserved = false;
         var reservedBuffer = new StringBuilder(3);
+        var runeBuffer = (Span<char>)stackalloc char[2];
+        var buffer = (Span<char>)stackalloc char[12];
+        var bufferIndex = 0;
 
-        if (max > 0 && prefix != null)
+        result.EnsureCapacity(length * 2);
+        if (length > 0 && prefix != null)
             result.Append(prefix);
 
         if (!escape)
         {
-            result.Append(stringValue.Length > max ? stringValue[..max] : stringValue);
+            result.Append(stringValue.Length > length ? stringValue[..length] : stringValue);
             return;
         }
 
-        for (var i = 0; i < max; i++)
+        for (var index = 0; index < length; index++)
         {
-            var character = stringValue[i];
-
+            var character = stringValue[index];
             if (character is '%' && !replaceReserved)
             {
-                toReserved = true;
+                insideReserved = true;
                 reservedBuffer.Clear();
             }
 
-            var toAppend = character.ToString();
             if (char.IsSurrogate(character))
-                toAppend = Uri.EscapeDataString(char.ConvertFromUtf32(char.ConvertToUtf32(stringValue, i++)));
-            else if (replaceReserved || IsUcs(character) || IsPrivateUse(character))
-                toAppend = Uri.EscapeDataString(toAppend);
-
-            if (toReserved)
             {
-                reservedBuffer.Append(toAppend);
+                Rune.DecodeFromUtf16(stringValue[index++..(index + 1)], out var rune, out _);
+                rune.EncodeToUtf16(runeBuffer);
+                Uri.TryEscapeDataString(runeBuffer, buffer[bufferIndex..], out var written);
+                bufferIndex += written;
+            }
+            else if (replaceReserved || IsUcs(character) || IsPrivateUse(character))
+            {
+                Uri.TryEscapeDataString(stringValue[index..(index + 1)], buffer[bufferIndex..], out var written);
+                bufferIndex += written;
+            }
+            else
+                buffer[bufferIndex++] = character;
+
+            if (insideReserved)
+            {
+                reservedBuffer.Append(buffer[..bufferIndex]);
 
                 if (reservedBuffer.Length is 3)
                 {
-                    var original = reservedBuffer.ToString();
-                    var isEncoded = !original.Equals(Uri.UnescapeDataString(original));
+                    var isEscaped = reservedBuffer[0] is '%' &&
+                                    char.IsAsciiHexDigit(reservedBuffer[1]) &&
+                                    char.IsAsciiHexDigit(reservedBuffer[2]);
 
-                    if (isEncoded)
-                    {
-                        result.Append(reservedBuffer);
-                    }
-                    else
+                    if (!isEscaped)
                     {
                         result.Append("%25");
-                        result.Append(Uri.EscapeDataString(reservedBuffer.ToString(1, 2)));
+                        Uri.TryEscapeDataString(reservedBuffer.ToString(1, 2), buffer, out var written);
+                        result.Append(buffer[..written]);
                     }
-                    toReserved = false;
+                    else
+                        result.Append(reservedBuffer);
+
+                    insideReserved = false;
                     reservedBuffer.Clear();
                 }
             }
@@ -352,11 +364,13 @@ internal sealed class UriTemplate
                 else if (character is '%')
                     result.Append("%25");
                 else
-                    result.Append(toAppend);
+                    result.Append(buffer[..bufferIndex]);
             }
+
+            bufferIndex = 0;
         }
 
-        if (toReserved)
+        if (insideReserved)
         {
             result.Append("%25");
             result.Append(reservedBuffer.ToString(1, reservedBuffer.Length - 1));
