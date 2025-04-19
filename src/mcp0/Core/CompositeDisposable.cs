@@ -10,5 +10,7 @@ internal sealed class CompositeDisposable<T> : List<T>, IDisposable where T : ID
     {
         foreach (var disposable in this)
             disposable.Dispose();
+
+        Clear();
     }
 }
