@@ -16,8 +16,7 @@ internal sealed class DisposableTask : IAsyncDisposable
         await cts.CancelAsync();
 
         try { await task; }
-        catch (OperationCanceledException) { }
-
-        cts.Dispose();
+        catch (OperationCanceledException exception) when (exception.CancellationToken == cts.Token) { }
+        finally { cts.Dispose(); }
     }
 }
