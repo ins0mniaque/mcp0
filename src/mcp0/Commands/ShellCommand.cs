@@ -53,6 +53,8 @@ internal sealed class ShellCommand : ProxyCommand
                 Inspector.Inspect(proxy);
             else if (command is "l" or "load")
                 reload = Reload(context, arguments ?? []);
+            else if (command is "?" or "help")
+                Help();
             else
                 Terminal.WriteLine($"command not found: {command}");
 
@@ -81,6 +83,14 @@ internal sealed class ShellCommand : ProxyCommand
     {
         context.ParseResult = context.Parser.Parse([Name, .. arguments]);
         return true;
+    }
+
+    private static void Help()
+    {
+        Terminal.WriteLine("Commands", ConsoleColor.Magenta);
+        Terminal.WriteLine("  ?, help                         show this message");
+        Terminal.WriteLine("  i, inspect                      inspect the current server");
+        Terminal.WriteLine("  l, load [<files>...] [options]  load server from configuration files/options");
     }
 
     private static readonly string[] commandHints = ["help", "inspect", "load "];
