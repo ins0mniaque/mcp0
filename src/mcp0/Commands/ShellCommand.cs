@@ -20,9 +20,13 @@ internal sealed class ShellCommand : ProxyCommand
 
     protected override async Task Execute(InvocationContext context, CancellationToken cancellationToken)
     {
+        Terminal.WriteLine(Root.Banner);
+
         do
         {
             reload = false;
+
+            Terminal.Write("Connecting...");
 
             await ConnectAndRun(context, LogLevel.Warning, cancellationToken);
         }
@@ -31,6 +35,8 @@ internal sealed class ShellCommand : ProxyCommand
 
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
     {
+        Terminal.WriteLine($"\rConnected to {proxy.Clients.Count} {(proxy.Clients.Count is 1 ? "server" : "servers")}");
+
         var hints = BuildHints(proxy);
 
         while (!cancellationToken.IsCancellationRequested)

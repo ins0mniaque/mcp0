@@ -13,6 +13,8 @@ namespace mcp0.Commands;
 
 internal sealed class Root : RootCommand
 {
+    public const string Banner = "mcp0 - Secure MCP (Model Context Protocol) servers configurator/inspector/proxy";
+
     public Root(IEnumerable<Command> commands)
     {
         AddGlobalOption(LogLevelOption);
@@ -49,8 +51,6 @@ internal sealed class Root : RootCommand
 
     private static void Help(HelpContext context)
     {
-        const string Banner = "mcp0 - Secure MCP (Model Context Protocol) servers configurator/inspector/proxy";
-
         context.HelpBuilder.CustomizeLayout(static context =>
             HelpBuilder.Default.GetLayout()
                 .Skip(string.IsNullOrEmpty(context.Command.Description) ? 1 : 0)
