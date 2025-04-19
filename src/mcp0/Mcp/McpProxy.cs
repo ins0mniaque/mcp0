@@ -55,9 +55,9 @@ internal sealed partial class McpProxy : IAsyncDisposable
         if (proxyOptions?.LoggingLevel is { } loggingLevel)
             await SetLoggingLevel(loggingLevel, cancellationToken);
 
-        await InitializePrompts(clients, cancellationToken);
-        await InitializeResources(clients, cancellationToken);
-        await InitializeTools(clients, cancellationToken);
+        await Task.WhenAll(InitializePrompts(clients, cancellationToken),
+                           InitializeResources(clients, cancellationToken),
+                           InitializeTools(clients, cancellationToken));
     }
 
     public async Task DisconnectAsync(CancellationToken cancellationToken)
