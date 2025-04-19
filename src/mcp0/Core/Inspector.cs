@@ -219,7 +219,7 @@ internal static class Inspector
     private static async Task CallPrompt(McpProxy proxy, IMcpClient client, Prompt prompt, JsonElement[] arguments, CancellationToken cancellationToken)
     {
         var promptArguments = arguments.ToNamedArguments(prompt.Arguments?.Select(static argument => argument.Name));
-        var promptResult = await client.GetPromptAsync(proxy.Map(prompt), promptArguments, cancellationToken: cancellationToken);
+        var promptResult = await client.GetPromptAsync(proxy.Prompts.Unmap(prompt), promptArguments, cancellationToken: cancellationToken);
         if (promptResult.Description is not null)
         {
             Terminal.Write("Description: ");
@@ -245,7 +245,7 @@ internal static class Inspector
         }
 
         var toolArguments = arguments.ToNamedArguments(objectType.Properties.Select(static property => property.Name));
-        var toolResponse = await client.CallToolAsync(proxy.Map(tool), toolArguments, cancellationToken: cancellationToken);
+        var toolResponse = await client.CallToolAsync(proxy.Tools.Unmap(tool), toolArguments, cancellationToken: cancellationToken);
         if (toolResponse.IsError)
             Terminal.Write("Error: ", ConsoleColor.Red);
 
@@ -280,13 +280,13 @@ internal static class Inspector
     {
         if (proxy.Resources.TryFind(uri, out var client, out var resource))
         {
-            var result = await client.ReadResourceAsync(proxy.Map(resource), cancellationToken);
+            var result = await client.ReadResourceAsync(proxy.Resources.Unmap(resource), cancellationToken);
             foreach (var content in result.Contents)
                 WriteResourceContents(content);
         }
         else if (proxy.ResourceTemplates.TryMatch(uri, out client, out var resourceTemplate))
         {
-            var result = await client.ReadResourceAsync(proxy.Map(resourceTemplate, uri), cancellationToken);
+            var result = await client.ReadResourceAsync(proxy.ResourceTemplates.Unmap(resourceTemplate, uri), cancellationToken);
             foreach (var content in result.Contents)
                 WriteResourceContents(content);
         }

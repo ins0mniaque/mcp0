@@ -6,9 +6,11 @@ using ModelContextProtocol.Client;
 
 namespace mcp0.Mcp;
 
-internal class McpProxyRegistry<T>(string itemType, Func<T, string> keySelector) : IEnumerable<T> where T : notnull
+internal class McpProxyRegistry<T>(string itemType, Func<T, string> keySelector, Func<T, T?>? map = null) : IEnumerable<T> where T : notnull
 {
     protected readonly Dictionary<string, (IMcpClient Client, T Item)> registry = new(StringComparer.Ordinal);
+    protected readonly Dictionary<string, string> inverseMap = new(StringComparer.Ordinal);
+    protected readonly Func<T, string> keySelector = keySelector;
 
     public int Count => registry.Count;
 
@@ -33,6 +35,13 @@ internal class McpProxyRegistry<T>(string itemType, Func<T, string> keySelector)
         return true;
     }
 
+    public string Unmap(T item)
+    {
+        var key = keySelector(item);
+
+        return inverseMap.GetValueOrDefault(key, key);
+    }
+
     internal async Task Register(IReadOnlyList<IMcpClient> clients, Func<IMcpClient, Task<IList<T>>> task)
     {
         var tasks = new List<Task<IList<T>>>(clients.Count);
@@ -43,13 +52,33 @@ internal class McpProxyRegistry<T>(string itemType, Func<T, string> keySelector)
         for (var index = 0; index < clientsItems.Length; index++)
         {
             var client = clients[index];
-            var clientItems = clientsItems[index];
-            foreach (var clientItem in clientItems)
-                registry[keySelector(clientItem)] = (client, clientItem);
+            var items = clientsItems[index];
+            foreach (var item in items)
+            {
+                var key = keySelector(item);
+                if (map is null)
+                {
+                    registry[key] = (client, item);
+                    continue;
+                }
+
+                if (map(item) is not { } mappedItem)
+                    continue;
+
+                var mappedKey = keySelector(mappedItem);
+                if (!string.Equals(mappedKey, key, StringComparison.Ordinal))
+                    inverseMap[mappedKey] = key;
+
+                registry[mappedKey] = (client, mappedItem);
+            }
         }
     }
 
-    internal virtual void Clear() => registry.Clear();
+    internal virtual void Clear()
+    {
+        registry.Clear();
+        inverseMap.Clear();
+    }
 
     public IEnumerable<T> this[IMcpClient client] => registry.Where(entry => entry.Value.Client == client)
                                                              .Select(static entry => entry.Value.Item);

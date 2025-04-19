@@ -4,9 +4,9 @@ using ModelContextProtocol.Client;
 
 namespace mcp0.Mcp;
 
-internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, string> keySelector, UriTemplateCache? cache = null) : McpProxyRegistry<T>(itemType, keySelector) where T : notnull
+internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, string> keySelector, Func<T, T?>? map = null) : McpProxyRegistry<T>(itemType, keySelector, map) where T : notnull
 {
-    private readonly UriTemplateCache uriTemplateCache = cache ?? new();
+    private readonly UriTemplateCache uriTemplateCache = new();
 
     public T Match(string? uri, out IMcpClient client)
     {
@@ -36,6 +36,21 @@ internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, st
         }
 
         return false;
+    }
+
+    public string Unmap(T template, string uri)
+    {
+        var key = keySelector(template);
+        if (!inverseMap.TryGetValue(key, out var inverseKey))
+            return uri;
+
+        var uriTemplate = uriTemplateCache.GetUriTemplate(key);
+        var inverseUriTemplate = uriTemplateCache.GetUriTemplate(inverseKey);
+
+        if (uriTemplate.Parse(uri) is { } values)
+            return inverseUriTemplate.Expand(values);
+
+        return uri;
     }
 
     internal override void Clear()
