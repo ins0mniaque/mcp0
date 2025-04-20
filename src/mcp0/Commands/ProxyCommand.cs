@@ -9,6 +9,7 @@ using mcp0.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Transport;
@@ -111,11 +112,11 @@ internal abstract class ProxyCommand : CancellableCommand
 
     private static async Task Reload(McpProxy proxy, string[] paths, IClientTransport? clientTransport, ILoggerFactory? loggerFactory, CancellationToken cancellationToken)
     {
-        var logger = loggerFactory?.CreateLogger<ProxyCommand>();
+        var logger = loggerFactory?.CreateLogger<ProxyCommand>() ?? (ILogger)NullLogger.Instance;
 
         try
         {
-            logger?.ConfigurationReloading(paths);
+            logger.ConfigurationReloading(paths);
 
             var configuration = await Configuration.Load(paths, cancellationToken);
 
@@ -129,11 +130,11 @@ internal abstract class ProxyCommand : CancellableCommand
 
             await proxy.ConnectAsync(clients, cancellationToken);
 
-            logger?.ConfigurationReloaded(paths);
+            logger.ConfigurationReloaded(paths);
         }
         catch (Exception exception) when (exception is IOException or JsonException or McpException)
         {
-            logger?.ConfigurationReloadFailed(exception, paths);
+            logger.ConfigurationReloadFailed(exception, paths);
         }
     }
 
