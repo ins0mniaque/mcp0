@@ -1,9 +1,12 @@
 using System.CommandLine.Invocation;
+using System.Text.Json;
 
 using mcp0.Core;
 using mcp0.Mcp;
 
 using Microsoft.Extensions.Logging;
+
+using ModelContextProtocol;
 
 namespace mcp0.Commands;
 
@@ -25,17 +28,26 @@ internal sealed class ShellCommand : ProxyCommand
         do
         {
             reload = false;
+            Terminal.Cursor.Hide();
+            Terminal.Write("Connecting...\r");
 
-            Terminal.Write("Connecting...");
-
-            await ConnectAndRun(context, LogLevel.Warning, cancellationToken);
+            try
+            {
+                await ConnectAndRun(context, LogLevel.Warning, cancellationToken);
+            }
+            catch (Exception exception) when (exception is McpException or IOException or JsonException or FormatException or InvalidOperationException)
+            {
+                HandleException(exception);
+                Reload(context, []);
+            }
         }
         while (reload);
     }
 
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
     {
-        Terminal.WriteLine($"\rConnected to {proxy.Clients.Count} {(proxy.Clients.Count is 1 ? "server" : "servers")}");
+        Terminal.WriteLine($"Connected to {proxy.Clients.Count} {(proxy.Clients.Count is 1 ? "server" : "servers")}");
+        Terminal.Cursor.Show();
 
         var hints = BuildHints(proxy);
 
@@ -44,25 +56,22 @@ internal sealed class ShellCommand : ProxyCommand
             Terminal.Write("> ");
 
             var line = Terminal.ReadLine(History, Hint).Trim();
-            if (line is "exit")
+            if (line is "q" or "quit" or "exit")
                 break;
 
-            CommandLine.Split(line, out var command, out var arguments);
-            if (command is null)
-                continue;
-
-            if (FunctionCall.TryParse(line, out var function, out var args))
-                await Inspector.Call(proxy, function, args, cancellationToken);
-            else if (Uri.IsWellFormedUriString(line, UriKind.Absolute))
-                await Inspector.Read(proxy, line, cancellationToken);
-            else if (command is "i" or "inspect")
-                Inspector.Inspect(proxy);
-            else if (command is "l" or "load")
-                reload = Reload(context, arguments ?? []);
-            else if (command is "?" or "help")
-                Help();
-            else
-                Terminal.WriteLine($"command not found: {command}");
+            try
+            {
+                if (FunctionCall.TryParse(line, out var function, out var arguments))
+                    await Inspector.Call(proxy, function, arguments, cancellationToken);
+                else if (Uri.IsWellFormedUriString(line, UriKind.Absolute))
+                    await Inspector.Read(proxy, line, cancellationToken);
+                else
+                    RunCommand(proxy, context, line);
+            }
+            catch (Exception exception) when (exception is McpException or IOException or JsonException or FormatException or InvalidOperationException)
+            {
+                HandleException(exception);
+            }
 
             if (history.Count is 0 || !string.Equals(history[^1], line, StringComparison.Ordinal))
                 history.Add(line);
@@ -71,24 +80,30 @@ internal sealed class ShellCommand : ProxyCommand
                 break;
         }
 
-        string? Hint(string line)
-        {
-            if (line.Length is 0)
-                return "help";
-
-            return BinaryPrefixSearch(hints, line);
-        }
-
-        string? History(int index)
-        {
-            return index < 0 || index >= history.Count ? null : history[^(index + 1)];
-        }
+        string? Hint(string line) => line.Length is 0 ? "help" : BinaryPrefixSearch(hints, line);
+        string? History(int index) => index < 0 || index >= history.Count ? null : history[^(index + 1)];
     }
 
-    private bool Reload(InvocationContext context, string[] arguments)
+    private void RunCommand(McpProxy proxy, InvocationContext context, string line)
+    {
+        CommandLine.Split(line, out var command, out var arguments);
+        if (command is null)
+            return;
+
+        if (command is "i" or "inspect")
+            Inspector.Inspect(proxy);
+        else if (command is "l" or "load")
+            Reload(context, arguments ?? []);
+        else if (command is "?" or "help")
+            Help();
+        else
+            Terminal.WriteLine($"command not found: {command}");
+    }
+
+    private void Reload(InvocationContext context, string[] arguments)
     {
         context.ParseResult = context.Parser.Parse([Name, .. arguments]);
-        return true;
+        reload = true;
     }
 
     private static void Help()
@@ -97,9 +112,10 @@ internal sealed class ShellCommand : ProxyCommand
         Terminal.WriteLine("  ?, help                         show this message");
         Terminal.WriteLine("  i, inspect                      inspect the current server");
         Terminal.WriteLine("  l, load [<files>...] [options]  load server from configuration files/options");
+        Terminal.WriteLine("  q, quit, exit                   exit the shell");
     }
 
-    private static readonly string[] commandHints = ["help", "inspect", "load "];
+    private static readonly string[] commandHints = ["help", "inspect", "load ", "quit", "exit"];
 
     private static List<string> BuildHints(McpProxy proxy)
     {
@@ -134,5 +150,10 @@ internal sealed class ShellCommand : ProxyCommand
             return null;
 
         return element;
+    }
+
+    private static void HandleException(Exception exception)
+    {
+        Terminal.WriteLine(exception.Message, ConsoleColor.Red);
     }
 }
