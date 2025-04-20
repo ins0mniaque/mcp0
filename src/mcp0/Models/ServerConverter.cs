@@ -96,6 +96,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
                 return new StdioServer
                 {
+                    Name = name,
                     Command = command ?? throw Exceptions.MissingRequiredServerProperty(Property.Command),
                     Arguments = arguments,
                     WorkingDirectory = workingDirectory,
@@ -160,6 +161,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
             {
                 return new SseServer
                 {
+                    Name = name,
                     Url = url ?? throw Exceptions.MissingRequiredServerProperty(Property.Url),
                     Headers = headers,
                     ConnectionTimeout = connectionTimeout
