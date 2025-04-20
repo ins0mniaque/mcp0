@@ -377,7 +377,7 @@ internal static class UriTemplateEngine
 
             if (char.IsSurrogate(character))
             {
-                Rune.DecodeFromUtf16(formatted[index++..(index + 1)], out var rune, out _);
+                Rune.DecodeFromUtf16(formatted[index++..], out var rune, out _);
                 rune.EncodeToUtf16(runeBuffer);
                 Uri.TryEscapeDataString(runeBuffer, buffer[bufferIndex..], out var written);
                 bufferIndex += written;
@@ -396,14 +396,16 @@ internal static class UriTemplateEngine
 
                 if (reservedBuffer.Length is 3)
                 {
+                    var highDigit = reservedBuffer[1];
+                    var lowDigit = reservedBuffer[2];
                     var isEscaped = reservedBuffer[0] is '%' &&
-                                    char.IsAsciiHexDigit(reservedBuffer[1]) &&
-                                    char.IsAsciiHexDigit(reservedBuffer[2]);
+                                    char.IsAsciiHexDigit(highDigit) &&
+                                    char.IsAsciiHexDigit(lowDigit);
 
                     if (!isEscaped)
                     {
                         uri.Append("%25");
-                        Uri.TryEscapeDataString(reservedBuffer.ToString(1, 2), buffer, out var written);
+                        Uri.TryEscapeDataString([highDigit, lowDigit], buffer, out var written);
                         uri.Append(buffer[..written]);
                     }
                     else
@@ -429,7 +431,7 @@ internal static class UriTemplateEngine
         if (insideReserved)
         {
             uri.Append("%25");
-            uri.Append(reservedBuffer.ToString(1, reservedBuffer.Length - 1));
+            uri.Append(reservedBuffer, 1, reservedBuffer.Length - 1);
         }
     }
 
@@ -448,7 +450,7 @@ internal static class UriTemplateEngine
 
     private static string Format(object value) => value switch
     {
-        string str => str,
+        string text => text,
         bool boolean => boolean ? "true" : "false",
         int number => number.ToString(CultureInfo.InvariantCulture),
         long number => number.ToString(CultureInfo.InvariantCulture),
