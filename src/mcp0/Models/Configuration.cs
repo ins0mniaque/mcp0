@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 using Generator.Equals;
 
@@ -9,6 +10,10 @@ namespace mcp0.Models;
 [Equatable]
 internal sealed partial record Configuration
 {
+    [JsonConverter(typeof(ServersConverter))]
+    [UnorderedEquality]
+    public List<Server>? Servers { get; set; }
+
     [UnorderedEquality]
     public Dictionary<string, string>? Prompts { get; set; }
 
@@ -19,18 +24,15 @@ internal sealed partial record Configuration
     public Dictionary<string, string>? Tools { get; set; }
 
     [UnorderedEquality]
-    public Dictionary<string, Server>? Servers { get; set; }
-
-    [UnorderedEquality]
     public Dictionary<string, Patch>? Patch { get; set; }
 
     public void Merge(Configuration configuration)
     {
-        Prompts = Dictionary.Merge(Prompts, configuration.Prompts);
-        Resources = Dictionary.Merge(Resources, configuration.Resources);
-        Tools = Dictionary.Merge(Tools, configuration.Tools);
-        Servers = Dictionary.Merge(Servers, configuration.Servers);
-        Patch = Dictionary.Merge(Patch, configuration.Patch);
+        Servers = Collection.Merge(Servers, configuration.Servers);
+        Prompts = Collection.Merge(Prompts, configuration.Prompts);
+        Resources = Collection.Merge(Resources, configuration.Resources);
+        Tools = Collection.Merge(Tools, configuration.Tools);
+        Patch = Collection.Merge(Patch, configuration.Patch);
     }
 
     public static async Task<Configuration> Load(string[] paths, CancellationToken cancellationToken)

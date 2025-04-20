@@ -9,6 +9,8 @@ namespace mcp0.Models;
 [JsonConverter(typeof(ServerConverter))]
 internal abstract record Server
 {
+    public string? Name { get; set; }
+
     public static Server? FromString(string text)
     {
         return (Server?)SseServer.FromString(text) ??

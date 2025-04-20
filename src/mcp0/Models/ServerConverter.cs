@@ -8,6 +8,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
 {
     private static class Property
     {
+        public const string Name = "name";
         public const string Command = "command";
         public const string Args = "args";
         public const string WorkDir = "workDir";
@@ -48,16 +49,26 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
         var propertyName = reader.GetString() ?? throw Exceptions.InvalidServerJson();
 
+        var name = (string?)null;
+        if (propertyName is Property.Name)
+        {
+            reader.Read();
+            name = reader.GetString();
+
+            reader.Read();
+            propertyName = reader.GetString() ?? throw Exceptions.InvalidServerJson();
+        }
+
         if (Property.IsStdioServerProperty(propertyName))
-            return ReadStdioServer(ref reader, propertyName);
+            return ReadStdioServer(ref reader, propertyName, name);
 
         if (Property.IsSseServerProperty(propertyName))
-            return ReadSseServer(ref reader, propertyName);
+            return ReadSseServer(ref reader, propertyName, name);
 
         throw Exceptions.UnknownServerProperty(propertyName);
     }
 
-    private static StdioServer ReadStdioServer(ref Utf8JsonReader reader, string propertyName)
+    private static StdioServer ReadStdioServer(ref Utf8JsonReader reader, string propertyName, string? name)
     {
         var command = (string?)null;
         var arguments = (string[]?)null;
@@ -83,7 +94,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 {
                     command = server.Command;
                     arguments = server.Arguments;
-                    environment = Dictionary.Merge(environment, server.Environment);
+                    environment = Collection.Merge(environment, server.Environment);
                 }
 
                 return new StdioServer
@@ -115,7 +126,9 @@ internal sealed class ServerConverter : JsonConverter<Server>
             else
             {
                 reader.Read();
-                if (propertyName is Property.Command)
+                if (propertyName is Property.Name)
+                    name = reader.GetString();
+                else if (propertyName is Property.Command)
                     command = reader.GetString() ?? throw Exceptions.MissingRequiredServerProperty(Property.Command);
                 else if (propertyName is Property.WorkDir)
                     workingDirectory = reader.GetString();
@@ -129,7 +142,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
         }
     }
 
-    private static SseServer ReadSseServer(ref Utf8JsonReader reader, string propertyName)
+    private static SseServer ReadSseServer(ref Utf8JsonReader reader, string propertyName, string? name)
     {
         var url = (Uri?)null;
         var headers = (Dictionary<string, string>?)null;
@@ -168,7 +181,9 @@ internal sealed class ServerConverter : JsonConverter<Server>
             else
             {
                 reader.Read();
-                if (propertyName is Property.Url)
+                if (propertyName is Property.Name)
+                    name = reader.GetString();
+                else if (propertyName is Property.Url)
                 {
                     var urlString = reader.GetString();
                     if (!Uri.TryCreate(urlString, UriKind.Absolute, out url))
@@ -196,7 +211,8 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
     private static void Write(Utf8JsonWriter writer, StdioServer server)
     {
-        var stringFormattable = server.WorkingDirectory is null &&
+        var stringFormattable = server.Name is null &&
+                                server.WorkingDirectory is null &&
                                 server.Environment is null &&
                                 server.EnvironmentFile is null &&
                                 server.ShutdownTimeout is null &&
@@ -213,6 +229,9 @@ internal sealed class ServerConverter : JsonConverter<Server>
         else
         {
             writer.WriteStartObject();
+
+            if (server.Name is not null)
+                writer.WriteString(Property.Name, server.Name);
 
             writer.WriteString(Property.Command, server.Command);
 
@@ -243,7 +262,8 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
     private static void Write(Utf8JsonWriter writer, SseServer server)
     {
-        var stringFormattable = server.Headers is null &&
+        var stringFormattable = server.Name is null &&
+                                server.Headers is null &&
                                 server.ConnectionTimeout is null;
 
         if (stringFormattable)
@@ -253,6 +273,9 @@ internal sealed class ServerConverter : JsonConverter<Server>
         else
         {
             writer.WriteStartObject();
+
+            if (server.Name is not null)
+                writer.WriteString(Property.Name, server.Name);
 
             writer.WriteString(Property.Url, server.Url.ToString());
 

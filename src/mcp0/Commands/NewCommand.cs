@@ -57,15 +57,17 @@ internal sealed class NewCommand : CancellableCommand
                 ["add"] = "bc -e {{a:integer}}+{{b:integer}}+0{{c?:integer}} # Add two or three numbers using bc",
                 ["git-status"] = "git -C {{repo_path#Path to the repository}} # Gets the status of a git repository",
             },
-            Servers = new(StringComparer.Ordinal)
-            {
-                ["everything"] = new StdioServer
+            Servers =
+            [
+                new StdioServer
                 {
+                    Name = "everything",
                     Command = "npx",
                     Arguments = ["-y", "@modelcontextprotocol/server-everything"]
                 },
-                ["stdio"] = new StdioServer
+                new StdioServer
                 {
+                    Name = "stdio",
                     Command = "command",
                     Arguments = ["arg1", "arg2", "arg3"],
                     WorkingDirectory = "~/workdir",
@@ -73,19 +75,21 @@ internal sealed class NewCommand : CancellableCommand
                     EnvironmentFile = "~/secrets.env",
                     ShutdownTimeout = TimeSpan.FromSeconds(5)
                 },
-                ["sse"] = new SseServer { Url = new Uri("http://localhost:3001/sse") },
-                ["sse-api-key"] = new SseServer
+                new SseServer { Name = "sse", Url = new Uri("http://localhost:3001/sse") },
+                new SseServer
                 {
+                    Name = "sse-api-key",
                     Url = new Uri("https://mcp.example.com/sse"),
                     Headers = new(StringComparer.Ordinal) { ["X-API-Key"] = "SECRETAPIKEY" }
                 },
-                ["sse-token"] = new SseServer
+                new SseServer
                 {
+                    Name = "sse-token",
                     Url = new Uri("https://mcp.example.com/sse"),
                     Headers = new(StringComparer.Ordinal) { ["Authorization"] = "Bearer SECRETTOKEN" },
                     ConnectionTimeout = TimeSpan.FromSeconds(30)
                 }
-            }
+            ]
         };
     }
 }
