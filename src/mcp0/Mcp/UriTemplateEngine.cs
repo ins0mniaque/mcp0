@@ -136,7 +136,19 @@ internal static class UriTemplateEngine
                 }
             }
             else if (regex)
-                uri.Append(Regex.Escape(character.ToString()));
+            {
+                if (character is '\t' or '\n' or '\f' or '\r' or ' ' or '#' or '$' or '(' or ')' or '*' or '+' or '.' or '?' or '[' or '\\' or '^' or '{' or '|')
+                    uri.Append('\\');
+
+                uri.Append(character switch
+                {
+                    '\t' => 't',
+                    '\n' => 'n',
+                    '\f' => 'f',
+                    '\r' => 'r',
+                    _ => character
+                });
+            }
             else
                 uri.Append(character);
         }
