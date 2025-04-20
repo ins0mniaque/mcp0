@@ -61,7 +61,7 @@ internal sealed class ShellCommand : ProxyCommand
 
             try
             {
-                if (FunctionCall.Match(line))
+                if (FunctionCall.IsFunctionCallString(line))
                 {
                     FunctionCall.Parse(line, out var function, out var arguments);
 

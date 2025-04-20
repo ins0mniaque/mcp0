@@ -67,4 +67,16 @@ public sealed class FunctionCallTests
         Assert.IsTrue(arguments[1].TryGetProperty("key", out var element));
         Assert.AreEqual(JsonValueKind.Array, element.ValueKind);
     }
+
+    [TestMethod]
+    public void ParsesFunctionCallsWithSpacesCorrectly()
+    {
+        var success = FunctionCall.TryParse("  function  (  42  ,  true  )  ", out var function, out var arguments);
+
+        Assert.IsTrue(success);
+        Assert.AreEqual("function", function);
+        Assert.AreEqual(2, arguments.Length);
+        Assert.AreEqual(JsonValueKind.Number, arguments[0].ValueKind);
+        Assert.AreEqual(JsonValueKind.True, arguments[1].ValueKind);
+    }
 }

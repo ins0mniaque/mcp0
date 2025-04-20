@@ -5,15 +5,15 @@ namespace mcp0.Core;
 
 internal static partial class FunctionCall
 {
-    [GeneratedRegex(@"(?<function>[a-zA-Z_][a-zA-Z0-9_]*)\s*\((?<arguments>.*)\)",
+    [GeneratedRegex(@"\s*(?<function>[a-zA-Z_][a-zA-Z0-9_]*)\s*\((?<arguments>.*)\)\s*",
         RegexOptions.Compiled, matchTimeoutMilliseconds: 1000)]
     private static partial Regex GenerateParser();
     private static readonly Regex parser = GenerateParser();
     private static ReadOnlySpan<char> Indentation => "    ";
 
-    public static bool Match(string call)
+    public static bool IsFunctionCallString(string call)
     {
-        return parser.IsMatch(call.Trim());
+        return parser.IsMatch(call);
     }
 
     public static void Parse(string call, out string function, out JsonElement[] arguments)
@@ -43,7 +43,6 @@ internal static partial class FunctionCall
         arguments = [];
         error = null;
 
-        call = call.Trim();
         var match = parser.Match(call);
         if (!match.Success || match.Index is not 0 || match.Length != call.Length)
             return false;
