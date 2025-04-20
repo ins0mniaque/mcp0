@@ -69,13 +69,13 @@ internal sealed class UriTemplate(string template)
         Ampersand
     }
 
-    private static void ValidateLiteral(char character, int column)
+    private static void ValidateLiteral(char character, int position)
     {
         if (character is '+' or '#' or '/' or ';' or '?' or '&' or ' ' or '!' or '=' or '$' or '|' or '*' or ':' or '~' or '-')
-            throw new FormatException($"Invalid character '{character}' in token at column {column}");
+            throw new FormatException($"Invalid character '{character}' in token at position {position}");
     }
 
-    private static int GetMaxTokenLength(StringBuilder buffer, int column)
+    private static int GetMaxTokenLength(StringBuilder buffer, int position)
     {
         if (buffer.Length is 0)
             return -1;
@@ -84,10 +84,10 @@ internal sealed class UriTemplate(string template)
         if (int.TryParse(maxTokenLength, CultureInfo.InvariantCulture, out var length))
             return length;
 
-        throw new FormatException($"Invalid maximum token length '{maxTokenLength}' at column {column}");
+        throw new FormatException($"Invalid maximum token length '{maxTokenLength}' at position {position}");
     }
 
-    private static Operator GetOperator(char character, StringBuilder token, int column)
+    private static Operator GetOperator(char character, StringBuilder token, int position)
     {
         if (character is '+') return Operator.Plus;
         if (character is '#') return Operator.Hash;
@@ -97,7 +97,7 @@ internal sealed class UriTemplate(string template)
         if (character is '?') return Operator.QuestionMark;
         if (character is '&') return Operator.Ampersand;
 
-        ValidateLiteral(character, column);
+        ValidateLiteral(character, position);
         token.Append(character);
         return Operator.NoOp;
     }
@@ -129,7 +129,7 @@ internal sealed class UriTemplate(string template)
             if (character is '}')
             {
                 if (!insideToken)
-                    throw new FormatException($"Invalid character '{character}' in template at column {index}");
+                    throw new FormatException($"Invalid character '{character}' in template at position {index}");
 
                 var expanded = ExpandToken(op, token.ToString(), composite, GetMaxTokenLength(maxTokenLengthBuffer, index), firstToken, replaceToken, result, index, regex);
                 if (expanded && firstToken)
@@ -169,7 +169,7 @@ internal sealed class UriTemplate(string template)
                     if (char.IsDigit(character))
                         maxTokenLengthBuffer.Append(character);
                     else
-                        throw new FormatException($"Invalid character '{character}' in maximum token length at column {index}");
+                        throw new FormatException($"Invalid character '{character}' in maximum token length at position {index}");
                 }
                 else
                 {
@@ -377,10 +377,10 @@ internal sealed class UriTemplate(string template)
 
     private static bool ExpandToken(Operator op, string token, bool composite, int maxTokenLength, bool firstToken,
                                     Func<Operator, string, object?> replaceToken, StringBuilder result,
-                                    int column, bool regex)
+                                    int position, bool regex)
     {
         if (string.IsNullOrEmpty(token))
-            throw new FormatException($"Empty token at column {column}");
+            throw new FormatException($"Empty token at position {position}");
 
         var value = replaceToken(op, token);
         if (IsEmpty(value))
@@ -398,7 +398,7 @@ internal sealed class UriTemplate(string template)
         else if (value is IDictionary dictionary)
             AddDictionaryValue(op, token, dictionary, result, maxTokenLength, composite, regex);
         else
-            throw new InvalidOperationException($"Invalid value type {value.GetType().Name} passed as replacement for token '{token}' at column {column}");
+            throw new InvalidOperationException($"Invalid value type {value.GetType().Name} passed as replacement for token '{token}' at position {position}");
 
         return true;
     }
