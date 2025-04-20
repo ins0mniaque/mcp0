@@ -350,11 +350,12 @@ internal static class UriTemplateEngine
     {
         var formatted = Format(value).AsSpan();
         var length = maxTokenLength is not -1 ? Math.Min(maxTokenLength, formatted.Length) : formatted.Length;
-        var insideReserved = false;
-        var reservedBuffer = new StringBuilder(3);
         var runeBuffer = (Span<char>)stackalloc char[2];
+        var reservedBuffer = (Span<char>)stackalloc char[3];
+        var reservedBufferLength = 0;
+        var insideReserved = false;
         var buffer = (Span<char>)stackalloc char[12];
-        var bufferIndex = 0;
+        var bufferLength = 0;
 
         uri.EnsureCapacity(length * 2);
         if (length > 0 && prefix is not char.MinValue)
@@ -372,47 +373,46 @@ internal static class UriTemplateEngine
             if (character is '%' && !replaceReserved)
             {
                 insideReserved = true;
-                reservedBuffer.Clear();
+                reservedBufferLength = 0;
             }
 
             if (char.IsSurrogate(character))
             {
                 Rune.DecodeFromUtf16(formatted[index++..], out var rune, out _);
                 rune.EncodeToUtf16(runeBuffer);
-                Uri.TryEscapeDataString(runeBuffer, buffer[bufferIndex..], out var written);
-                bufferIndex += written;
+                Uri.TryEscapeDataString(runeBuffer, buffer[bufferLength..], out var written);
+                bufferLength += written;
             }
             else if (replaceReserved || !IsUnreserved(character))
             {
-                Uri.TryEscapeDataString(formatted[index..(index + 1)], buffer[bufferIndex..], out var written);
-                bufferIndex += written;
+                Uri.TryEscapeDataString(formatted[index..(index + 1)], buffer[bufferLength..], out var written);
+                bufferLength += written;
             }
             else
-                buffer[bufferIndex++] = character;
+                buffer[bufferLength++] = character;
 
             if (insideReserved)
             {
-                reservedBuffer.Append(buffer[..bufferIndex]);
+                buffer[..bufferLength].CopyTo(reservedBuffer[reservedBufferLength..]);
+                reservedBufferLength += bufferLength;
 
-                if (reservedBuffer.Length is 3)
+                if (reservedBufferLength is 3)
                 {
-                    var highDigit = reservedBuffer[1];
-                    var lowDigit = reservedBuffer[2];
                     var isEscaped = reservedBuffer[0] is '%' &&
-                                    char.IsAsciiHexDigit(highDigit) &&
-                                    char.IsAsciiHexDigit(lowDigit);
+                                    char.IsAsciiHexDigit(reservedBuffer[1]) &&
+                                    char.IsAsciiHexDigit(reservedBuffer[2]);
 
                     if (!isEscaped)
                     {
                         uri.Append("%25");
-                        Uri.TryEscapeDataString([highDigit, lowDigit], buffer, out var written);
+                        Uri.TryEscapeDataString(reservedBuffer[1..], buffer, out var written);
                         uri.Append(buffer[..written]);
                     }
                     else
                         uri.Append(reservedBuffer);
 
                     insideReserved = false;
-                    reservedBuffer.Clear();
+                    reservedBufferLength = 0;
                 }
             }
             else
@@ -422,16 +422,16 @@ internal static class UriTemplateEngine
                 else if (character is '%')
                     uri.Append("%25");
                 else
-                    uri.Append(buffer[..bufferIndex]);
+                    uri.Append(buffer[..bufferLength]);
             }
 
-            bufferIndex = 0;
+            bufferLength = 0;
         }
 
         if (insideReserved)
         {
             uri.Append("%25");
-            uri.Append(reservedBuffer, 1, reservedBuffer.Length - 1);
+            uri.Append(reservedBuffer[1..reservedBufferLength]);
         }
     }
 
