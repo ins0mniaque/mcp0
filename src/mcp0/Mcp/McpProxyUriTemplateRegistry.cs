@@ -27,7 +27,7 @@ internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, st
         foreach (var entry in registry)
         {
             var uriTemplate = uriTemplateCache.GetUriTemplate(entry.Key);
-            if (uriTemplate.Match(uri))
+            if (uriTemplate.IsMatch(uri))
             {
                 client = entry.Value.Client;
                 item = entry.Value.Item;
@@ -48,7 +48,7 @@ internal sealed class McpProxyUriTemplateRegistry<T>(string itemType, Func<T, st
         var inverseUriTemplate = uriTemplateCache.GetUriTemplate(inverseKey);
 
         if (uriTemplate.Parse(uri) is { } values)
-            return inverseUriTemplate.Expand(values);
+            return inverseUriTemplate.Render(values);
 
         return uri;
     }

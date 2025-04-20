@@ -17,7 +17,7 @@ public sealed class UriTemplateTests
     {
         var uriTemplate = new UriTemplate(template);
 
-        Assert.IsTrue(uriTemplate.Match(uri));
+        Assert.IsTrue(uriTemplate.IsMatch(uri));
     }
 
     [TestMethod]
@@ -29,7 +29,7 @@ public sealed class UriTemplateTests
     {
         var uriTemplate = new UriTemplate(template);
 
-        Assert.IsFalse(uriTemplate.Match(uri));
+        Assert.IsFalse(uriTemplate.IsMatch(uri));
     }
 
     [TestMethod]
@@ -46,20 +46,24 @@ public sealed class UriTemplateTests
     }
 
     [TestMethod]
-    public void ExpandsCorrectly()
+    public void RendersCorrectly()
     {
         var uriTemplate = new UriTemplate("http://localhost:8080/dir/{id}/{page}{?query}");
         var values = new RouteValueDictionary { ["id"] = "1", ["page"] = "search", ["query"] = "test" };
+        var expected = "http://localhost:8080/dir/1/search?query=test";
+        var actual = uriTemplate.Render(values);
 
-        Assert.AreEqual("http://localhost:8080/dir/1/search?query=test", uriTemplate.Expand(values));
+        Assert.AreEqual(expected, actual);
     }
 
     [TestMethod]
-    public void ExpandEscapesCorrectly()
+    public void RenderEscapesCorrectly()
     {
         var uriTemplate = new UriTemplate("http://localhost:8080/dir/{id}/{page}{?query}{#fragment}");
         var values = new RouteValueDictionary { ["id"] = "%\uD83D\uDE03", ["page"] = "100% AND %25", ["query"] = "❤️", ["fragment"] = "100% AND %25 %\uD83D\uDE03" };
+        var expected = "http://localhost:8080/dir/%25%F0%9F%98%83/100%25%20AND%20%2525?query=%E2%9D%A4%EF%B8%8F#100%25%20AND%20%2525%20%25%F0%9F%98%83";
+        var actual = uriTemplate.Render(values);
 
-        Assert.AreEqual("http://localhost:8080/dir/%25%F0%9F%98%83/100%25%20AND%20%2525?query=%E2%9D%A4%EF%B8%8F#100%25%20AND%20%2525%20%25%F0%9F%98%83", uriTemplate.Expand(values));
+        Assert.AreEqual(expected, actual);
     }
 }
