@@ -1,29 +1,13 @@
 using System.Text.Json;
 
-using Microsoft.Extensions.Logging;
-
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
-using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 
 namespace mcp0.Mcp;
 
 internal static class McpClientExtensions
 {
-    public static async Task<IMcpClient[]> CreateMcpClientsAsync(
-        this IEnumerable<IClientTransport> clientTransports,
-        McpClientOptions? clientOptions = null,
-        ILoggerFactory? loggerFactory = null,
-        CancellationToken cancellationToken = default)
-    {
-        var clientTasks = new List<Task<IMcpClient>>();
-        foreach (var clientTransport in clientTransports)
-            clientTasks.Add(McpClientFactory.CreateAsync(clientTransport, clientOptions, loggerFactory, cancellationToken));
-
-        return await Task.WhenAll(clientTasks);
-    }
-
     public static Task<IList<McpClientPrompt>> SafeListPromptsAsync(
         this IMcpClient client, CancellationToken cancellationToken = default)
     {

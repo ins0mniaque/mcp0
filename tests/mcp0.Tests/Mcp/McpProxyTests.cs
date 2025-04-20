@@ -46,11 +46,10 @@ public sealed class McpProxyTests
                         .AddSingleton(transport.ServerTransport);
 
         var serverTask = builder.Build().RunAsync(cancellationToken);
-        var client = await McpClientFactory.CreateAsync(transport.ClientTransport, cancellationToken: cancellationToken);
 
         await using var proxy = new McpProxy();
 
-        await proxy.ConnectAsync([client], cancellationToken);
+        await proxy.ConnectAsync([transport.ClientTransport], cancellationToken);
 
         await using var proxyTransport = new ClientServerTransport();
         await using var proxyServer = McpServerFactory.Create(proxyTransport.ServerTransport, proxy.GetServerOptions());

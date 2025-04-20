@@ -101,9 +101,7 @@ internal abstract partial class ProxyCommand : CancellableCommand
             // ReSharper restore AccessToDisposedClosure
         }
 
-        var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
-
-        await proxy.ConnectAsync(clients, cancellationToken);
+        await proxy.ConnectAsync(clientTransports, cancellationToken);
 
         await Run(proxy, context, cancellationToken);
     }
@@ -120,13 +118,9 @@ internal abstract partial class ProxyCommand : CancellableCommand
 
             var clientTransports = configuration.ToClientTransports();
             if (clientTransport is not null)
-                clientTransports = clientTransports.Append(clientTransport).ToArray();
+                clientTransports = clientTransports.Append(clientTransport);
 
-            await proxy.DisconnectAsync(cancellationToken);
-
-            var clients = await clientTransports.CreateMcpClientsAsync(proxy.GetClientOptions(), loggerFactory, cancellationToken);
-
-            await proxy.ConnectAsync(clients, cancellationToken);
+            await proxy.ConnectAsync(clientTransports, cancellationToken);
 
             LogConfigurationReloaded(logger, paths);
         }

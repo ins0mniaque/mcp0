@@ -24,9 +24,9 @@ internal sealed partial class McpProxy
     {
         NotificationHandlers = new Dictionary<string, Func<JsonRpcNotification, CancellationToken, ValueTask>>(StringComparer.Ordinal)
         {
-            [NotificationMethods.PromptListChangedNotification] = async (_, cancellationToken) => await InitializePrompts(Clients, cancellationToken),
-            [NotificationMethods.ResourceListChangedNotification] = async (_, cancellationToken) => await InitializeResources(Clients, cancellationToken),
-            [NotificationMethods.ToolListChangedNotification] = async (_, cancellationToken) => await InitializeTools(Clients, cancellationToken)
+            [NotificationMethods.PromptListChangedNotification] = async (_, cancellationToken) => await InitializePrompts(cancellationToken),
+            [NotificationMethods.ResourceListChangedNotification] = async (_, cancellationToken) => await InitializeResources(cancellationToken),
+            [NotificationMethods.ToolListChangedNotification] = async (_, cancellationToken) => await InitializeTools(cancellationToken)
         },
         Sampling = new()
         {

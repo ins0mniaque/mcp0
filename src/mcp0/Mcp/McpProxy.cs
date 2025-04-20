@@ -1,6 +1,9 @@
+using Microsoft.Extensions.Logging;
+
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Messages;
+using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
@@ -9,13 +12,14 @@ namespace mcp0.Mcp;
 internal sealed partial class McpProxy : IAsyncDisposable
 {
     private readonly McpProxyOptions? proxyOptions;
+    private readonly ILoggerFactory? loggerFactory;
 
     private ListPromptsResult listPromptsResult = new();
     private ListResourcesResult listResourcesResult = new();
     private ListResourceTemplatesResult listResourceTemplatesResult = new();
     private ListToolsResult listToolsResult = new();
 
-    public McpProxy(McpProxyOptions? proxyOptions = null)
+    public McpProxy(McpProxyOptions? proxyOptions = null, ILoggerFactory? loggerFactory = null)
     {
         Prompts = new("prompt", static prompt => prompt.Name, proxyOptions?.Maps?.Prompt);
         Resources = new("resource", static resource => resource.Uri, proxyOptions?.Maps?.Resource);
@@ -23,6 +27,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
         Tools = new("tool", static tool => tool.Name, proxyOptions?.Maps?.Tool);
 
         this.proxyOptions = proxyOptions;
+        this.loggerFactory = loggerFactory;
     }
 
     public IMcpServer? Server { get; private set; }
@@ -32,24 +37,31 @@ internal sealed partial class McpProxy : IAsyncDisposable
     public McpProxyUriTemplateRegistry<ResourceTemplate> ResourceTemplates { get; }
     public McpProxyRegistry<Tool> Tools { get; }
 
-    public async Task ConnectAsync(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken = default)
+    public async Task ConnectAsync(IEnumerable<IClientTransport> clientTransports, CancellationToken cancellationToken = default)
     {
         foreach (var client in Clients)
             await client.DisposeAsync();
 
-        Clients = clients;
+        var clientOptions = GetClientOptions();
+
+        Clients = await Task.WhenAll(clientTransports.Select(CreateClient));
 
         if (proxyOptions?.LoggingLevel is { } loggingLevel)
             await SetLoggingLevel(loggingLevel, cancellationToken);
 
-        await Task.WhenAll(InitializePrompts(clients, cancellationToken),
-                           InitializeResources(clients, cancellationToken),
-                           InitializeTools(clients, cancellationToken));
+        await Task.WhenAll(InitializePrompts(cancellationToken),
+                           InitializeResources(cancellationToken),
+                           InitializeTools(cancellationToken));
+
+        Task<IMcpClient> CreateClient(IClientTransport clientTransport)
+        {
+            return McpClientFactory.CreateAsync(clientTransport, clientOptions, loggerFactory, cancellationToken);
+        }
     }
 
-    public async Task DisconnectAsync(CancellationToken cancellationToken = default)
+    public Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
-        await ConnectAsync([], cancellationToken);
+        return ConnectAsync([], cancellationToken);
     }
 
     public async ValueTask DisposeAsync()
@@ -59,11 +71,11 @@ internal sealed partial class McpProxy : IAsyncDisposable
             await client.DisposeAsync();
     }
 
-    private async Task InitializePrompts(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
+    private async Task InitializePrompts(CancellationToken cancellationToken)
     {
         Prompts.Clear();
 
-        await Prompts.Register(clients, async client =>
+        await Prompts.Register(Clients, async client =>
         {
             var prompts = await client.SafeListPromptsAsync(cancellationToken);
 
@@ -76,13 +88,13 @@ internal sealed partial class McpProxy : IAsyncDisposable
             await server.SendNotificationAsync(NotificationMethods.PromptListChangedNotification, cancellationToken);
     }
 
-    private async Task InitializeResources(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
+    private async Task InitializeResources(CancellationToken cancellationToken)
     {
         Resources.Clear();
         ResourceTemplates.Clear();
 
-        await Task.WhenAll(Resources.Register(clients, client => client.SafeListResourcesAsync(cancellationToken)),
-                           ResourceTemplates.Register(clients, client => client.SafeListResourceTemplatesAsync(cancellationToken)));
+        await Task.WhenAll(Resources.Register(Clients, client => client.SafeListResourcesAsync(cancellationToken)),
+                           ResourceTemplates.Register(Clients, client => client.SafeListResourceTemplatesAsync(cancellationToken)));
 
         listResourcesResult = new() { Resources = Resources.ToList() };
         listResourceTemplatesResult = new() { ResourceTemplates = ResourceTemplates.ToList() };
@@ -91,11 +103,11 @@ internal sealed partial class McpProxy : IAsyncDisposable
             await server.SendNotificationAsync(NotificationMethods.ResourceListChangedNotification, cancellationToken);
     }
 
-    private async Task InitializeTools(IReadOnlyList<IMcpClient> clients, CancellationToken cancellationToken)
+    private async Task InitializeTools(CancellationToken cancellationToken)
     {
         Tools.Clear();
 
-        await Tools.Register(clients, async client =>
+        await Tools.Register(Clients, async client =>
         {
             var tools = await client.SafeListToolsAsync(null, cancellationToken);
 

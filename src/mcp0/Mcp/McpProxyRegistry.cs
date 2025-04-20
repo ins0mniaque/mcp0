@@ -44,11 +44,7 @@ internal class McpProxyRegistry<T>(string itemType, Func<T, string> keySelector,
 
     internal async Task Register(IReadOnlyList<IMcpClient> clients, Func<IMcpClient, Task<IList<T>>> task)
     {
-        var tasks = new List<Task<IList<T>>>(clients.Count);
-        foreach (var client in clients)
-            tasks.Add(task(client));
-
-        var clientsItems = await Task.WhenAll(tasks);
+        var clientsItems = await Task.WhenAll(clients.Select(task));
         for (var index = 0; index < clientsItems.Length; index++)
         {
             var client = clients[index];
