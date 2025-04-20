@@ -17,7 +17,7 @@ using ModelContextProtocol.Server;
 
 namespace mcp0.Commands;
 
-internal abstract class ProxyCommand : CancellableCommand
+internal abstract partial class ProxyCommand : CancellableCommand
 {
     protected ProxyCommand(string name, string? description = null) : base(name, description)
     {
@@ -116,7 +116,7 @@ internal abstract class ProxyCommand : CancellableCommand
 
         try
         {
-            logger.ConfigurationReloading(paths);
+            LogConfigurationReloading(logger, paths);
 
             var configuration = await Configuration.Load(paths, cancellationToken);
 
@@ -130,11 +130,11 @@ internal abstract class ProxyCommand : CancellableCommand
 
             await proxy.ConnectAsync(clients, cancellationToken);
 
-            logger.ConfigurationReloaded(paths);
+            LogConfigurationReloaded(logger, paths);
         }
         catch (Exception exception) when (exception is IOException or JsonException or McpException)
         {
-            logger.ConfigurationReloadFailed(exception, paths);
+            LogConfigurationReloadFailed(logger, exception, paths);
         }
     }
 
@@ -145,4 +145,13 @@ internal abstract class ProxyCommand : CancellableCommand
         NotifyFilter = NotifyFilters.LastWrite,
         EnableRaisingEvents = true
     };
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Reloading configuration: {Paths}")]
+    private static partial void LogConfigurationReloading(ILogger logger, string[] paths);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Reloaded configuration: {Paths}")]
+    private static partial void LogConfigurationReloaded(ILogger logger, string[] paths);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to reload configuration: {Paths}")]
+    private static partial void LogConfigurationReloadFailed(ILogger logger, Exception exception, string[] paths);
 }

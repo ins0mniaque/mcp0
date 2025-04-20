@@ -5,17 +5,8 @@ using ModelContextProtocol.Protocol.Types;
 
 namespace mcp0;
 
-internal static partial class Log
+internal static class Logging
 {
-    [LoggerMessage(Level = LogLevel.Information, Message = "Reloading configuration: {Paths}")]
-    public static partial void ConfigurationReloading(this ILogger logger, string[] paths);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Reloaded configuration: {Paths}")]
-    public static partial void ConfigurationReloaded(this ILogger logger, string[] paths);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to reload configuration: {Paths}")]
-    public static partial void ConfigurationReloadFailed(this ILogger logger, Exception exception, string[] paths);
-
     public static LogLevel? GetLogLevel(this IConfiguration configuration)
     {
         return Enum.TryParse<LogLevel>(configuration["LogLevel:Default"], out var logLevel) ? logLevel : null;
