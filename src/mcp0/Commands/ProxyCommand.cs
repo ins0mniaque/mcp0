@@ -39,7 +39,7 @@ internal abstract partial class ProxyCommand : CancellableCommand
     protected async Task ConnectAndRun(InvocationContext context, LogLevel logLevel, CancellationToken cancellationToken)
     {
         var paths = PathsArgument.GetValue(context);
-        var servers = ServerOption.GetValue(context);
+        var servers = ServerOption.GetValue(context)?.Select(Server.Parse).ToList();
         var noReload = NoReloadOption.GetValue(context);
 
         var serviceProvider = context.GetServiceProvider();
@@ -54,12 +54,10 @@ internal abstract partial class ProxyCommand : CancellableCommand
         configurationRoot?.TrySetLogLevel(logLevel);
 
         var configuration = await Configuration.Load(paths, cancellationToken);
+
+        configuration.Servers = Collection.Merge(configuration.Servers, servers);
+
         var clientTransports = configuration.ToClientTransports().ToList();
-
-        foreach (var server in servers ?? [])
-            clientTransports.Add(Server.FromString(server)?.ToClientTransport() ??
-                                 throw new InvalidOperationException($"Invalid server: {server}"));
-
         var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
         var serverOptions = configuration.ToMcpServerOptions(serviceProvider);
         var serverName = proxyOptions.ServerInfo?.Name ??

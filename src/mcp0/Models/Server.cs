@@ -11,10 +11,14 @@ internal abstract record Server
 {
     public string? Name { get; set; }
 
-    public static Server? FromString(string text)
+    public static Server Parse(string text)
     {
-        return (Server?)SseServer.FromString(text) ??
-               StdioServer.FromString(text);
+        return TryParse(text) ?? throw new FormatException($"Invalid server: {text}");
+    }
+
+    public static Server? TryParse(string text)
+    {
+        return (Server?)SseServer.TryParse(text) ?? StdioServer.TryParse(text);
     }
 }
 
@@ -32,7 +36,7 @@ internal sealed partial record StdioServer : Server
     public string? EnvironmentFile { get; init; }
     public TimeSpan? ShutdownTimeout { get; init; }
 
-    public static new StdioServer? FromString(string text)
+    public static new StdioServer? TryParse(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
             return null;
@@ -62,7 +66,7 @@ internal sealed partial record SseServer : Server
     public Dictionary<string, string>? Headers { get; init; }
     public TimeSpan? ConnectionTimeout { get; init; }
 
-    public static new SseServer? FromString(string text)
+    public static new SseServer? TryParse(string text)
     {
         if (!Uri.IsWellFormedUriString(text, UriKind.Absolute))
             return null;

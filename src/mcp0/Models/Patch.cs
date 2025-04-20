@@ -12,7 +12,12 @@ internal sealed record Patch
     public string? Name { get; init; }
     public string? Description { get; init; }
 
-    public static Patch? FromString(string text)
+    public static Patch Parse(string text)
+    {
+        return TryParse(text) ?? throw new FormatException($"Invalid patch: {text}");
+    }
+
+    public static Patch? TryParse(string text)
     {
         text = text.Trim();
         if (string.IsNullOrEmpty(text))

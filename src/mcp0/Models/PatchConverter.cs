@@ -21,10 +21,7 @@ internal sealed class PatchConverter : JsonConverter<Patch>
             return Patch.Remove;
 
         if (reader.TokenType is JsonTokenType.String)
-        {
-            return Patch.FromString(reader.GetString() ?? throw Exceptions.InvalidPatchJson()) ??
-                   throw Exceptions.InvalidPatchStringValue();
-        }
+            return Patch.Parse(reader.GetString() ?? throw Exceptions.InvalidPatchJson());
 
         if (reader.TokenType is not JsonTokenType.StartObject)
             throw Exceptions.InvalidPatchJson();
@@ -70,7 +67,6 @@ internal sealed class PatchConverter : JsonConverter<Patch>
     private static class Exceptions
     {
         public static JsonException InvalidPatchJson() => throw new JsonException("Invalid JSON in patch configuration");
-        public static JsonException InvalidPatchStringValue() => throw new JsonException("Invalid string value for patch configuration");
         public static JsonException UnknownPatchProperty(string propertyName) => throw new JsonException($"Unknown patch property: {propertyName}");
     }
 }

@@ -35,10 +35,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
     public override Server Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType is JsonTokenType.String)
-        {
-            return Server.FromString(reader.GetString() ?? throw Exceptions.InvalidServerJson()) ??
-                   throw Exceptions.InvalidServerStringValue();
-        }
+            return Server.Parse(reader.GetString() ?? throw Exceptions.InvalidServerJson());
 
         if (reader.TokenType is not JsonTokenType.StartObject)
             throw Exceptions.InvalidServerJson();
@@ -90,7 +87,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
             if (reader.TokenType is JsonTokenType.EndObject)
             {
-                if (command is not null && arguments is null && StdioServer.FromString(command) is { } server)
+                if (command is not null && arguments is null && StdioServer.TryParse(command) is { } server)
                 {
                     command = server.Command;
                     arguments = server.Arguments;
@@ -295,7 +292,6 @@ internal sealed class ServerConverter : JsonConverter<Server>
     private static class Exceptions
     {
         public static JsonException InvalidServerJson() => throw new JsonException("Invalid JSON in server configuration");
-        public static JsonException InvalidServerStringValue() => throw new JsonException("Invalid string value for server configuration");
         public static JsonException InvalidValueForServerProperty(string propertyName, string? propertyValue) => throw new JsonException($"Invalid value for server property: {propertyName} = {propertyValue}");
         public static JsonException MissingRequiredServerProperty(string propertyName) => throw new JsonException($"Missing required server property: {propertyName}");
         public static JsonException UnknownServerProperty(string propertyName) => throw new JsonException($"Unknown server property: {propertyName}");
