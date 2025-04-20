@@ -65,11 +65,11 @@ internal sealed partial class McpProxy : IAsyncDisposable
             throw new InvalidOperationException("Server is already running");
 
         var serverOptions = GetServerOptions();
-        var serverName = proxyOptions?.ServerInfo?.Name ??
-                         serverOptions.ServerInfo?.Name ??
-                         DefaultImplementation.Name;
+        var serverInfo = proxyOptions?.ServerInfo ??
+                         serverOptions.ServerInfo ??
+                         DefaultImplementation;
 
-        await using var transport = new StdioServerTransport(serverName, loggerFactory);
+        await using var transport = new StdioServerTransport(serverInfo.Name, loggerFactory);
         await using var server = McpServerFactory.Create(transport, serverOptions, loggerFactory, serviceProvider);
 
         try

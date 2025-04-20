@@ -60,11 +60,11 @@ internal abstract partial class ProxyCommand : CancellableCommand
         var clientTransports = configuration.ToClientTransports().ToList();
         var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
         var serverOptions = configuration.ToMcpServerOptions(serviceProvider);
-        var serverName = proxyOptions.ServerInfo?.Name ??
-                         serverOptions?.ServerInfo?.Name ??
-                         ServerInfo.Default.Name;
+        var serverInfo = proxyOptions.ServerInfo ??
+                         serverOptions?.ServerInfo ??
+                         ServerInfo.Default;
 
-        await using var transport = serverOptions is null ? null : new ClientServerTransport(serverName, loggerFactory);
+        await using var transport = serverOptions is null ? null : new ClientServerTransport(serverInfo.Name, loggerFactory);
         await using var serverTask = serverOptions is null ? null : new DisposableTask(async ct =>
         {
             // ReSharper disable once AccessToDisposedClosure
