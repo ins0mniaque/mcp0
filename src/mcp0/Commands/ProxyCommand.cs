@@ -91,7 +91,7 @@ internal abstract partial class ProxyCommand : CancellableCommand
             };
         }
 
-        await using var proxy = new McpProxy(proxyOptions, loggerFactory, serviceProvider);
+        await using var proxy = new McpProxy(proxyOptions);
 
         using var watchers = new CompositeDisposable<FileSystemWatcher>(noReload ? [] : paths.Select(CreateWatcher));
         foreach (var watcher in watchers)

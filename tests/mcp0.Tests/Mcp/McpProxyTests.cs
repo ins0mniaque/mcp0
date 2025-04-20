@@ -51,7 +51,6 @@ public sealed class McpProxyTests
         await using var proxy = new McpProxy();
 
         await proxy.ConnectAsync([client], cancellationToken);
-        var proxyTask = proxy.RunAsync(cancellationToken);
 
         await using var proxyTransport = new ClientServerTransport();
         await using var proxyServer = McpServerFactory.Create(proxyTransport.ServerTransport, proxy.GetServerOptions());
@@ -75,10 +74,11 @@ public sealed class McpProxyTests
 
         Assert.AreEqual("Echo: message", toolResponse.Content[0].Text);
 
+        Assert.IsNotNull(proxy.Server);
+
         await cancellationTokenSource.CancelAsync();
 
         await proxyServerTask;
-        await proxyTask;
         await serverTask;
     }
 }

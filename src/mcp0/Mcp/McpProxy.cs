@@ -1,9 +1,6 @@
-using Microsoft.Extensions.Logging;
-
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Messages;
-using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
@@ -12,15 +9,13 @@ namespace mcp0.Mcp;
 internal sealed partial class McpProxy : IAsyncDisposable
 {
     private readonly McpProxyOptions? proxyOptions;
-    private readonly ILoggerFactory? loggerFactory;
-    private readonly IServiceProvider? serviceProvider;
 
     private ListPromptsResult listPromptsResult = new();
     private ListResourcesResult listResourcesResult = new();
     private ListResourceTemplatesResult listResourceTemplatesResult = new();
     private ListToolsResult listToolsResult = new();
 
-    public McpProxy(McpProxyOptions? proxyOptions = null, ILoggerFactory? loggerFactory = null, IServiceProvider? serviceProvider = null)
+    public McpProxy(McpProxyOptions? proxyOptions = null)
     {
         Prompts = new("prompt", static prompt => prompt.Name, proxyOptions?.Maps?.Prompt);
         Resources = new("resource", static resource => resource.Uri, proxyOptions?.Maps?.Resource);
@@ -28,8 +23,6 @@ internal sealed partial class McpProxy : IAsyncDisposable
         Tools = new("tool", static tool => tool.Name, proxyOptions?.Maps?.Tool);
 
         this.proxyOptions = proxyOptions;
-        this.loggerFactory = loggerFactory;
-        this.serviceProvider = serviceProvider;
     }
 
     public IMcpServer? Server { get; private set; }
@@ -59,36 +52,9 @@ internal sealed partial class McpProxy : IAsyncDisposable
         await ConnectAsync([], cancellationToken);
     }
 
-    public async Task RunAsync(CancellationToken cancellationToken = default)
-    {
-        if (Server is not null)
-            throw new InvalidOperationException("Server is already running");
-
-        var serverOptions = GetServerOptions();
-        var serverInfo = proxyOptions?.ServerInfo ??
-                         serverOptions.ServerInfo ??
-                         DefaultImplementation;
-
-        await using var transport = new StdioServerTransport(serverInfo.Name, loggerFactory);
-        await using var server = McpServerFactory.Create(transport, serverOptions, loggerFactory, serviceProvider);
-
-        try
-        {
-            Server = server;
-
-            await server.RunAsync(cancellationToken);
-        }
-        finally
-        {
-            Server = null;
-        }
-    }
-
     public async ValueTask DisposeAsync()
     {
-        if (Server is not null)
-            await Server.DisposeAsync();
-
+        Server = null;
         foreach (var client in Clients)
             await client.DisposeAsync();
     }

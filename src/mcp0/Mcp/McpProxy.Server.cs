@@ -48,6 +48,8 @@ internal sealed partial class McpProxy
         {
             SetLoggingLevelHandler = async (request, cancellationToken) =>
             {
+                Server = request.Server;
+
                 if (request.Params?.Level is not { } level)
                     throw new McpException("Missing logging level parameter");
 
@@ -60,9 +62,16 @@ internal sealed partial class McpProxy
         },
         Prompts = new()
         {
-            ListPromptsHandler = (_, _) => ValueTask.FromResult(listPromptsResult),
+            ListPromptsHandler = (request, _) =>
+            {
+                Server = request.Server;
+
+                return ValueTask.FromResult(listPromptsResult);
+            },
             GetPromptHandler = async (request, cancellationToken) =>
             {
+                Server = request.Server;
+
                 var prompt = Prompts.Find(request.Params?.Name, out var client);
                 var arguments = request.Params?.Arguments?.ToDictionary(
                     static entry => entry.Key,
@@ -74,10 +83,22 @@ internal sealed partial class McpProxy
         },
         Resources = new()
         {
-            ListResourcesHandler = (_, _) => ValueTask.FromResult(listResourcesResult),
-            ListResourceTemplatesHandler = (_, _) => ValueTask.FromResult(listResourceTemplatesResult),
+            ListResourcesHandler = (request, _) =>
+            {
+                Server = request.Server;
+
+                return ValueTask.FromResult(listResourcesResult);
+            },
+            ListResourceTemplatesHandler = (request, _) =>
+            {
+                Server = request.Server;
+
+                return ValueTask.FromResult(listResourceTemplatesResult);
+            },
             ReadResourceHandler = async (request, cancellationToken) =>
             {
+                Server = request.Server;
+
                 if (request.Params?.Uri is not { } uri)
                     throw new McpException("Missing resource or resource template uri");
 
@@ -90,6 +111,8 @@ internal sealed partial class McpProxy
             },
             SubscribeToResourcesHandler = async (request, cancellationToken) =>
             {
+                Server = request.Server;
+
                 if (request.Params?.Uri is not { } uri)
                     throw new McpException("Missing resource or resource template uri");
 
@@ -104,6 +127,8 @@ internal sealed partial class McpProxy
             },
             UnsubscribeFromResourcesHandler = async (request, cancellationToken) =>
             {
+                Server = request.Server;
+
                 if (request.Params?.Uri is not { } uri)
                     throw new McpException("Missing resource or resource template uri");
 
@@ -119,9 +144,16 @@ internal sealed partial class McpProxy
         },
         Tools = new()
         {
-            ListToolsHandler = (_, _) => ValueTask.FromResult(listToolsResult),
+            ListToolsHandler = (request, _) =>
+            {
+                Server = request.Server;
+
+                return ValueTask.FromResult(listToolsResult);
+            },
             CallToolHandler = async (request, cancellationToken) =>
             {
+                Server = request.Server;
+
                 var tool = Tools.Find(request.Params?.Name, out var client);
                 var arguments = request.Params?.Arguments?.ToDictionary(
                     static entry => entry.Key,
@@ -135,6 +167,8 @@ internal sealed partial class McpProxy
         {
             CompleteHandler = async (request, cancellationToken) =>
             {
+                Server = request.Server;
+
                 if (request.Params is null)
                     throw new McpException("Missing completion request parameters");
 
