@@ -61,8 +61,12 @@ internal sealed class ShellCommand : ProxyCommand
 
             try
             {
-                if (FunctionCall.TryParse(line, out var function, out var arguments))
+                if (FunctionCall.Match(line))
+                {
+                    FunctionCall.Parse(line, out var function, out var arguments);
+
                     await Inspector.Call(proxy, function, arguments, cancellationToken);
+                }
                 else if (Uri.IsWellFormedUriString(line, UriKind.Absolute))
                     await Inspector.Read(proxy, line, cancellationToken);
                 else

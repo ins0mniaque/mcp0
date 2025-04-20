@@ -9,11 +9,39 @@ internal static partial class FunctionCall
         RegexOptions.Compiled, matchTimeoutMilliseconds: 1000)]
     private static partial Regex GenerateParser();
     private static readonly Regex parser = GenerateParser();
+    private static ReadOnlySpan<char> Indentation => "    ";
+
+    public static bool Match(string call)
+    {
+        return parser.IsMatch(call.Trim());
+    }
+
+    public static void Parse(string call, out string function, out JsonElement[] arguments)
+    {
+        if (TryParse(call, out function, out arguments, out var error))
+            return;
+
+        if (error is not null)
+        {
+            var position = (int)(error.BytePositionInLine ?? 0) + function.Length;
+            var message = error.Message.Split('.', 2)[0];
+
+            throw new FormatException($"Invalid argument: {message} at position {position}\n\n{Indentation}{call}\n{Indentation}{new string(' ', position)}^");
+        }
+
+        throw new FormatException("Invalid function call format");
+    }
 
     public static bool TryParse(string call, out string function, out JsonElement[] arguments)
     {
+        return TryParse(call, out function, out arguments, out _);
+    }
+
+    private static bool TryParse(string call, out string function, out JsonElement[] arguments, out JsonException? error)
+    {
         function = string.Empty;
         arguments = [];
+        error = null;
 
         call = call.Trim();
         var match = parser.Match(call);
@@ -31,14 +59,13 @@ internal static partial class FunctionCall
         try
         {
             var elements = JsonSerializer.Deserialize('[' + json + ']', JsonSchemaContext.Default.JsonElement);
-            if (elements.ValueKind is not JsonValueKind.Array)
-                return false;
 
             arguments = elements.EnumerateArray().ToArray();
             return true;
         }
-        catch (JsonException)
+        catch (JsonException exception)
         {
+            error = exception;
             return false;
         }
     }
