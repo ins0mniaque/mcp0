@@ -26,7 +26,7 @@ internal abstract class KeyedListConverter<T> : JsonConverter<List<T>>
             return list;
         }
 
-        if (reader.TokenType is not JsonTokenType.StartObject)
+        if (reader.TokenType is JsonTokenType.StartObject)
         {
             var list = new List<T>();
 
