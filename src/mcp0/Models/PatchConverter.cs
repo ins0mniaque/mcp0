@@ -7,8 +7,6 @@ internal sealed class PatchConverter : JsonConverter<Patch>
 {
     public override bool HandleNull => true;
 
-    public override bool CanConvert(Type typeToConvert) => typeof(Patch).IsAssignableFrom(typeToConvert);
-
     public override Patch Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType is JsonTokenType.False or JsonTokenType.Null)
