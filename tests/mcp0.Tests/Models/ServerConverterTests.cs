@@ -26,6 +26,7 @@ public sealed class ServerConverterTests
         var json =
         """
         {
+          "name": "server-everything",
           "command": "npx",
           "args": [
             "-y",
@@ -40,6 +41,7 @@ public sealed class ServerConverterTests
         var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Server);
         var expected = new StdioServer
         {
+            Name = "server-everything",
             Command = "npx",
             Arguments = ["-y", "@modelcontextprotocol/server-everything"],
             WorkingDirectory = "/home/user",
@@ -70,6 +72,7 @@ public sealed class ServerConverterTests
         var json =
         """
         {
+          "name": "server-everything",
           "url": "http://localhost:8080/server-everything",
           "headers": { "Authorization": "TOKEN" },
           "connectionTimeout": 30
@@ -79,6 +82,7 @@ public sealed class ServerConverterTests
         var actual = JsonSerializer.Deserialize(json, ModelContext.Default.Server);
         var expected = new SseServer
         {
+            Name = "server-everything",
             Url = new Uri("http://localhost:8080/server-everything"),
             Headers = new(StringComparer.Ordinal) { ["Authorization"] = "TOKEN" },
             ConnectionTimeout = TimeSpan.FromSeconds(30)
@@ -107,6 +111,7 @@ public sealed class ServerConverterTests
     {
         var expected = new StdioServer
         {
+            Name = "server-everything",
             Command = "npx",
             Arguments = ["-y", "@modelcontextprotocol/server-everything"],
             WorkingDirectory = "/home/user",
@@ -139,6 +144,7 @@ public sealed class ServerConverterTests
     {
         var expected = new SseServer
         {
+            Name = "server-everything",
             Url = new Uri("http://localhost:8080/server-everything"),
             Headers = new(StringComparer.Ordinal) { ["Authorization"] = "TOKEN" },
             ConnectionTimeout = TimeSpan.FromSeconds(30)
