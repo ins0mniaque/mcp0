@@ -35,9 +35,6 @@ internal sealed class PatchConverter : JsonConverter<Patch>
             if (reader.TokenType is JsonTokenType.EndObject)
                 break;
 
-            if (reader.TokenType is not JsonTokenType.PropertyName)
-                throw Exceptions.InvalidPatchJson();
-
             var propertyName = reader.GetString() ?? throw Exceptions.InvalidPatchJson();
 
             reader.Read();
