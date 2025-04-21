@@ -20,15 +20,10 @@ internal static partial class UriResource
         return new()
         {
             Name = name,
-            Description = ParseDescription(ref uri),
+            Description = CommandLine.ParseComment(ref uri),
             Uri = Uri.IsWellFormedUriString(uri, UriKind.Absolute) ? uri : new Uri(uri).AbsoluteUri,
             MimeType = mimeTypeProvider.TryGetContentType(uri, out var mimeType) ? mimeType : null
         };
-    }
-
-    private static string? ParseDescription(ref string uri)
-    {
-        return CommandLine.ParseComment(ref uri);
     }
 
     public static async Task<(byte[] Data, string? MimeType)> Download(this Resource resource, IHttpClientFactory httpClientFactory, CancellationToken cancellationToken)

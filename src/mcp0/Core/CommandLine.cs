@@ -50,6 +50,17 @@ internal static class CommandLine
         return commandSpan[(index + 2)..].Trim().ToString();
     }
 
+    public static string? FormatComment(string? commandLine, string? comment)
+    {
+        if (comment is null || comment.Length is 0)
+            return commandLine;
+
+        if (commandLine is null || commandLine.Length is 0)
+            return $"# {comment}";
+
+        return $"{commandLine} # {comment}";
+    }
+
     public static int ParseEnvironment(string[] commandLine, IDictionary<string, string> environment)
     {
         var commandIndex = -1;

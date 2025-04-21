@@ -125,7 +125,7 @@ internal static class Configurator
                 var tool = new Tool
                 {
                     Name = entry.Key,
-                    Description = ToolTemplate.ParseDescription(ref template),
+                    Description = CommandLine.ParseComment(ref template),
                     InputSchema = ToolTemplate.ParseInputSchema(template)
                 };
 

@@ -5,11 +5,6 @@ namespace mcp0.Core;
 
 internal static class ToolTemplate
 {
-    public static string? ParseDescription(ref string template)
-    {
-        return CommandLine.ParseComment(ref template);
-    }
-
     public static JsonElement ParseInputSchema(string template)
     {
         var requiredProperties = new List<JsonNode?>();
