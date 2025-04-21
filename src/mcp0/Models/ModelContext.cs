@@ -1,11 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 
 namespace mcp0.Models;
 
 [JsonSourceGenerationOptions(
-    Converters = [typeof(PatchConverter), typeof(ServerConverter), typeof(ServersConverter)],
+    Converters = [typeof(PatchConverter), typeof(ServerConverter), typeof(ServersConverter), typeof(TimeSpanConverter)],
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     ReadCommentHandling = JsonCommentHandling.Skip,

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 using Generator.Equals;
 
 using mcp0.Core;
@@ -24,12 +26,18 @@ internal sealed partial record StdioServer : Server
 {
     public required string Command { get; init; }
 
+    [JsonPropertyName("args")]
     [OrderedEquality]
     public string[]? Arguments { get; init; }
+
+    [JsonPropertyName("workDir")]
     public string? WorkingDirectory { get; init; }
 
+    [JsonPropertyName("env")]
     [UnorderedEquality]
     public Dictionary<string, string>? Environment { get; init; }
+
+    [JsonPropertyName("envFile")]
     public string? EnvironmentFile { get; init; }
     public TimeSpan? ShutdownTimeout { get; init; }
 
