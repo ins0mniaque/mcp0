@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text.Json.Serialization;
 
 using Generator.Equals;
@@ -19,6 +20,13 @@ internal abstract record Server
     {
         return (Server?)SseServer.TryParse(text) ?? StdioServer.TryParse(text);
     }
+
+    public static string? TryFormat(Server server) => server switch
+    {
+        StdioServer stdioServer => StdioServer.TryFormat(stdioServer),
+        SseServer sseServer => SseServer.TryFormat(sseServer),
+        _ => null
+    };
 }
 
 [Equatable]
@@ -60,6 +68,27 @@ internal sealed partial record StdioServer : Server
             Environment = environment.Count is 0 ? null : environment
         };
     }
+
+    private static readonly SearchValues<char> commandDelimiters = SearchValues.Create(' ', '\"', '\'');
+
+    public static string? TryFormat(StdioServer server)
+    {
+        var formattable = server.Name is null &&
+                          server.WorkingDirectory is null &&
+                          server.Environment is null &&
+                          server.EnvironmentFile is null &&
+                          server.ShutdownTimeout is null &&
+                          server.Command.AsSpan().ContainsAny(commandDelimiters) is false &&
+                          server.Arguments?.Any(a => a.AsSpan().ContainsAny(commandDelimiters)) is false or null;
+
+        if (!formattable)
+            return null;
+
+        if (server.Arguments is null || server.Arguments.Length is 0)
+            return server.Command;
+
+        return server.Command + ' ' + string.Join(' ', server.Arguments);
+    }
 }
 
 [Equatable]
@@ -77,5 +106,14 @@ internal sealed partial record SseServer : Server
             return null;
 
         return new() { Url = new Uri(text) };
+    }
+
+    public static string? TryFormat(SseServer server)
+    {
+        var formattable = server.Name is null &&
+                          server.Headers is null &&
+                          server.ConnectionTimeout is null;
+
+        return formattable ? server.Url.ToString() : null;
     }
 }

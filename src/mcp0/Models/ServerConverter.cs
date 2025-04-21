@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -43,45 +42,20 @@ internal sealed class ServerConverter : JsonConverter<Server>
     public override void Write(Utf8JsonWriter writer, Server server, JsonSerializerOptions options)
     {
         if (server is StdioServer stdioServer)
-            Write(writer, stdioServer);
-        else if (server is SseServer sseServer)
-            Write(writer, sseServer);
-        else
-            throw new JsonException($"Unknown server type: {server.GetType().Name}");
-    }
-
-    private static readonly SearchValues<char> commandDelimiters = SearchValues.Create(' ', '\"', '\'');
-
-    private static void Write(Utf8JsonWriter writer, StdioServer server)
-    {
-        var stringFormattable = server.Name is null &&
-                                server.WorkingDirectory is null &&
-                                server.Environment is null &&
-                                server.EnvironmentFile is null &&
-                                server.ShutdownTimeout is null &&
-                                server.Command.AsSpan().ContainsAny(commandDelimiters) is false &&
-                                server.Arguments?.Any(a => a.AsSpan().ContainsAny(commandDelimiters)) is false or null;
-
-        if (stringFormattable)
         {
-            if (server.Arguments is null || server.Arguments.Length is 0)
-                writer.WriteStringValue(server.Command);
+            if (StdioServer.TryFormat(stdioServer) is { } formatted)
+                writer.WriteStringValue(formatted);
             else
-                writer.WriteStringValue(server.Command + ' ' + string.Join(' ', server.Arguments));
+                JsonSerializer.Serialize(writer, stdioServer, ConverterContext.Default.StdioServer);
+        }
+        else if (server is SseServer sseServer)
+        {
+            if (SseServer.TryFormat(sseServer) is { } formatted)
+                writer.WriteStringValue(formatted);
+            else
+                JsonSerializer.Serialize(writer, sseServer, ConverterContext.Default.SseServer);
         }
         else
-            JsonSerializer.Serialize(writer, server, ConverterContext.Default.StdioServer);
-    }
-
-    private static void Write(Utf8JsonWriter writer, SseServer server)
-    {
-        var stringFormattable = server.Name is null &&
-                                server.Headers is null &&
-                                server.ConnectionTimeout is null;
-
-        if (stringFormattable)
-            writer.WriteStringValue(server.Url.ToString());
-        else
-            JsonSerializer.Serialize(writer, server, ConverterContext.Default.SseServer);
+            throw new JsonException($"Unknown server type: {server.GetType().Name}");
     }
 }
