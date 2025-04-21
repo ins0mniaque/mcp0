@@ -41,9 +41,6 @@ internal sealed class ServerConverter : JsonConverter<Server>
             throw Exceptions.InvalidServerJson();
 
         reader.Read();
-        if (reader.TokenType is not JsonTokenType.PropertyName)
-            throw Exceptions.InvalidServerJson();
-
         var propertyName = reader.GetString() ?? throw Exceptions.InvalidServerJson();
 
         var name = (string?)null;
@@ -85,28 +82,26 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 continue;
             }
 
-            if (reader.TokenType is JsonTokenType.EndObject)
-            {
-                if (command is not null && arguments is null && StdioServer.TryParse(command) is { } server)
-                {
-                    command = server.Command;
-                    arguments = server.Arguments;
-                    environment = Collection.Merge(environment, server.Environment);
-                }
+            if (reader.TokenType is not JsonTokenType.EndObject)
+                throw Exceptions.InvalidServerJson();
 
-                return new StdioServer
-                {
-                    Name = name,
-                    Command = command ?? throw Exceptions.MissingRequiredServerProperty(Property.Command),
-                    Arguments = arguments,
-                    WorkingDirectory = workingDirectory,
-                    Environment = environment?.Count is 0 ? null : environment,
-                    EnvironmentFile = environmentFile,
-                    ShutdownTimeout = shutdownTimeout
-                };
+            if (command is not null && arguments is null && StdioServer.TryParse(command) is { } server)
+            {
+                command = server.Command;
+                arguments = server.Arguments;
+                environment = Collection.Merge(environment, server.Environment);
             }
 
-            throw Exceptions.InvalidServerJson();
+            return new StdioServer
+            {
+                Name = name,
+                Command = command ?? throw Exceptions.MissingRequiredServerProperty(Property.Command),
+                Arguments = arguments,
+                WorkingDirectory = workingDirectory,
+                Environment = environment?.Count is 0 ? null : environment,
+                EnvironmentFile = environmentFile,
+                ShutdownTimeout = shutdownTimeout
+            };
         }
 
         throw Exceptions.InvalidServerJson();
@@ -157,18 +152,16 @@ internal sealed class ServerConverter : JsonConverter<Server>
                 continue;
             }
 
-            if (reader.TokenType is JsonTokenType.EndObject)
-            {
-                return new SseServer
-                {
-                    Name = name,
-                    Url = url ?? throw Exceptions.MissingRequiredServerProperty(Property.Url),
-                    Headers = headers,
-                    ConnectionTimeout = connectionTimeout
-                };
-            }
+            if (reader.TokenType is not JsonTokenType.EndObject)
+                throw Exceptions.InvalidServerJson();
 
-            throw Exceptions.InvalidServerJson();
+            return new SseServer
+            {
+                Name = name,
+                Url = url ?? throw Exceptions.MissingRequiredServerProperty(Property.Url),
+                Headers = headers,
+                ConnectionTimeout = connectionTimeout
+            };
         }
 
         throw Exceptions.InvalidServerJson();
