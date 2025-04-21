@@ -5,12 +5,6 @@ namespace mcp0.Models;
 
 internal sealed class PatchConverter : JsonConverter<Patch>
 {
-    private static class Property
-    {
-        public const string Name = "name";
-        public const string Description = "description";
-    }
-
     public override bool HandleNull => true;
 
     public override bool CanConvert(Type typeToConvert) => typeof(Patch).IsAssignableFrom(typeToConvert);
@@ -23,30 +17,8 @@ internal sealed class PatchConverter : JsonConverter<Patch>
         if (reader.TokenType is JsonTokenType.String)
             return Patch.Parse(reader.GetString() ?? throw Exceptions.InvalidPatchJson());
 
-        if (reader.TokenType is not JsonTokenType.StartObject)
-            throw Exceptions.InvalidPatchJson();
-
-        var name = (string?)null;
-        var description = (string?)null;
-
-        while (true)
-        {
-            reader.Read();
-            if (reader.TokenType is JsonTokenType.EndObject)
-                break;
-
-            var propertyName = reader.GetString() ?? throw Exceptions.InvalidPatchJson();
-
-            reader.Read();
-            if (propertyName is Property.Name)
-                name = reader.GetString();
-            else if (propertyName is Property.Description)
-                description = reader.GetString();
-            else
-                throw Exceptions.UnknownPatchProperty(propertyName);
-        }
-
-        return new() { Name = name, Description = description };
+        return JsonSerializer.Deserialize(ref reader, ConverterContext.Default.Patch) ??
+               throw Exceptions.InvalidPatchJson();
     }
 
     public override void Write(Utf8JsonWriter writer, Patch patch, JsonSerializerOptions options)
@@ -64,6 +36,5 @@ internal sealed class PatchConverter : JsonConverter<Patch>
     private static class Exceptions
     {
         public static JsonException InvalidPatchJson() => throw new JsonException("Invalid JSON in patch configuration");
-        public static JsonException UnknownPatchProperty(string propertyName) => throw new JsonException($"Unknown patch property: {propertyName}");
     }
 }

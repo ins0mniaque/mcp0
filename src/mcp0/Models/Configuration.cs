@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 using Generator.Equals;
 
@@ -10,7 +9,6 @@ namespace mcp0.Models;
 [Equatable]
 internal sealed partial record Configuration
 {
-    [JsonConverter(typeof(ServersConverter))]
     [UnorderedEquality]
     public List<Server>? Servers { get; set; }
 

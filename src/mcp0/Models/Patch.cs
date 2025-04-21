@@ -1,10 +1,7 @@
-using System.Text.Json.Serialization;
-
 using mcp0.Core;
 
 namespace mcp0.Models;
 
-[JsonConverter(typeof(PatchConverter))]
 internal sealed record Patch
 {
     public static Patch Remove { get; } = new();

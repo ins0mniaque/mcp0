@@ -1,12 +1,9 @@
-using System.Text.Json.Serialization;
-
 using Generator.Equals;
 
 using mcp0.Core;
 
 namespace mcp0.Models;
 
-[JsonConverter(typeof(ServerConverter))]
 internal abstract record Server
 {
     public string? Name { get; set; }
