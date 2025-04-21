@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
-namespace mcp0.Models;
+namespace mcp0.Models.Converters;
 
 internal abstract class KeyedListConverter<T> : JsonConverter<List<T>>
 {

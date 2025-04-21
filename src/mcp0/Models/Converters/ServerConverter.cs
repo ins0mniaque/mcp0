@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace mcp0.Models;
+namespace mcp0.Models.Converters;
 
 internal sealed class ServerConverter : JsonConverter<Server>
 {

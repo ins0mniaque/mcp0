@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using mcp0.Models.Converters;
+
 namespace mcp0.Models;
 
 [JsonSourceGenerationOptions(

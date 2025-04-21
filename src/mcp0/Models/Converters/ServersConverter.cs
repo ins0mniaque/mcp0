@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization.Metadata;
 
-namespace mcp0.Models;
+namespace mcp0.Models.Converters;
 
 internal sealed class ServersConverter : KeyedListConverter<Server>
 {
