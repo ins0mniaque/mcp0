@@ -13,11 +13,11 @@ internal sealed class ServerConverter : JsonConverter<Server>
 
     public override Server Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType is JsonTokenType.String)
-            return Server.Parse(reader.GetString() ?? throw Exceptions.InvalidServerJson());
+        if (reader.TokenType is JsonTokenType.String && reader.GetString() is { } text)
+            return Server.Parse(text);
 
         if (reader.TokenType is not JsonTokenType.StartObject)
-            throw Exceptions.InvalidServerJson();
+            throw new JsonException("Expected a string or an object for the server configuration");
 
         var snapshot = reader;
 
@@ -25,7 +25,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
         while (true)
         {
             reader.Read();
-            propertyName = reader.GetString() ?? throw Exceptions.InvalidServerJson();
+            propertyName = reader.GetPropertyName();
             if (!IsServerProperty(propertyName))
                 break;
 
@@ -35,11 +35,9 @@ internal sealed class ServerConverter : JsonConverter<Server>
         reader = snapshot;
 
         if (IsSseServerProperty(propertyName))
-            return JsonSerializer.Deserialize(ref reader, ConverterContext.Default.SseServer) ??
-                   throw Exceptions.InvalidServerJson();
+            return reader.Deserialize(ConverterContext.Default.SseServer);
 
-        return JsonSerializer.Deserialize(ref reader, ConverterContext.Default.StdioServer) ??
-               throw Exceptions.InvalidServerJson();
+        return reader.Deserialize(ConverterContext.Default.StdioServer);
     }
 
     public override void Write(Utf8JsonWriter writer, Server server, JsonSerializerOptions options)
@@ -49,7 +47,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
         else if (server is SseServer sseServer)
             Write(writer, sseServer);
         else
-            throw Exceptions.UnknownServerType(server.GetType());
+            throw new JsonException($"Unknown server type: {server.GetType().Name}");
     }
 
     private static readonly SearchValues<char> commandDelimiters = SearchValues.Create(' ', '\"', '\'');
@@ -85,11 +83,5 @@ internal sealed class ServerConverter : JsonConverter<Server>
             writer.WriteStringValue(server.Url.ToString());
         else
             JsonSerializer.Serialize(writer, server, ConverterContext.Default.SseServer);
-    }
-
-    private static class Exceptions
-    {
-        public static JsonException InvalidServerJson() => throw new JsonException("Invalid JSON in server configuration");
-        public static JsonException UnknownServerType(Type serverType) => throw new JsonException($"Unknown server type: {serverType.Name}");
     }
 }

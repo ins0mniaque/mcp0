@@ -13,15 +13,14 @@ internal sealed class PatchConverter : JsonConverter<Patch>
             return Patch.Remove;
 
         if (reader.TokenType is JsonTokenType.String)
-            return Patch.Parse(reader.GetString() ?? throw Exceptions.InvalidPatchJson());
+            return reader.GetString() is { } text ? Patch.Parse(text) : Patch.Remove;
 
-        return JsonSerializer.Deserialize(ref reader, ConverterContext.Default.Patch) ??
-               throw Exceptions.InvalidPatchJson();
+        return reader.Deserialize(ConverterContext.Default.Patch);
     }
 
-    public override void Write(Utf8JsonWriter writer, Patch patch, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, Patch? patch, JsonSerializerOptions options)
     {
-        if (patch == Patch.Remove)
+        if (patch is null || patch == Patch.Remove)
             writer.WriteBooleanValue(false);
         else if (patch.Description is null || patch.Description.Length is 0)
             writer.WriteStringValue(patch.Name);
@@ -29,10 +28,5 @@ internal sealed class PatchConverter : JsonConverter<Patch>
             writer.WriteStringValue($"# {patch.Description}");
         else
             writer.WriteStringValue($"{patch.Name} # {patch.Description}");
-    }
-
-    private static class Exceptions
-    {
-        public static JsonException InvalidPatchJson() => throw new JsonException("Invalid JSON in patch configuration");
     }
 }
