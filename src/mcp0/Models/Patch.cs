@@ -26,4 +26,18 @@ internal sealed record Patch
             Name = text.Length is 0 ? null : text
         };
     }
+
+    public static string? Format(Patch patch)
+    {
+        if (patch == Remove)
+            return null;
+
+        if (patch.Description is null || patch.Description.Length is 0)
+            return patch.Name;
+
+        if (patch.Name is null || patch.Name.Length is 0)
+            return $"# {patch.Description}";
+
+        return $"{patch.Name} # {patch.Description}";
+    }
 }

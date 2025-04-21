@@ -18,15 +18,11 @@ internal sealed class PatchConverter : JsonConverter<Patch>
         return reader.Deserialize(ConverterContext.Default.Patch);
     }
 
-    public override void Write(Utf8JsonWriter writer, Patch? patch, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, Patch patch, JsonSerializerOptions options)
     {
-        if (patch is null || patch == Patch.Remove)
-            writer.WriteBooleanValue(false);
-        else if (patch.Description is null || patch.Description.Length is 0)
-            writer.WriteStringValue(patch.Name);
-        else if (patch.Name is null || patch.Name.Length is 0)
-            writer.WriteStringValue($"# {patch.Description}");
+        if (Patch.Format(patch) is { } formatted)
+            writer.WriteStringValue(formatted);
         else
-            writer.WriteStringValue($"{patch.Name} # {patch.Description}");
+            writer.WriteBooleanValue(false);
     }
 }
