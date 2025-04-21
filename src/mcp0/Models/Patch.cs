@@ -23,11 +23,10 @@ internal sealed record Patch
         if (string.IsNullOrEmpty(text))
             return null;
 
-        if (text[0] is '#')
-            return new() { Description = text[1..].TrimStart() };
-
-        var description = CommandLine.ParseComment(ref text);
-
-        return new() { Name = text, Description = description };
+        return new()
+        {
+            Description = CommandLine.ParseComment(ref text),
+            Name = text.Length is 0 ? null : text
+        };
     }
 }

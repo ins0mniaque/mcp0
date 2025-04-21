@@ -32,13 +32,22 @@ internal static class CommandLine
 
     public static string? ParseComment(ref string commandLine)
     {
-        var index = commandLine.AsSpan().LastIndexOf(" #", StringComparison.Ordinal);
+        if (commandLine.Length is 0)
+            return null;
+
+        var commandSpan = commandLine.AsSpan();
+        if (commandSpan[0] is '#')
+        {
+            commandLine = string.Empty;
+            return commandSpan[1..].Trim().ToString();
+        }
+
+        var index = commandSpan.LastIndexOf(" #", StringComparison.Ordinal);
         if (index is -1)
             return null;
 
-        var comment = commandLine[(index + 2)..].Trim();
-        commandLine = commandLine[..index].Trim();
-        return comment;
+        commandLine = commandSpan[..index].Trim().ToString();
+        return commandSpan[(index + 2)..].Trim().ToString();
     }
 
     public static int ParseEnvironment(string[] commandLine, IDictionary<string, string> environment)
