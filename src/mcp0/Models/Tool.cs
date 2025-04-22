@@ -18,7 +18,7 @@ internal sealed record Tool
         if (text.Length is 0)
             return null;
 
-        var description = CommandLine.ParseComment(ref text);
+        var description = Formattable.Parse(ref text, "#");
         if (text.Length is 0)
             return null;
 
@@ -27,6 +27,6 @@ internal sealed record Tool
 
     public static string? TryFormat(Tool tool)
     {
-        return CommandLine.FormatComment(tool.Command, tool.Description);
+        return Formattable.Format(tool.Command, tool.Description, "#");
     }
 }

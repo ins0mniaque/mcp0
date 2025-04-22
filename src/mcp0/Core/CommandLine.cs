@@ -31,37 +31,6 @@ internal static class CommandLine
         arguments = commandLine.Length is 0 ? null : commandLine[(commandIndex + 1)..];
     }
 
-    public static string? ParseComment(ref string commandLine)
-    {
-        if (commandLine.Length is 0)
-            return null;
-
-        var commandSpan = commandLine.AsSpan();
-        if (commandSpan[0] is '#')
-        {
-            commandLine = string.Empty;
-            return commandSpan[1..].Trim().ToString();
-        }
-
-        var index = commandSpan.LastIndexOf(" #", StringComparison.Ordinal);
-        if (index is -1)
-            return null;
-
-        commandLine = commandSpan[..index].Trim().ToString();
-        return commandSpan[(index + 2)..].Trim().ToString();
-    }
-
-    public static string? FormatComment(string? commandLine, string? comment)
-    {
-        if (comment is null || comment.Length is 0)
-            return commandLine;
-
-        if (commandLine is null || commandLine.Length is 0)
-            return $"# {comment}";
-
-        return $"{commandLine} # {comment}";
-    }
-
     public static int ParseEnvironment(string[] commandLine, IDictionary<string, string> environment)
     {
         var commandIndex = -1;
