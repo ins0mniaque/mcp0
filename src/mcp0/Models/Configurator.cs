@@ -41,7 +41,7 @@ internal static class Configurator
 
         var prompts = configuration.Prompts.ToDictionary(
             static entry => entry.Key,
-            static entry => new DynamicPrompt(entry.Key, entry.Value.Template, entry.Value.Description),
+            static entry => new DynamicPrompt(entry.Key, entry.Value),
             StringComparer.Ordinal);
 
         var listPromptsResult = new ListPromptsResult
@@ -52,17 +52,17 @@ internal static class Configurator
         return new()
         {
             ListPromptsHandler = (_, _) => ValueTask.FromResult(listPromptsResult),
-            GetPromptHandler = async (request, _) =>
+            GetPromptHandler = async (request, cancellationToken) =>
             {
                 if (request.Params?.Name is not { } name || !prompts.TryGetValue(name, out var prompt))
                     throw new McpException($"Unknown prompt: {request.Params?.Name}");
 
                 var arguments = request.Params?.Arguments ?? ImmutableDictionary<string, JsonElement>.Empty;
-                var text = prompt.Template.Render(arguments);
+                var messages = await prompt.Template.Render(request.Server, arguments, cancellationToken);
 
                 return await Task.FromResult(new GetPromptResult
                 {
-                    Messages = [new() { Role = Role.User, Content = new Content { Type = "text", Text = text } }]
+                    Messages = messages
                 });
             }
         };

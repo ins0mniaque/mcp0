@@ -39,10 +39,10 @@ internal sealed class NewCommand : CancellableCommand
         {
             Prompts = new(StringComparer.Ordinal)
             {
-                ["prompt"] = new() { Template = "This is a prompt." },
-                ["argument"] = new() { Template = "This is a prompt with an {{argument}}." },
-                ["optional"] = new() { Template = "This is a prompt with an optional {{argument?}}." },
-                ["described"] = new() { Template = "This is a prompt with a described optional {{argument?#Argument description}}." }
+                ["prompt"] = new() { Messages = [new() { Template = "This is a prompt." }] },
+                ["argument"] = new() { Messages = [new() { Template = "This is a prompt with an {{argument}}." }] },
+                ["optional"] = new() { Messages = [new() { Template = "This is a prompt with an optional {{argument?}}." }] },
+                ["described"] = new() { Messages = [new() { Template = "This is a prompt with a described optional {{argument?#Argument description}}." }] }
             },
             Resources = new(StringComparer.Ordinal)
             {
