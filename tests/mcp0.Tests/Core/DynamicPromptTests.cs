@@ -110,11 +110,11 @@ public sealed class DynamicPromptTests
         var prompt = new Models.Prompt
         {
             Messages =
-        [
-            new() { Template = "Summarize this document: {{document}}", ReturnArgument = "summary" },
-            new() { Template = "Given this document: {{document}} and summary: {{summary}}, provide feedback on the summary.", ReturnArgument = "feedback" },
-            new() { Template = "Given this document: {{document}}, summary: {{summary}} and feedback: {{feedback}}, update on the summary based on the feedback.", ReturnArgument = string.Empty }
-        ]
+            [
+                new() { Template = "Summarize this document: {{document}}", ReturnArgument = "summary" },
+                new() { Template = "Given this document: {{document}} and summary: {{summary}}, provide feedback on the summary.", ReturnArgument = "feedback" },
+                new() { Template = "Given this document: {{document}}, summary: {{summary}} and feedback: {{feedback}}, update on the summary based on the feedback.", ReturnArgument = string.Empty }
+            ]
         };
 
         var actual = await new DynamicPromptTemplate(prompt).Render(server, new Dictionary<string, string>(StringComparer.Ordinal)
@@ -165,9 +165,9 @@ public sealed class DynamicPromptTests
                 Id = request.Id,
                 Result = JsonSerializer.SerializeToNode(new CreateMessageResult
                 {
-                    Content = new() { Text = Response },
                     Model = "model",
-                    Role = Role.Assistant
+                    Role = Role.Assistant,
+                    Content = new() { Text = Response }
                 }),
             });
         }
