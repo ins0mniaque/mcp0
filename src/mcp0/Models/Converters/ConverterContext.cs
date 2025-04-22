@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace mcp0.Models.Converters;
 
 [JsonSourceGenerationOptions(
-    Converters = [typeof(TimeSpanConverter)],
+    Converters = [typeof(PromptMessagesConverter), typeof(TimeSpanConverter)],
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     ReadCommentHandling = JsonCommentHandling.Skip,
@@ -12,6 +12,8 @@ namespace mcp0.Models.Converters;
     WriteIndented = true)]
 [JsonSerializable(typeof(Patch))]
 [JsonSerializable(typeof(Prompt))]
+[JsonSerializable(typeof(PromptMessage))]
+[JsonSerializable(typeof(PromptOptions))]
 [JsonSerializable(typeof(Resource))]
 [JsonSerializable(typeof(Server))]
 [JsonSerializable(typeof(StdioServer))]
