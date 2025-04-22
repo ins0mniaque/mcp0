@@ -1,9 +1,13 @@
+using System.Text.Json.Serialization;
+
 using mcp0.Core;
+using mcp0.Models.Converters;
 
 namespace mcp0.Models;
 
 internal sealed record Resource
 {
+    [JsonConverter(typeof(ResourceUriConverter))]
     public required Uri Uri { get; init; }
     public string? MimeType { get; init; }
     public string? Description { get; init; }
@@ -20,10 +24,10 @@ internal sealed record Resource
             return null;
 
         var description = CommandLine.ParseComment(ref text);
-        if (text.Length is 0 || Uri.IsWellFormedUriString(text, UriKind.Absolute))
+        if (text.Length is 0 || ResourceUriConverter.TryConvert(text) is not { } uri)
             return null;
 
-        return new() { Uri = new Uri(text, UriKind.Absolute), Description = description };
+        return new() { Uri = uri, Description = description };
     }
 
     public static string? TryFormat(Resource resource)
@@ -31,6 +35,6 @@ internal sealed record Resource
         if (resource.MimeType is not null)
             return null;
 
-        return CommandLine.FormatComment(resource.Uri.ToString(), resource.Description);
+        return CommandLine.FormatComment(ResourceUriConverter.Convert(resource.Uri), resource.Description);
     }
 }

@@ -86,7 +86,7 @@ internal static class Configurator
             return null;
 
         var resources = configuration.Resources
-            .Select(entry => UriResource.Create(entry.Key, entry.Value.Uri, entry.Value.Description, entry.Value.MimeType))
+            .Select(entry => UriResource.Create(entry.Key, entry.Value.Uri, entry.Value.MimeType, entry.Value.Description))
             .ToDictionary(static resource => resource.Uri, StringComparer.Ordinal);
 
         var listResourcesResult = new ListResourcesResult

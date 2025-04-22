@@ -15,7 +15,7 @@ internal static partial class UriResource
 
     private static readonly FileExtensionContentTypeProvider mimeTypeProvider = new();
 
-    public static Resource Create(string name, Uri uri, string? description, string? mimeType)
+    public static Resource Create(string name, Uri uri, string? mimeType, string? description)
     {
         return new()
         {
