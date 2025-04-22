@@ -86,12 +86,12 @@ internal static class Configurator
             return null;
 
         var resources = configuration.Resources
-            .Select(entry => UriResource.Create(entry.Key, entry.Value.Uri, entry.Value.MimeType, entry.Value.Description))
-            .ToDictionary(static resource => resource.Uri, StringComparer.Ordinal);
+            .Select(entry => new UriResource(entry.Key, entry.Value.Uri, entry.Value.MimeType, entry.Value.Description))
+            .ToDictionary(static resource => resource.Resource.Uri, StringComparer.Ordinal);
 
         var listResourcesResult = new ListResourcesResult
         {
-            Resources = resources.Select(static entry => entry.Value).ToList()
+            Resources = resources.Select(static entry => entry.Value.Resource).ToList()
         };
 
         var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();

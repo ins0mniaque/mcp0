@@ -7,7 +7,7 @@ using ModelContextProtocol.Protocol.Types;
 
 namespace mcp0.Core;
 
-internal static partial class UriResource
+internal sealed partial class UriResource
 {
     [GeneratedRegex("data:(?<type>.+?);base64,(?<data>.+)", RegexOptions.Compiled, matchTimeoutMilliseconds: 1000)]
     private static partial Regex GenerateDataUriParser();
@@ -15,9 +15,10 @@ internal static partial class UriResource
 
     private static readonly FileExtensionContentTypeProvider mimeTypeProvider = new();
 
-    public static Resource Create(string name, Uri uri, string? mimeType, string? description)
+    public UriResource(string name, Uri uri, string? mimeType, string? description)
     {
-        return new()
+        Uri = uri;
+        Resource = new()
         {
             Name = name,
             Description = description,
@@ -26,14 +27,15 @@ internal static partial class UriResource
         };
     }
 
-    public static async Task<(byte[] Data, string? MimeType)> Download(this Resource resource, IHttpClientFactory httpClientFactory, CancellationToken cancellationToken)
-    {
-        var uri = new Uri(resource.Uri);
+    public Uri Uri { get; }
+    public Resource Resource { get; }
 
-        if (uri.Scheme is "http" or "https")
+    public async Task<(byte[] Data, string? MimeType)> Download(IHttpClientFactory httpClientFactory, CancellationToken cancellationToken)
+    {
+        if (Uri.Scheme is "http" or "https")
         {
             using var client = httpClientFactory.CreateClient();
-            using var result = await client.GetAsync(uri, cancellationToken);
+            using var result = await client.GetAsync(Uri, cancellationToken);
 
             if (result.IsSuccessStatusCode)
             {
@@ -46,35 +48,35 @@ internal static partial class UriResource
             throw new McpException($"Error: HTTP Status Code {result.StatusCode}: {result.ReasonPhrase}");
         }
 
-        if (uri.IsFile)
+        if (Uri.IsFile)
         {
-            var data = await File.ReadAllBytesAsync(uri.LocalPath, cancellationToken);
+            var data = await File.ReadAllBytesAsync(Uri.LocalPath, cancellationToken);
 
             return (data, null);
         }
 
-        if (uri.Scheme is "data")
+        if (Uri.Scheme is "data")
         {
-            var match = dataUriParser.Match(uri.OriginalString);
+            var match = dataUriParser.Match(Uri.AbsoluteUri);
             var data = Convert.FromBase64String(match.Groups["data"].Value);
             var mimetype = match.Groups["type"].Value;
 
             return (data, mimetype);
         }
 
-        throw new McpException($"Unsupported resource protocol: {uri}");
+        throw new McpException($"Unsupported resource protocol: {Uri}");
     }
 
-    public static async Task<ResourceContents> ToResourceContents(this Resource resource, byte[] data, string? mimetype, CancellationToken cancellationToken)
+    public async Task<ResourceContents> ToResourceContents(byte[] data, string? mimetype, CancellationToken cancellationToken)
     {
         var binary = data.AsSpan().Contains((byte)0);
         if (binary)
         {
             return new BlobResourceContents
             {
-                Uri = resource.Uri,
+                Uri = Resource.Uri,
                 Blob = Convert.ToBase64String(data),
-                MimeType = mimetype ?? resource.MimeType ?? "application/octet-stream"
+                MimeType = mimetype ?? Resource.MimeType ?? "application/octet-stream"
             };
         }
 
@@ -85,9 +87,9 @@ internal static partial class UriResource
 
         return new TextResourceContents
         {
-            Uri = resource.Uri,
+            Uri = Resource.Uri,
             Text = text,
-            MimeType = mimetype ?? resource.MimeType ?? "text/plain"
+            MimeType = mimetype ?? Resource.MimeType ?? "text/plain"
         };
     }
 }
