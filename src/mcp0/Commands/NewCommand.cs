@@ -53,9 +53,17 @@ internal sealed class NewCommand : CancellableCommand
             },
             Tools = new(StringComparer.Ordinal)
             {
-                ["ping"] = "ping -c 1 {{host}}",
-                ["add"] = "bc -e {{a:integer}}+{{b:integer}}+0{{c?:integer}} # Add two or three numbers using bc",
-                ["git-status"] = "git -C {{repo_path#Path to the repository}} # Gets the status of a git repository",
+                ["ping"] = new Tool { Command = "ping -c 1 {{host}}" },
+                ["add"] = new Tool
+                {
+                    Command = "bc -e {{a:integer}}+{{b:integer}}+0{{c?:integer}}",
+                    Description = "Add two or three numbers using bc"
+                },
+                ["git-status"] = new Tool
+                {
+                    Command = "git -C {{repo_path#Path to the repository}}",
+                    Description = "Gets the status of a git repository"
+                },
             },
             Servers =
             [

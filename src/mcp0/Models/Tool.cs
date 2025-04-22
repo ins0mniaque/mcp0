@@ -1,0 +1,32 @@
+using mcp0.Core;
+
+namespace mcp0.Models;
+
+internal sealed class Tool
+{
+    public required string Command { get; init; }
+    public string? Description { get; init; }
+
+    public static Tool Parse(string text)
+    {
+        return TryParse(text) ?? throw new FormatException($"Invalid tool: {text}");
+    }
+
+    public static Tool? TryParse(string text)
+    {
+        text = text.Trim();
+        if (text.Length is 0)
+            return null;
+
+        var description = CommandLine.ParseComment(ref text);
+        if (text.Length is 0)
+            return null;
+
+        return new() { Command = text, Description = description };
+    }
+
+    public static string? Format(Tool tool)
+    {
+        return CommandLine.FormatComment(tool.Command, tool.Description);
+    }
+}

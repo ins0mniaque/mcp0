@@ -7,12 +7,12 @@ namespace mcp0.Core;
 
 internal sealed class CommandLineTool
 {
-    public CommandLineTool(string name, string template)
+    public CommandLineTool(string name, string template, string? description)
     {
         Tool = new()
         {
             Name = name,
-            Description = CommandLine.ParseComment(ref template),
+            Description = description,
             InputSchema = ParseInputSchema(template)
         };
 

@@ -14,6 +14,7 @@ namespace mcp0.Models.Converters;
 [JsonSerializable(typeof(Server))]
 [JsonSerializable(typeof(StdioServer))]
 [JsonSerializable(typeof(SseServer))]
+[JsonSerializable(typeof(Tool))]
 [JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 internal sealed partial class ConverterContext : JsonSerializerContext;

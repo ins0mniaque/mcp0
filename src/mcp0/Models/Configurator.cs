@@ -119,7 +119,7 @@ internal static class Configurator
 
         var tools = configuration.Tools.ToDictionary(
             static entry => entry.Key,
-            static entry => new CommandLineTool(entry.Key, entry.Value),
+            static entry => new CommandLineTool(entry.Key, entry.Value.Command, entry.Value.Description),
             StringComparer.Ordinal);
 
         var listToolsResult = new ListToolsResult

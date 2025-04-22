@@ -1,10 +1,8 @@
-using mcp0.Models;
-
 using ModelContextProtocol.Protocol.Types;
 
 namespace mcp0.Core;
 
-internal sealed class Patcher(Dictionary<string, Patch> patches)
+internal sealed class Patcher(Dictionary<string, Models.Patch> patches)
 {
     public Prompt? Patch(Prompt prompt)
     {

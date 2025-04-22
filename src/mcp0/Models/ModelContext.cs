@@ -6,7 +6,11 @@ using mcp0.Models.Converters;
 namespace mcp0.Models;
 
 [JsonSourceGenerationOptions(
-    Converters = [typeof(PatchConverter), typeof(ServerConverter), typeof(ServersConverter), typeof(TimeSpanConverter)],
+    Converters = [typeof(PatchConverter),
+                  typeof(ServerConverter),
+                  typeof(ServersConverter),
+                  typeof(TimeSpanConverter),
+                  typeof(ToolConverter)],
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     ReadCommentHandling = JsonCommentHandling.Skip,
@@ -17,6 +21,7 @@ namespace mcp0.Models;
 [JsonSerializable(typeof(Server))]
 [JsonSerializable(typeof(StdioServer))]
 [JsonSerializable(typeof(SseServer))]
+[JsonSerializable(typeof(Tool))]
 [JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 internal sealed partial class ModelContext : JsonSerializerContext;

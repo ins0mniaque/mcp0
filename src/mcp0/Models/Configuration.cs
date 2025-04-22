@@ -19,7 +19,7 @@ internal sealed partial record Configuration
     public Dictionary<string, string>? Resources { get; set; }
 
     [UnorderedEquality]
-    public Dictionary<string, string>? Tools { get; set; }
+    public Dictionary<string, Tool>? Tools { get; set; }
 
     [UnorderedEquality]
     public Dictionary<string, Patch>? Patch { get; set; }
