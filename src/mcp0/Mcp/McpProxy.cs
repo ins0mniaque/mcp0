@@ -39,6 +39,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
 
     public async Task ConnectAsync(IEnumerable<IClientTransport> clientTransports, CancellationToken cancellationToken = default)
     {
+        Server = null;
         foreach (var client in Clients)
             await client.DisposeAsync();
 
