@@ -1,15 +1,14 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
+﻿using mcp0.Mcp;
 
-using ModelContextProtocol.Protocol.Messages;
 using ModelContextProtocol.Protocol.Types;
-using ModelContextProtocol.Server;
 
 namespace mcp0.Core;
 
 [TestClass]
 public sealed class DynamicPromptTests
 {
+    private const string ModelResponse = "MODEL RESPONSE";
+
     [TestMethod]
     public void ParsesArgumentCorrectly()
     {
@@ -81,7 +80,7 @@ public sealed class DynamicPromptTests
         These are not arguments: {{}} {{0}} {{ not_argument }} {{0argument}} {{\"escaped\"}}.
         """;
 
-        await using var server = new McpServer();
+        await using var server = new McpSamplingServer(static _ => ModelResponse);
 
         var prompt = new Models.Prompt { Messages = [new() { Template = template }] };
         var actual = await new DynamicPromptTemplate(prompt).Render(server, new Dictionary<string, string>(StringComparer.Ordinal)
@@ -104,7 +103,7 @@ public sealed class DynamicPromptTests
     [TestMethod]
     public async Task RendersDynamicTemplateCorrectly()
     {
-        await using var server = new McpServer();
+        await using var server = new McpSamplingServer(static _ => ModelResponse);
 
         var document = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
         var prompt = new Models.Prompt
@@ -130,11 +129,11 @@ public sealed class DynamicPromptTests
         Assert.AreEqual(Role.User, actual[4].Role);
         Assert.AreEqual(Role.Assistant, actual[5].Role);
         Assert.AreEqual($"Summarize this document: {document}", actual[0].Content.Text);
-        Assert.AreEqual(McpServer.Response, actual[1].Content.Text);
-        Assert.AreEqual($"Given this document: {document} and summary: {McpServer.Response}, provide feedback on the summary.", actual[2].Content.Text);
-        Assert.AreEqual(McpServer.Response, actual[3].Content.Text);
-        Assert.AreEqual($"Given this document: {document}, summary: {McpServer.Response} and feedback: {McpServer.Response}, update on the summary based on the feedback.", actual[4].Content.Text);
-        Assert.AreEqual(McpServer.Response, actual[5].Content.Text);
+        Assert.AreEqual(ModelResponse, actual[1].Content.Text);
+        Assert.AreEqual($"Given this document: {document} and summary: {ModelResponse}, provide feedback on the summary.", actual[2].Content.Text);
+        Assert.AreEqual(ModelResponse, actual[3].Content.Text);
+        Assert.AreEqual($"Given this document: {document}, summary: {ModelResponse} and feedback: {ModelResponse}, update on the summary based on the feedback.", actual[4].Content.Text);
+        Assert.AreEqual(ModelResponse, actual[5].Content.Text);
     }
 
     private static void AreEqual(PromptArgument expected, PromptArgument actual)
@@ -142,40 +141,5 @@ public sealed class DynamicPromptTests
         Assert.AreEqual(expected.Name, actual.Name);
         Assert.AreEqual(expected.Description, actual.Description);
         Assert.AreEqual(expected.Required, actual.Required);
-    }
-
-    [SuppressMessage("ReSharper", "UnassignedGetOnlyAutoProperty", Justification = "Unused IMcpServer property")]
-    private sealed class McpServer : IMcpServer
-    {
-        public const string Response = "MODEL RESPONSE";
-
-        public ClientCapabilities? ClientCapabilities { get; } = new() { Sampling = new() };
-        public Implementation? ClientInfo { get; }
-        public McpServerOptions ServerOptions { get; } = new();
-        public IServiceProvider? Services { get; }
-        public LoggingLevel? LoggingLevel { get; }
-
-        public async Task<JsonRpcResponse> SendRequestAsync(JsonRpcRequest request, CancellationToken cancellationToken = default)
-        {
-            if (request.Method is not RequestMethods.SamplingCreateMessage)
-                throw new NotImplementedException();
-
-            return await Task.FromResult(new JsonRpcResponse
-            {
-                Id = request.Id,
-                Result = JsonSerializer.SerializeToNode(new CreateMessageResult
-                {
-                    Model = "model",
-                    Role = Role.Assistant,
-                    Content = new() { Text = Response }
-                }),
-            });
-        }
-
-        public Task SendMessageAsync(JsonRpcMessage message, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public IAsyncDisposable RegisterNotificationHandler(string method, Func<JsonRpcNotification, CancellationToken, ValueTask> handler) => throw new NotImplementedException();
-        public Task RunAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
-
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }
