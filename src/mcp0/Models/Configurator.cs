@@ -129,7 +129,7 @@ internal static class Configurator
                     InputSchema = ToolTemplate.ParseInputSchema(template)
                 };
 
-                return (Tool: tool, Template: template);
+                return (Tool: tool, Template: new CommandLineTemplate(template));
             },
             StringComparer.Ordinal);
 
@@ -147,8 +147,8 @@ internal static class Configurator
                     throw new McpException($"Unknown tool: {request.Params?.Name}");
 
                 var arguments = request.Params?.Arguments ?? ImmutableDictionary<string, JsonElement>.Empty;
-                var commandLine = ToolCommand.Parse(tool.Template, arguments);
-                var (stdout, stderr, exitCode) = await ToolCommand.Run(commandLine, cancellationToken);
+                var startInfo = tool.Template.Render(arguments);
+                var (stdout, stderr, exitCode) = await CommandLine.Run(startInfo, cancellationToken);
 
                 var output = stdout.Trim();
                 if (exitCode is not 0 && !string.IsNullOrWhiteSpace(stderr))

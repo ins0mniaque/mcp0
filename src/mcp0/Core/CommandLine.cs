@@ -1,4 +1,5 @@
 using System.CommandLine.Parsing;
+using System.Diagnostics;
 
 namespace mcp0.Core;
 
@@ -81,5 +82,37 @@ internal static class CommandLine
         }
 
         return commandIndex;
+    }
+
+    public static async Task<(string Stdout, string Stderr, int ExitCode)> Run(ProcessStartInfo startInfo, CancellationToken cancellationToken)
+    {
+        using var process = new Process();
+
+        process.StartInfo = startInfo;
+        process.Start();
+
+        using var stdoutStream = new MemoryStream();
+        using var stderrStream = new MemoryStream();
+
+        var copyToStdoutTask = process.StandardOutput.BaseStream.CopyToAsync(stdoutStream, cancellationToken);
+        var copyToStderrTask = process.StandardError.BaseStream.CopyToAsync(stderrStream, cancellationToken);
+
+        await process.WaitForExitAsync(cancellationToken);
+
+        await copyToStdoutTask;
+        await copyToStderrTask;
+
+        stdoutStream.Position = 0;
+        stderrStream.Position = 0;
+
+        string stdout;
+        using (var reader = new StreamReader(stdoutStream))
+            stdout = await reader.ReadToEndAsync(cancellationToken);
+
+        string stderr;
+        using (var reader = new StreamReader(stderrStream))
+            stderr = await reader.ReadToEndAsync(cancellationToken);
+
+        return (stdout, stderr, process.ExitCode);
     }
 }
