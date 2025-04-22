@@ -119,18 +119,7 @@ internal static class Configurator
 
         var tools = configuration.Tools.ToDictionary(
             static entry => entry.Key,
-            static entry =>
-            {
-                var template = entry.Value;
-                var tool = new Tool
-                {
-                    Name = entry.Key,
-                    Description = CommandLine.ParseComment(ref template),
-                    InputSchema = ToolTemplate.ParseInputSchema(template)
-                };
-
-                return (Tool: tool, Template: new CommandLineTemplate(template));
-            },
+            static entry => new CommandLineTool(entry.Key, entry.Value),
             StringComparer.Ordinal);
 
         var listToolsResult = new ListToolsResult

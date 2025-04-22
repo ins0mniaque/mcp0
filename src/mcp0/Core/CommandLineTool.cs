@@ -1,15 +1,32 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using ModelContextProtocol.Protocol.Types;
+
 namespace mcp0.Core;
 
-internal static class ToolTemplate
+internal sealed class CommandLineTool
 {
-    public static JsonElement ParseInputSchema(string template)
+    public CommandLineTool(string name, string template)
+    {
+        Tool = new()
+        {
+            Name = name,
+            Description = CommandLine.ParseComment(ref template),
+            InputSchema = ParseInputSchema(template)
+        };
+
+        Template = new CommandLineTemplate(template);
+    }
+
+    public Tool Tool { get; }
+    public CommandLineTemplate Template { get; }
+
+    private static JsonElement ParseInputSchema(string template)
     {
         var requiredProperties = new List<JsonNode?>();
         var properties = new JsonObject();
-        foreach (var property in Template.Parse(template, CreateArgument))
+        foreach (var property in Core.Template.Parse(template, CreateArgument))
             properties.Add(property);
 
         var inputSchema = new JsonObject
