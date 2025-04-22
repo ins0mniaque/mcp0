@@ -41,18 +41,7 @@ internal static class Configurator
 
         var prompts = configuration.Prompts.ToDictionary(
             static entry => entry.Key,
-            static entry =>
-            {
-                var arguments = PromptTemplate.Parse(entry.Value.Template);
-                var prompt = new ModelContextProtocol.Protocol.Types.Prompt
-                {
-                    Name = entry.Key,
-                    Description = entry.Value.Description,
-                    Arguments = arguments.Count is 0 ? null : arguments
-                };
-
-                return (Prompt: prompt, entry.Value.Template);
-            },
+            static entry => new DynamicPrompt(entry.Key, entry.Value.Template, entry.Value.Description),
             StringComparer.Ordinal);
 
         var listPromptsResult = new ListPromptsResult
@@ -68,9 +57,8 @@ internal static class Configurator
                 if (request.Params?.Name is not { } name || !prompts.TryGetValue(name, out var prompt))
                     throw new McpException($"Unknown prompt: {request.Params?.Name}");
 
-                var text = prompt.Template;
-                if (request.Params?.Arguments is { } arguments)
-                    text = Template.Render(text, arguments);
+                var arguments = request.Params?.Arguments ?? ImmutableDictionary<string, JsonElement>.Empty;
+                var text = prompt.Template.Render(arguments);
 
                 return await Task.FromResult(new GetPromptResult
                 {

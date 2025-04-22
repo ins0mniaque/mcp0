@@ -3,14 +3,15 @@
 namespace mcp0.Core;
 
 [TestClass]
-public sealed class PromptTemplateTests
+public sealed class DynamicPromptTests
 {
     [TestMethod]
     public void ParsesArgumentCorrectly()
     {
-        var arguments = PromptTemplate.Parse("{{argument}}");
+        var arguments = new DynamicPrompt(string.Empty, "{{argument}}", null).Prompt.Arguments;
         var expected = new PromptArgument { Name = "argument", Description = null, Required = true };
 
+        Assert.IsNotNull(arguments);
         Assert.AreEqual(1, arguments.Count);
         AreEqual(expected, arguments[0]);
     }
@@ -18,9 +19,10 @@ public sealed class PromptTemplateTests
     [TestMethod]
     public void ParsesRequiredCorrectly()
     {
-        var arguments = PromptTemplate.Parse("{{argument?}}");
+        var arguments = new DynamicPrompt(string.Empty, "{{argument?}}", null).Prompt.Arguments;
         var expected = new PromptArgument { Name = "argument", Description = null };
 
+        Assert.IsNotNull(arguments);
         Assert.AreEqual(1, arguments.Count);
         AreEqual(expected, arguments[0]);
     }
@@ -28,9 +30,10 @@ public sealed class PromptTemplateTests
     [TestMethod]
     public void ParsesDescriptionCorrectly()
     {
-        var arguments = PromptTemplate.Parse("{{argument#desc}}");
+        var arguments = new DynamicPrompt(string.Empty, "{{argument#desc}}", null).Prompt.Arguments;
         var expected = new PromptArgument { Name = "argument", Description = "desc", Required = true };
 
+        Assert.IsNotNull(arguments);
         Assert.AreEqual(1, arguments.Count);
         AreEqual(expected, arguments[0]);
     }
@@ -44,7 +47,7 @@ public sealed class PromptTemplateTests
         These are not arguments: {{}} {{0}} {{ not_argument }} {{0argument}} {{\"escaped\"}}.
         """;
 
-        var arguments = PromptTemplate.Parse(template);
+        var arguments = new DynamicPrompt(string.Empty, template, null).Prompt.Arguments;
         var expected = new PromptArgument[]
         {
             new() { Name = "argument", Description = null, Required = true },
@@ -54,6 +57,7 @@ public sealed class PromptTemplateTests
             new() { Name = "described", Description = "desc" }
         };
 
+        Assert.IsNotNull(arguments);
         Assert.AreEqual(5, arguments.Count);
         for (var index = 0; index < expected.Length; index++)
             AreEqual(expected[index], arguments[index]);
@@ -68,7 +72,7 @@ public sealed class PromptTemplateTests
         These are not arguments: {{}} {{0}} {{ not_argument }} {{0argument}} {{\"escaped\"}}.
         """;
 
-        var actual = Template.Render(template, new Dictionary<string, string>(StringComparer.Ordinal)
+        var actual = new DynamicPromptTemplate(template).Render(new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["argument"] = "value",
             ["optional"] = "option"
