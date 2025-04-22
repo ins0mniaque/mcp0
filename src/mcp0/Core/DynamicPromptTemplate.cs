@@ -14,7 +14,6 @@ internal sealed class DynamicPromptTemplate(Models.Prompt prompt)
                       cancellationToken);
     }
 
-    // TODO: Support options
     private async Task<List<PromptMessage>> Render(IMcpServer server, Dictionary<string, string?> arguments, CancellationToken cancellationToken)
     {
         var messages = new List<SamplingMessage>(prompt.Messages.Length * 2);
@@ -27,7 +26,29 @@ internal sealed class DynamicPromptTemplate(Models.Prompt prompt)
             if (message.ReturnArgument is not { } returnArgument)
                 continue;
 
-            var request = new CreateMessageRequestParams { Messages = messages };
+            var model = message.Options?.Model ?? prompt.Options?.Model;
+            var modelPreferences = model is null ? null : new ModelPreferences
+            {
+                Hints = model.Select(static model => new ModelHint { Name = model }).ToList()
+            };
+
+            var request = new CreateMessageRequestParams
+            {
+                Messages = messages,
+                ModelPreferences = modelPreferences,
+                IncludeContext = (message.Options?.Context ?? prompt.Options?.Context) switch
+                {
+                    Models.PromptContext.None => ContextInclusion.None,
+                    Models.PromptContext.Server => ContextInclusion.ThisServer,
+                    Models.PromptContext.AllServers => ContextInclusion.AllServers,
+                    _ => null
+                },
+                SystemPrompt = message.Options?.SystemPrompt ?? prompt.Options?.SystemPrompt,
+                MaxTokens = message.Options?.MaxTokens ?? prompt.Options?.MaxTokens,
+                StopSequences = message.Options?.StopSequences ?? prompt.Options?.StopSequences,
+                Temperature = message.Options?.Temperature ?? prompt.Options?.Temperature
+            };
+
             var result = await server.RequestSamplingAsync(request, cancellationToken);
 
             messages.Add(new SamplingMessage { Role = Role.Assistant, Content = result.Content });
