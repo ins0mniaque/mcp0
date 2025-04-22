@@ -13,10 +13,10 @@ internal sealed partial record Configuration
     public List<Server>? Servers { get; set; }
 
     [UnorderedEquality]
-    public Dictionary<string, string>? Prompts { get; set; }
+    public Dictionary<string, Prompt>? Prompts { get; set; }
 
     [UnorderedEquality]
-    public Dictionary<string, string>? Resources { get; set; }
+    public Dictionary<string, Resource>? Resources { get; set; }
 
     [UnorderedEquality]
     public Dictionary<string, Tool>? Tools { get; set; }

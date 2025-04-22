@@ -7,6 +7,8 @@ namespace mcp0.Models;
 
 [JsonSourceGenerationOptions(
     Converters = [typeof(PatchConverter),
+                  typeof(PromptConverter),
+                  typeof(ResourceConverter),
                   typeof(ServerConverter),
                   typeof(ServersConverter),
                   typeof(TimeSpanConverter),
@@ -18,6 +20,8 @@ namespace mcp0.Models;
     WriteIndented = true)]
 [JsonSerializable(typeof(Configuration))]
 [JsonSerializable(typeof(Patch))]
+[JsonSerializable(typeof(Prompt))]
+[JsonSerializable(typeof(Resource))]
 [JsonSerializable(typeof(Server))]
 [JsonSerializable(typeof(StdioServer))]
 [JsonSerializable(typeof(SseServer))]

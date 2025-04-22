@@ -15,14 +15,14 @@ internal static partial class UriResource
 
     private static readonly FileExtensionContentTypeProvider mimeTypeProvider = new();
 
-    public static Resource Create(string name, string uri)
+    public static Resource Create(string name, Uri uri, string? description, string? mimeType)
     {
         return new()
         {
             Name = name,
-            Description = CommandLine.ParseComment(ref uri),
-            Uri = Uri.IsWellFormedUriString(uri, UriKind.Absolute) ? uri : new Uri(uri).AbsoluteUri,
-            MimeType = mimeTypeProvider.TryGetContentType(uri, out var mimeType) ? mimeType : null
+            Description = description,
+            Uri = uri.AbsoluteUri,
+            MimeType = mimeType ?? (mimeTypeProvider.TryGetContentType(uri.AbsoluteUri, out mimeType) ? mimeType : null)
         };
     }
 

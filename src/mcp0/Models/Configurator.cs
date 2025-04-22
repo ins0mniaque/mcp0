@@ -43,15 +43,15 @@ internal static class Configurator
             static entry => entry.Key,
             static entry =>
             {
-                var arguments = PromptTemplate.Parse(entry.Value);
-                var prompt = new Prompt
+                var arguments = PromptTemplate.Parse(entry.Value.Template);
+                var prompt = new ModelContextProtocol.Protocol.Types.Prompt
                 {
                     Name = entry.Key,
-                    Description = null,
+                    Description = entry.Value.Description,
                     Arguments = arguments.Count is 0 ? null : arguments
                 };
 
-                return (Prompt: prompt, Template: entry.Value);
+                return (Prompt: prompt, entry.Value.Template);
             },
             StringComparer.Ordinal);
 
@@ -86,7 +86,7 @@ internal static class Configurator
             return null;
 
         var resources = configuration.Resources
-            .Select(entry => UriResource.Create(entry.Key, Posix.ExpandPath(entry.Value)))
+            .Select(entry => UriResource.Create(entry.Key, entry.Value.Uri, entry.Value.Description, entry.Value.MimeType))
             .ToDictionary(static resource => resource.Uri, StringComparer.Ordinal);
 
         var listResourcesResult = new ListResourcesResult

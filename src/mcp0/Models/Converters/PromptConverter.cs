@@ -1,0 +1,23 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace mcp0.Models.Converters;
+
+internal sealed class PromptConverter : JsonConverter<Prompt>
+{
+    public override Prompt Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType is JsonTokenType.String)
+            return Prompt.Parse(reader.GetString() ?? throw new JsonException("Expected a string or object for the prompt configuration"));
+
+        return reader.Deserialize(ConverterContext.Default.Prompt);
+    }
+
+    public override void Write(Utf8JsonWriter writer, Prompt prompt, JsonSerializerOptions options)
+    {
+        if (Prompt.TryFormat(prompt) is { } formatted)
+            writer.WriteStringValue(formatted);
+        else
+            JsonSerializer.Serialize(writer, prompt, ConverterContext.Default.Prompt);
+    }
+}

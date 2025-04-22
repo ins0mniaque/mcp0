@@ -15,9 +15,9 @@ internal sealed class ToolConverter : JsonConverter<Tool>
 
     public override void Write(Utf8JsonWriter writer, Tool tool, JsonSerializerOptions options)
     {
-        if (Tool.Format(tool) is { } formatted)
+        if (Tool.TryFormat(tool) is { } formatted)
             writer.WriteStringValue(formatted);
         else
-            writer.WriteNullValue();
+            JsonSerializer.Serialize(writer, tool, ConverterContext.Default.Tool);
     }
 }

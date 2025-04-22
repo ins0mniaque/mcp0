@@ -2,7 +2,7 @@ using mcp0.Core;
 
 namespace mcp0.Models;
 
-internal sealed class Tool
+internal sealed record Tool
 {
     public required string Command { get; init; }
     public string? Description { get; init; }
@@ -25,7 +25,7 @@ internal sealed class Tool
         return new() { Command = text, Description = description };
     }
 
-    public static string? Format(Tool tool)
+    public static string? TryFormat(Tool tool)
     {
         return CommandLine.FormatComment(tool.Command, tool.Description);
     }

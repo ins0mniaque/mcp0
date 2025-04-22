@@ -39,27 +39,27 @@ internal sealed class NewCommand : CancellableCommand
         {
             Prompts = new(StringComparer.Ordinal)
             {
-                ["prompt"] = "This is a prompt.",
-                ["argument"] = "This is a prompt with an {{argument}}.",
-                ["optional"] = "This is a prompt with an optional {{argument?}}.",
-                ["described"] = "This is a prompt with a described optional {{argument?#Argument description}}."
+                ["prompt"] = new() { Template = "This is a prompt." },
+                ["argument"] = new() { Template = "This is a prompt with an {{argument}}." },
+                ["optional"] = new() { Template = "This is a prompt with an optional {{argument?}}." },
+                ["described"] = new() { Template = "This is a prompt with a described optional {{argument?#Argument description}}." }
             },
             Resources = new(StringComparer.Ordinal)
             {
-                ["file"] = "~/file.txt",
-                ["image"] = "/path/to/image.png # Description for resource",
-                ["random-cat"] = "https://cataas.com/cat # Downloads a random cat picture",
-                ["data-uri"] = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="
+                ["file"] = new() { Uri = new Uri(Posix.ExpandPath("~/file.txt"), UriKind.Absolute) },
+                ["image"] = new() { Uri = new Uri("/path/to/image.png", UriKind.Absolute), Description = "Description for resource" },
+                ["random-cat"] = new() { Uri = new Uri("https://cataas.com/cat", UriKind.Absolute), Description = "Downloads a random cat picture" },
+                ["data-uri"] = new() { Uri = new Uri("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==", UriKind.Absolute) }
             },
             Tools = new(StringComparer.Ordinal)
             {
-                ["ping"] = new Tool { Command = "ping -c 1 {{host}}" },
-                ["add"] = new Tool
+                ["ping"] = new() { Command = "ping -c 1 {{host}}" },
+                ["add"] = new()
                 {
                     Command = "bc -e {{a:integer}}+{{b:integer}}+0{{c?:integer}}",
                     Description = "Add two or three numbers using bc"
                 },
-                ["git-status"] = new Tool
+                ["git-status"] = new()
                 {
                     Command = "git -C {{repo_path#Path to the repository}}",
                     Description = "Gets the status of a git repository"
