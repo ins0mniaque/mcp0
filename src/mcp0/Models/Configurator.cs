@@ -60,10 +60,7 @@ internal static class Configurator
                 var arguments = request.Params?.Arguments ?? ImmutableDictionary<string, JsonElement>.Empty;
                 var messages = await prompt.Template.Render(request.Server, arguments, cancellationToken);
 
-                return await Task.FromResult(new GetPromptResult
-                {
-                    Messages = messages
-                });
+                return new GetPromptResult { Messages = messages };
             }
         };
     }
