@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace mcp0.Models.Converters;
 
+[JsonSerializable(typeof(Configuration))]
+[JsonSerializable(typeof(StdioServer))]
+[JsonSerializable(typeof(SseServer))]
 [JsonSourceGenerationOptions(
     Converters = [typeof(PromptMessagesConverter), typeof(TimeSpanConverter)],
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
@@ -10,15 +13,4 @@ namespace mcp0.Models.Converters;
     ReadCommentHandling = JsonCommentHandling.Skip,
     UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
     WriteIndented = true)]
-[JsonSerializable(typeof(Patch))]
-[JsonSerializable(typeof(Prompt))]
-[JsonSerializable(typeof(PromptMessage))]
-[JsonSerializable(typeof(PromptOptions))]
-[JsonSerializable(typeof(Resource))]
-[JsonSerializable(typeof(Server))]
-[JsonSerializable(typeof(StdioServer))]
-[JsonSerializable(typeof(SseServer))]
-[JsonSerializable(typeof(Tool))]
-[JsonSerializable(typeof(string[]))]
-[JsonSerializable(typeof(Dictionary<string, string>))]
 internal sealed partial class ConverterContext : JsonSerializerContext;

@@ -5,6 +5,9 @@ using mcp0.Models.Converters;
 
 namespace mcp0.Models;
 
+[JsonSerializable(typeof(Configuration))]
+[JsonSerializable(typeof(StdioServer))]
+[JsonSerializable(typeof(SseServer))]
 [JsonSourceGenerationOptions(
     Converters = [typeof(PatchConverter),
                   typeof(PromptConverter),
@@ -19,16 +22,4 @@ namespace mcp0.Models;
     ReadCommentHandling = JsonCommentHandling.Skip,
     UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
     WriteIndented = true)]
-[JsonSerializable(typeof(Configuration))]
-[JsonSerializable(typeof(Patch))]
-[JsonSerializable(typeof(Prompt))]
-[JsonSerializable(typeof(PromptMessage))]
-[JsonSerializable(typeof(PromptOptions))]
-[JsonSerializable(typeof(Resource))]
-[JsonSerializable(typeof(Server))]
-[JsonSerializable(typeof(StdioServer))]
-[JsonSerializable(typeof(SseServer))]
-[JsonSerializable(typeof(Tool))]
-[JsonSerializable(typeof(string[]))]
-[JsonSerializable(typeof(Dictionary<string, string>))]
 internal sealed partial class ModelContext : JsonSerializerContext;
