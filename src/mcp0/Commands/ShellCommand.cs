@@ -7,6 +7,7 @@ using mcp0.Mcp;
 using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
+using ModelContextProtocol.Protocol.Types;
 
 namespace mcp0.Commands;
 
@@ -46,6 +47,10 @@ internal sealed class ShellCommand : ProxyCommand
 
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
     {
+        await using var server = new McpSamplingServer(EmulateSampling);
+
+        proxy.Server = server;
+
         Terminal.WriteLine($"Connected to {proxy.Clients.Count} {(proxy.Clients.Count is 1 ? "server" : "servers")}");
         Terminal.Cursor.Show();
 
@@ -154,6 +159,15 @@ internal sealed class ShellCommand : ProxyCommand
             return null;
 
         return element;
+    }
+
+    private static string EmulateSampling(CreateMessageRequestParams? request)
+    {
+        var model = "model";
+        if (request?.ModelPreferences?.Hints is { } hints && hints.Count is not 0)
+            model = hints[0].Name ?? model;
+
+        return $"[Emulated sampling from {model}]";
     }
 
     private static void HandleException(Exception exception)
