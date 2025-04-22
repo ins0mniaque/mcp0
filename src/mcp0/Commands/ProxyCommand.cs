@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 using mcp0.Core;
@@ -36,6 +37,7 @@ internal abstract partial class ProxyCommand : CancellableCommand
 
     protected abstract Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken);
 
+    [SuppressMessage("ReSharper", "AccessToDisposedClosure", Justification = "Closure is disposed before the captured variable is disposed")]
     protected async Task ConnectAndRun(InvocationContext context, LogLevel logLevel, CancellationToken cancellationToken)
     {
         var paths = PathsArgument.GetValue(context);
@@ -67,7 +69,6 @@ internal abstract partial class ProxyCommand : CancellableCommand
         await using var transport = serverOptions is null ? null : new ClientServerTransport(serverInfo.Name, loggerFactory);
         await using var serverTask = serverOptions is null ? null : new DisposableTask(async ct =>
         {
-            // ReSharper disable once AccessToDisposedClosure
             await using var server = McpServerFactory.Create(transport!.ServerTransport, serverOptions, loggerFactory, serviceProvider);
 
             await server.RunAsync(ct);
@@ -95,11 +96,7 @@ internal abstract partial class ProxyCommand : CancellableCommand
 
         using var watchers = new CompositeDisposable<FileSystemWatcher>(noReload ? [] : paths.Select(CreateWatcher));
         foreach (var watcher in watchers)
-        {
-            // ReSharper disable AccessToDisposedClosure
             watcher.Changed += async (_, _) => await Reload(proxy, paths, transport?.ClientTransport, loggerFactory, cancellationToken);
-            // ReSharper restore AccessToDisposedClosure
-        }
 
         await proxy.ConnectAsync(clientTransports, cancellationToken);
 
