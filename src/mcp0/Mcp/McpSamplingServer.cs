@@ -7,6 +7,7 @@ using ModelContextProtocol.Server;
 
 namespace mcp0.Mcp;
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 [SuppressMessage("ReSharper", "UnassignedGetOnlyAutoProperty", Justification = "Unused IMcpServer property")]
 internal sealed class McpSamplingServer(Func<CreateMessageRequestParams?, string> sample) : IMcpServer
 {
@@ -23,16 +24,22 @@ internal sealed class McpSamplingServer(Func<CreateMessageRequestParams?, string
 
         var requestParams = request.Params?.Deserialize(McpJsonSerializerContext.Default.CreateMessageRequestParams);
 
-        return await Task.FromResult(new JsonRpcResponse
+        var model = "model";
+        if (requestParams?.ModelPreferences?.Hints is { } hints && hints.Count is not 0)
+            model = hints[0].Name ?? model;
+
+        var result = new CreateMessageResult
+        {
+            Model = model,
+            Role = Role.Assistant,
+            Content = new() { Text = sample(requestParams) }
+        };
+
+        return new()
         {
             Id = request.Id,
-            Result = JsonSerializer.SerializeToNode(new CreateMessageResult
-            {
-                Model = "model",
-                Role = Role.Assistant,
-                Content = new() { Text = sample(requestParams) }
-            }, McpJsonSerializerContext.Default.CreateMessageResult),
-        });
+            Result = JsonSerializer.SerializeToNode(result, McpJsonSerializerContext.Default.CreateMessageResult),
+        };
     }
 
     public Task SendMessageAsync(JsonRpcMessage message, CancellationToken cancellationToken = default) => throw new NotImplementedException();
