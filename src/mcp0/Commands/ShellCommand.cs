@@ -18,6 +18,8 @@ internal sealed class ShellCommand : ProxyCommand
     public ShellCommand() : base("shell", "Run an interactive shell on the MCP server built from one or more configuration files")
     {
         AddAlias("sh");
+
+        Sampling = new EmulatedSamplingCapability();
     }
 
     private bool reload;
@@ -47,10 +49,6 @@ internal sealed class ShellCommand : ProxyCommand
 
     protected override async Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken)
     {
-        await using var server = new McpSamplingServer(EmulateSampling);
-
-        proxy.Server = server;
-
         Terminal.WriteLine($"Connected to {proxy.Clients.Count} {(proxy.Clients.Count is 1 ? "server" : "servers")}");
         Terminal.Cursor.Show();
 

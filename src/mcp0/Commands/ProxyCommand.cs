@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol.Transport;
+using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
 namespace mcp0.Commands;
@@ -35,6 +36,8 @@ internal abstract partial class ProxyCommand : CancellableCommand
         Arity = ArgumentArity.ZeroOrMore
     };
 
+    protected SamplingCapability? Sampling { get; set; }
+
     protected abstract Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken);
 
     [SuppressMessage("ReSharper", "AccessToDisposedClosure", Justification = "Closure is disposed before the captured variable is disposed")]
@@ -49,6 +52,7 @@ internal abstract partial class ProxyCommand : CancellableCommand
 
         var proxyOptions = new McpProxyOptions
         {
+            Sampling = Sampling,
             LoggingLevel = configurationRoot?.GetLogLevel()?.ToLoggingLevel(),
             SetLoggingLevelCallback = level => configurationRoot?.SetLogLevel(level.ToLogLevel())
         };

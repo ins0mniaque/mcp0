@@ -30,7 +30,7 @@ internal sealed partial class McpProxy : IAsyncDisposable
         this.loggerFactory = loggerFactory;
     }
 
-    public IMcpServer? Server { get; internal set; }
+    public IMcpServer? Server { get; private set; }
     public IReadOnlyList<IMcpClient> Clients { get; private set; } = [];
     public McpProxyRegistry<Prompt> Prompts { get; }
     public McpProxyRegistry<Resource> Resources { get; }

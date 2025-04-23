@@ -1,14 +1,18 @@
-﻿using mcp0.Mcp;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 
+using mcp0.Mcp;
+
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol.Messages;
 using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol.Server;
 
 namespace mcp0.Core;
 
 [TestClass]
 public sealed class DynamicPromptTests
 {
-    private const string ModelResponse = "MODEL RESPONSE";
-
     [TestMethod]
     public void ParsesArgumentCorrectly()
     {
@@ -80,7 +84,7 @@ public sealed class DynamicPromptTests
         These are not arguments: {{}} {{0}} {{ not_argument }} {{0argument}} {{\"escaped\"}}.
         """;
 
-        await using var server = new McpSamplingServer(static _ => ModelResponse);
+        await using var server = new McpSamplingServer();
 
         var prompt = new Models.Prompt { Messages = [new() { Template = template }] };
         var actual = await new DynamicPromptTemplate(prompt).Render(server, new Dictionary<string, string>(StringComparer.Ordinal)
@@ -103,7 +107,7 @@ public sealed class DynamicPromptTests
     [TestMethod]
     public async Task RendersDynamicTemplateCorrectly()
     {
-        await using var server = new McpSamplingServer(static _ => ModelResponse);
+        await using var server = new McpSamplingServer();
 
         var document = "This is a multi-line document.\nIt contains multiple lines.\nAnd some text.";
         var prompt = new Models.Prompt
@@ -141,5 +145,40 @@ public sealed class DynamicPromptTests
         Assert.AreEqual(expected.Name, actual.Name);
         Assert.AreEqual(expected.Description, actual.Description);
         Assert.AreEqual(expected.Required, actual.Required);
+    }
+
+    private const string ModelResponse = "[Emulated sampling from model]";
+
+    [SuppressMessage("ReSharper", "UnassignedGetOnlyAutoProperty", Justification = "Unused IMcpServer property")]
+    private sealed class McpSamplingServer : IMcpServer
+    {
+        public ClientCapabilities? ClientCapabilities { get; } = new() { Sampling = new EmulatedSamplingCapability() };
+        public Implementation? ClientInfo { get; }
+        public McpServerOptions ServerOptions { get; } = new();
+        public IServiceProvider? Services { get; }
+        public LoggingLevel? LoggingLevel { get; }
+
+        public async Task<JsonRpcResponse> SendRequestAsync(JsonRpcRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request.Method is not RequestMethods.SamplingCreateMessage)
+                throw new NotImplementedException();
+
+            var samplingHandler = ClientCapabilities?.Sampling?.SamplingHandler ?? throw new InvalidOperationException("Sampling handler is not configured");
+            var requestParams = request.Params?.Deserialize(McpJsonSerializerContext.Default.CreateMessageRequestParams);
+            var progress = new Progress<ProgressNotificationValue>();
+            var result = await samplingHandler(requestParams, progress, cancellationToken);
+
+            return new()
+            {
+                Id = request.Id,
+                Result = JsonSerializer.SerializeToNode(result, McpJsonSerializerContext.Default.CreateMessageResult),
+            };
+        }
+
+        public Task SendMessageAsync(JsonRpcMessage message, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public IAsyncDisposable RegisterNotificationHandler(string method, Func<JsonRpcNotification, CancellationToken, ValueTask> handler) => throw new NotImplementedException();
+        public Task RunAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }

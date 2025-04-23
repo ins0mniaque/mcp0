@@ -28,7 +28,7 @@ internal sealed partial class McpProxy
             [NotificationMethods.ResourceListChangedNotification] = async (_, cancellationToken) => await InitializeResources(cancellationToken),
             [NotificationMethods.ToolListChangedNotification] = async (_, cancellationToken) => await InitializeTools(cancellationToken)
         },
-        Sampling = new()
+        Sampling = proxyOptions?.Sampling ?? new()
         {
             SamplingHandler = async (request, _, cancellationToken) =>
             {
