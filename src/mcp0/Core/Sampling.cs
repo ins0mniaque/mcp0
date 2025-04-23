@@ -13,6 +13,11 @@ internal sealed class Sampling : IDisposable
 {
     private IChatClient? chatClient;
 
+    public void ConfigureDefault()
+    {
+        ChatClient = null;
+    }
+
     public void ConfigureOllama(Uri? endpoint, string? model)
     {
         ChatClient = new OllamaChatClient(endpoint ?? new Uri("http://localhost:11434/"), model ?? "llama3.1");
