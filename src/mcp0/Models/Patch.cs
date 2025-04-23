@@ -22,7 +22,7 @@ internal sealed record Patch
 
         return new()
         {
-            Description = Formattable.Parse(ref text, "#"),
+            Description = Formattable.ParseAtEnd(ref text, " #"),
             Name = text.Length is 0 ? null : text
         };
     }
@@ -32,6 +32,6 @@ internal sealed record Patch
         if (patch == Remove)
             return null;
 
-        return Formattable.Format(patch.Name, patch.Description, "#");
+        return Formattable.Format(patch.Name, patch.Description, " # ");
     }
 }

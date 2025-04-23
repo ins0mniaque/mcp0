@@ -10,32 +10,33 @@ internal sealed record PromptMessage
 
     public static PromptMessage Parse(string text)
     {
-        return TryParse(text) ?? throw new FormatException($"Invalid prompt: {text}");
+        return TryParse(text) ?? throw new FormatException($"Invalid prompt message: {text}");
     }
 
     public static PromptMessage? TryParse(string text)
     {
-        // TODO: Support formattable options
         text = text.Trim();
         if (text.Length is 0)
             return null;
 
         return new()
         {
-            ReturnArgument = Formattable.Parse(ref text, "=>")?.TrimStart('{').TrimEnd('}'),
+            ReturnArgument = Formattable.ParseAtEnd(ref text, "=>")?.TrimStart('{').TrimEnd('}'),
             Template = text
         };
     }
 
     public static string? TryFormat(PromptMessage message)
     {
-        // TODO: Support formattable options
-        if (message.Options is not null)
+        var options = message.Options;
+        var formattable = options is null;
+        if (!formattable)
             return null;
 
-        if (message.ReturnArgument is null)
-            return message.Template;
+        var formatted = message.Template;
+        if (message.ReturnArgument is not null)
+            formatted = Formattable.Format(formatted, $"{{{{{message.ReturnArgument}}}}}", " => ");
 
-        return Formattable.Format(message.Template, $"{{{{{message.ReturnArgument}}}}}", "=>");
+        return formatted;
     }
 }

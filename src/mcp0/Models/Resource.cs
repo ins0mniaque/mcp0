@@ -23,7 +23,7 @@ internal sealed record Resource
         if (text.Length is 0)
             return null;
 
-        var description = Formattable.Parse(ref text, "#");
+        var description = Formattable.ParseAtEnd(ref text, " #");
         if (text.Length is 0 || ResourceUriConverter.TryConvert(text) is not { } uri)
             return null;
 
@@ -35,6 +35,6 @@ internal sealed record Resource
         if (resource.MimeType is not null)
             return null;
 
-        return Formattable.Format(ResourceUriConverter.Convert(resource.Uri), resource.Description, "#");
+        return Formattable.Format(ResourceUriConverter.Convert(resource.Uri), resource.Description, " # ");
     }
 }

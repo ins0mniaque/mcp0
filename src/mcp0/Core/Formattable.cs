@@ -2,24 +2,50 @@ namespace mcp0.Core;
 
 internal static class Formattable
 {
-    public static string? Parse(ref string text, ReadOnlySpan<char> separator)
+    public static string? ParseAtStart(ref string text, ReadOnlySpan<char> separator)
     {
-        if (text.Length is 0)
+        var span = text.AsSpan();
+        if (span.Length is 0)
             return null;
 
-        var span = text.AsSpan();
-        if (span.StartsWith(separator))
+        var index = span.IndexOf(separator, StringComparison.Ordinal);
+        if (index is not -1)
         {
-            text = string.Empty;
-            return span[separator.Length..].Trim().ToString();
+            text = span[(index + separator.Length)..].Trim().ToString();
+            return span[..index].Trim().ToString();
         }
 
-        var index = span.LastIndexOf([' ', .. separator], StringComparison.Ordinal);
-        if (index is -1)
+        var trimmed = separator.TrimEnd();
+        if (span.EndsWith(trimmed, StringComparison.Ordinal))
+        {
+            text = string.Empty;
+            return span[..trimmed.Length].Trim().ToString();
+        }
+
+        return null;
+    }
+
+    public static string? ParseAtEnd(ref string text, ReadOnlySpan<char> separator)
+    {
+        var span = text.AsSpan();
+        if (span.Length is 0)
             return null;
 
-        text = span[..index].Trim().ToString();
-        return span[(index + separator.Length + 1)..].Trim().ToString();
+        var index = span.LastIndexOf(separator, StringComparison.Ordinal);
+        if (index is not -1)
+        {
+            text = span[..index].Trim().ToString();
+            return span[(index + separator.Length)..].Trim().ToString();
+        }
+
+        var trimmed = separator.TrimStart();
+        if (span.StartsWith(trimmed, StringComparison.Ordinal))
+        {
+            text = string.Empty;
+            return span[trimmed.Length..].Trim().ToString();
+        }
+
+        return null;
     }
 
     public static string? Format(string? text, string? value, ReadOnlySpan<char> separator)
@@ -28,8 +54,8 @@ internal static class Formattable
             return text;
 
         if (text is null || text.Length is 0)
-            return $"{separator} {value}";
+            return $"{separator.TrimStart()}{value}";
 
-        return $"{text} {separator} {value}";
+        return $"{text}{separator}{value}";
     }
 }
