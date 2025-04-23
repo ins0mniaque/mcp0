@@ -36,7 +36,7 @@ internal abstract partial class ProxyCommand : CancellableCommand
         Arity = ArgumentArity.ZeroOrMore
     };
 
-    protected SamplingCapability? Sampling { get; set; }
+    protected SamplingCapability? DefaultSampling { get; init; }
 
     protected abstract Task Run(McpProxy proxy, InvocationContext context, CancellationToken cancellationToken);
 
@@ -49,15 +49,17 @@ internal abstract partial class ProxyCommand : CancellableCommand
 
         var serviceProvider = context.GetServiceProvider();
         var configurationRoot = serviceProvider.GetService<IConfigurationRoot>();
-
         var proxyOptions = new McpProxyOptions
         {
-            Sampling = Sampling,
+            Sampling = DefaultSampling,
             LoggingLevel = configurationRoot?.GetLogLevel()?.ToLoggingLevel(),
             SetLoggingLevelCallback = level => configurationRoot?.SetLogLevel(level.ToLogLevel())
         };
 
         configurationRoot?.TrySetLogLevel(logLevel);
+
+        if (serviceProvider.GetService<Sampling>()?.ChatClient is { } chatClient)
+            proxyOptions.Sampling = new() { SamplingHandler = chatClient.CreateSamplingWithModelHandler() };
 
         var configuration = await Configuration.Load(paths, cancellationToken);
 

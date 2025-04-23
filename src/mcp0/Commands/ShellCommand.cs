@@ -7,7 +7,6 @@ using mcp0.Mcp;
 using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol;
-using ModelContextProtocol.Protocol.Types;
 
 namespace mcp0.Commands;
 
@@ -19,7 +18,7 @@ internal sealed class ShellCommand : ProxyCommand
     {
         AddAlias("sh");
 
-        Sampling = new EmulatedSamplingCapability();
+        DefaultSampling = new() { SamplingHandler = Sampling.EmulatedSamplingHandler };
     }
 
     private bool reload;
@@ -157,15 +156,6 @@ internal sealed class ShellCommand : ProxyCommand
             return null;
 
         return element;
-    }
-
-    private static string EmulateSampling(CreateMessageRequestParams? request)
-    {
-        var model = "model";
-        if (request?.ModelPreferences?.Hints is { } hints && hints.Count is not 0)
-            model = hints[0].Name ?? model;
-
-        return $"[Emulated sampling from {model}]";
     }
 
     private static void HandleException(Exception exception)

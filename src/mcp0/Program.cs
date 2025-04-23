@@ -3,6 +3,7 @@ using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 
 using mcp0.Commands;
+using mcp0.Core;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,8 @@ services.AddLogging(logging =>
 });
 
 services.AddHttpClient();
+
+services.AddSingleton<Sampling>();
 
 services.AddSingleton<RootCommand, Root>();
 services.AddSingleton(Root.ConfigureCommandLine);

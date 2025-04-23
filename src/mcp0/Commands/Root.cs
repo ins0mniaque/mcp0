@@ -27,6 +27,7 @@ internal sealed class Root : RootCommand
     public static void ConfigureCommandLine(CommandLineBuilder commandLine, IServiceProvider serviceProvider)
     {
         commandLine.AddMiddleware(LogLevelMiddleware)
+                   .AddMiddleware(SamplingMiddleware)
                    .CancelOnProcessTermination()
                    .RegisterWithDotnetSuggest()
                    .UseEnvironmentVariableDirective()
@@ -45,6 +46,17 @@ internal sealed class Root : RootCommand
         var configurationRoot = serviceProvider.GetService<IConfigurationRoot>();
 
         configurationRoot?.SetLogLevel(context.ParseResult.GetValueForOption(LogLevelOption));
+
+        await next(context);
+    }
+
+    private static async Task SamplingMiddleware(InvocationContext context, Func<InvocationContext, Task> next)
+    {
+        var serviceProvider = context.GetServiceProvider();
+        var sampling = serviceProvider.GetService<Sampling>();
+
+        // TODO: Add sampling options
+        // sampling?.ConfigureOllama(null, null);
 
         await next(context);
     }

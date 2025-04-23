@@ -147,12 +147,12 @@ public sealed class DynamicPromptTests
         Assert.AreEqual(expected.Required, actual.Required);
     }
 
-    private const string ModelResponse = "[Emulated sampling from model]";
+    private const string ModelResponse = "[Emulated sampling from default model]";
 
     [SuppressMessage("ReSharper", "UnassignedGetOnlyAutoProperty", Justification = "Unused IMcpServer property")]
     private sealed class McpSamplingServer : IMcpServer
     {
-        public ClientCapabilities? ClientCapabilities { get; } = new() { Sampling = new EmulatedSamplingCapability() };
+        public ClientCapabilities? ClientCapabilities { get; } = new() { Sampling = new() };
         public Implementation? ClientInfo { get; }
         public McpServerOptions ServerOptions { get; } = new();
         public IServiceProvider? Services { get; }
@@ -163,10 +163,9 @@ public sealed class DynamicPromptTests
             if (request.Method is not RequestMethods.SamplingCreateMessage)
                 throw new NotImplementedException();
 
-            var samplingHandler = ClientCapabilities?.Sampling?.SamplingHandler ?? throw new InvalidOperationException("Sampling handler is not configured");
             var requestParams = request.Params?.Deserialize(McpJsonSerializerContext.Default.CreateMessageRequestParams);
             var progress = new Progress<ProgressNotificationValue>();
-            var result = await samplingHandler(requestParams, progress, cancellationToken);
+            var result = await Sampling.EmulatedSamplingHandler(requestParams, progress, cancellationToken);
 
             return new()
             {

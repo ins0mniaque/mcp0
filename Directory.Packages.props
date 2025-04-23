@@ -10,6 +10,8 @@
   <ItemGroup>
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Ollama" Version="9.4.0-preview.1.25207.5" />
+    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="9.3.0-preview.1.25161.3" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.1.0-preview.10" />
     <PackageVersion Include="Generator.Equals" Version="3.2.0" />
   </ItemGroup>

@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using Microsoft.Extensions.AI;
+
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol.Types;
@@ -8,6 +10,45 @@ namespace mcp0.Mcp;
 
 internal static class McpClientExtensions
 {
+    public static Func<CreateMessageRequestParams?, IProgress<ProgressNotificationValue>, CancellationToken, ValueTask<CreateMessageResult>> CreateSamplingWithModelHandler(
+        this IChatClient chatClient)
+    {
+        var defaultSamplingHandler = chatClient.CreateSamplingHandler();
+
+        return async (request, progress, cancellationToken) =>
+        {
+            var samplingHandler = defaultSamplingHandler;
+            if (request?.ModelPreferences?.Hints is { Count: not 0 } hints && hints[0].Name is { } model)
+                samplingHandler = new ChatClientWithModel(chatClient, model).CreateSamplingHandler();
+
+            return await samplingHandler(request, progress, cancellationToken);
+        };
+    }
+
+    private sealed class ChatClientWithModel(IChatClient chatClient, string modelId) : IChatClient
+    {
+        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options, CancellationToken cancellationToken)
+        {
+            return chatClient.GetResponseAsync(messages, AddModel(options), cancellationToken);
+        }
+
+        public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options, CancellationToken cancellationToken)
+        {
+            return chatClient.GetStreamingResponseAsync(messages, AddModel(options), cancellationToken);
+        }
+
+        private ChatOptions AddModel(ChatOptions? options)
+        {
+            options ??= new();
+            options.ModelId ??= modelId;
+
+            return options;
+        }
+
+        public object? GetService(Type serviceType, object? serviceKey) => chatClient.GetService(serviceType, serviceKey);
+        public void Dispose() => chatClient.Dispose();
+    }
+
     public static Task<IList<McpClientPrompt>> SafeListPromptsAsync(
         this IMcpClient client, CancellationToken cancellationToken = default)
     {
