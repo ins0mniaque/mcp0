@@ -46,7 +46,7 @@ internal sealed class DynamicPromptTemplate(Models.Prompt prompt)
                     _ => null
                 },
                 SystemPrompt = message.Options?.SystemPrompt ?? prompt.Options?.SystemPrompt,
-                MaxTokens = message.Options?.MaxTokens ?? prompt.Options?.MaxTokens,
+                MaxTokens = message.Options?.MaxTokens ?? prompt.Options?.MaxTokens ?? -1,
                 StopSequences = message.Options?.StopSequences ?? prompt.Options?.StopSequences,
                 Temperature = message.Options?.Temperature ?? prompt.Options?.Temperature
             };
