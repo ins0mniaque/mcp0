@@ -16,6 +16,8 @@ internal sealed class DynamicPromptTemplate(Models.Prompt prompt)
 
     private async Task<List<PromptMessage>> Render(IMcpServer server, Dictionary<string, string?> arguments, CancellationToken cancellationToken)
     {
+        FormatArguments(arguments);
+
         var messages = new List<SamplingMessage>(prompt.Messages.Length * 2);
 
         foreach (var message in prompt.Messages)
@@ -53,10 +55,27 @@ internal sealed class DynamicPromptTemplate(Models.Prompt prompt)
 
             messages.Add(new SamplingMessage { Role = Role.Assistant, Content = result.Content });
 
-            arguments[returnArgument] = result.Content.Text;
+            arguments[returnArgument] = FormatArgument(returnArgument, result.Content.Text);
         }
 
         return messages.Select(static message => new PromptMessage { Role = message.Role, Content = message.Content })
                        .ToList();
+    }
+
+    private static void FormatArguments(Dictionary<string, string?> arguments)
+    {
+        foreach (var entry in arguments.ToList())
+            arguments[entry.Key] = FormatArgument(entry.Key, entry.Value);
+    }
+
+    private static string? FormatArgument(string key, string? argument)
+    {
+        if (argument is null)
+            return null;
+
+        if (argument.Contains('\n'))
+            return $"\n<{key}>\n{argument}\n</{key}>\n";
+
+        return $"<{key}>{argument}</{key}>";
     }
 }

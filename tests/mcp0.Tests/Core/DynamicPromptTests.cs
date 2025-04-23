@@ -91,7 +91,7 @@ public sealed class DynamicPromptTests
 
         var expected =
         """
-        These are arguments: value {{_underscore}} {{numbered0}} option .
+        These are arguments: <argument>value</argument> {{_underscore}} {{numbered0}} <optional>option</optional> .
         These are not arguments: {{}} {{0}} {{ not_argument }} {{0argument}} {{\"escaped\"}}.
         """;
 
@@ -105,7 +105,7 @@ public sealed class DynamicPromptTests
     {
         await using var server = new McpSamplingServer(static _ => ModelResponse);
 
-        var document = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+        var document = "This is a multi-line document.\nIt contains multiple lines.\nAnd some text.";
         var prompt = new Models.Prompt
         {
             Messages =
@@ -128,11 +128,11 @@ public sealed class DynamicPromptTests
         Assert.AreEqual(Role.Assistant, actual[3].Role);
         Assert.AreEqual(Role.User, actual[4].Role);
         Assert.AreEqual(Role.Assistant, actual[5].Role);
-        Assert.AreEqual($"Summarize this document: {document}", actual[0].Content.Text);
+        Assert.AreEqual($"Summarize this document: \n<document>\n{document}\n</document>\n", actual[0].Content.Text);
         Assert.AreEqual(ModelResponse, actual[1].Content.Text);
-        Assert.AreEqual($"Given this document: {document} and summary: {ModelResponse}, provide feedback on the summary.", actual[2].Content.Text);
+        Assert.AreEqual($"Given this document: \n<document>\n{document}\n</document>\n and summary: <summary>{ModelResponse}</summary>, provide feedback on the summary.", actual[2].Content.Text);
         Assert.AreEqual(ModelResponse, actual[3].Content.Text);
-        Assert.AreEqual($"Given this document: {document}, summary: {ModelResponse} and feedback: {ModelResponse}, update on the summary based on the feedback.", actual[4].Content.Text);
+        Assert.AreEqual($"Given this document: \n<document>\n{document}\n</document>\n, summary: <summary>{ModelResponse}</summary> and feedback: <feedback>{ModelResponse}</feedback>, update on the summary based on the feedback.", actual[4].Content.Text);
         Assert.AreEqual(ModelResponse, actual[5].Content.Text);
     }
 
