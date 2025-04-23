@@ -7,16 +7,16 @@ namespace mcp0.Core;
 
 internal sealed class CommandLineTool
 {
-    public CommandLineTool(string name, string template, string? description)
+    public CommandLineTool(string name, Models.Tool tool)
     {
         Tool = new()
         {
             Name = name,
-            Description = description,
-            InputSchema = ParseInputSchema(template)
+            Description = tool.Description,
+            InputSchema = ParseInputSchema(tool.Command)
         };
 
-        Template = new CommandLineTemplate(template);
+        Template = new CommandLineTemplate(tool.Command);
     }
 
     public Tool Tool { get; }

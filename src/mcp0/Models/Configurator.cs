@@ -71,7 +71,7 @@ internal static class Configurator
             return null;
 
         var resources = configuration.Resources
-            .Select(entry => new UriResource(entry.Key, entry.Value.Uri, entry.Value.MimeType, entry.Value.Description))
+            .Select(entry => new UriResource(entry.Key, entry.Value))
             .ToDictionary(static resource => resource.Resource.Uri, StringComparer.Ordinal);
 
         var listResourcesResult = new ListResourcesResult
@@ -104,7 +104,7 @@ internal static class Configurator
 
         var tools = configuration.Tools.ToDictionary(
             static entry => entry.Key,
-            static entry => new CommandLineTool(entry.Key, entry.Value.Command, entry.Value.Description),
+            static entry => new CommandLineTool(entry.Key, entry.Value),
             StringComparer.Ordinal);
 
         var listToolsResult = new ListToolsResult
