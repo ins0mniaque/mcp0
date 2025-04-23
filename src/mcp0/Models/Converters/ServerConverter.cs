@@ -1,13 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace mcp0.Models.Converters;
 
 internal sealed class ServerConverter : JsonConverter<Server>
 {
-    private static bool IsServerProperty(string propertyName) => propertyName is "name";
-    private static bool IsSseServerProperty(string propertyName) => propertyName is "url" or "headers" or "connectionTimeout";
-
     public override bool CanConvert(Type typeToConvert) => typeof(Server).IsAssignableFrom(typeToConvert);
 
     public override Server Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -57,5 +55,24 @@ internal sealed class ServerConverter : JsonConverter<Server>
         }
         else
             throw new JsonException($"Unknown server type: {server.GetType().Name}");
+    }
+
+    private static bool IsServerProperty(string propertyName) => Array.BinarySearch(ServerProperties, propertyName, StringComparer.Ordinal) >= 0;
+    private static bool IsSseServerProperty(string propertyName) => Array.BinarySearch(SseServerProperties, propertyName, StringComparer.Ordinal) >= 0;
+
+    private static string[]? serverProperties;
+    private static string[] ServerProperties => serverProperties ??= GetProperties(ConverterContext.Default.Server);
+    private static string[]? sseServerProperties;
+    private static string[] SseServerProperties => sseServerProperties ??= GetProperties(ConverterContext.Default.SseServer);
+
+    private static string[] GetProperties(JsonTypeInfo jsonTypeInfo)
+    {
+        var properties = jsonTypeInfo.Properties.Where(property => property.DeclaringType == jsonTypeInfo.Type)
+                                                .Select(static property => property.Name)
+                                                .ToArray();
+
+        Array.Sort(properties, StringComparer.Ordinal);
+
+        return properties;
     }
 }
