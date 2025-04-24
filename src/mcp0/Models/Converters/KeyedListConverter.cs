@@ -9,7 +9,7 @@ internal abstract class KeyedListConverter<T> : JsonConverter<List<T>>
     protected abstract JsonTypeInfo<T> JsonTypeInfo { get; }
 
     protected abstract Func<T, string?> GetKey { get; }
-    protected abstract Func<T, string?, T> SetKey { get; }
+    protected abstract Action<T, string?> SetKey { get; }
 
     public override List<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -30,18 +30,19 @@ internal abstract class KeyedListConverter<T> : JsonConverter<List<T>>
         {
             var list = new List<T>();
 
+            reader.Read();
             while (reader.TokenType is not JsonTokenType.EndObject)
             {
-                reader.Read();
                 var propertyName = reader.GetPropertyName();
 
                 reader.Read();
                 var element = reader.Deserialize(JsonTypeInfo);
 
-                list.Add(SetKey(element, propertyName));
-            }
+                SetKey(element, propertyName);
+                list.Add(element);
 
-            reader.Read();
+                reader.Read();
+            }
 
             return list;
         }

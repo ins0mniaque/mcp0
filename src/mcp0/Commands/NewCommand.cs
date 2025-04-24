@@ -51,20 +51,22 @@ internal sealed class NewCommand : CancellableCommand
                 ["random-cat"] = new() { Uri = new Uri("https://cataas.com/cat", UriKind.Absolute), Description = "Downloads a random cat picture" },
                 ["data-uri"] = new() { Uri = new Uri("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==", UriKind.Absolute) }
             },
-            Tools = new(StringComparer.Ordinal)
-            {
-                ["ping"] = new() { Command = "ping -c 1 {{host}}" },
-                ["add"] = new()
+            Tools =
+            [
+                new() { Name = "ping", Command = "ping -c 1 {{host}}" },
+                new()
                 {
+                    Name = "add",
                     Command = "bc -e {{a:integer}}+{{b:integer}}+0{{c?:integer}}",
                     Description = "Add two or three numbers using bc"
                 },
-                ["git-status"] = new()
+                new()
                 {
+                    Name = "git-status",
                     Command = "git -C {{repo_path#Path to the repository}}",
                     Description = "Gets the status of a git repository"
                 },
-            },
+            ],
             Servers =
             [
                 new StdioServer

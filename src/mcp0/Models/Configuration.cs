@@ -19,7 +19,7 @@ internal sealed partial record Configuration
     public Dictionary<string, Resource>? Resources { get; set; }
 
     [UnorderedEquality]
-    public Dictionary<string, Tool>? Tools { get; set; }
+    public List<Tool>? Tools { get; set; }
 
     [UnorderedEquality]
     public Dictionary<string, Patch>? Patch { get; set; }
@@ -33,11 +33,12 @@ internal sealed partial record Configuration
         Patch = Merge(Patch, configuration.Patch);
     }
 
-    public static Configuration Parse(string[]? servers)
+    public static Configuration Parse(string[]? servers, string[]? tools)
     {
         return new()
         {
-            Servers = servers?.Select(Server.Parse).ToList()
+            Servers = servers?.Select(Server.Parse).ToList(),
+            Tools = tools?.Select(Tool.Parse).ToList()
         };
     }
 

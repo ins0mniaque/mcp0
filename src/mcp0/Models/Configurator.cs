@@ -104,8 +104,8 @@ internal static class Configurator
             return null;
 
         var tools = configuration.Tools.ToDictionary(
-            static entry => entry.Key,
-            static entry => new CommandLineTool(entry.Key, entry.Value),
+            static tool => tool.Name,
+            static tool => new CommandLineTool(tool),
             StringComparer.Ordinal);
 
         var listToolsResult = new ListToolsResult

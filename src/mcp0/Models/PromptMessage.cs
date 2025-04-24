@@ -63,9 +63,9 @@ internal sealed record PromptMessage
 
         var formatted = message.Template;
         if (formattedOptions is not null)
-            formatted = Formattable.Format(formatted, formattedOptions, " # ");
+            formatted = Formattable.FormatAtEnd(formatted, formattedOptions, " # ");
         if (message.ReturnArgument is not null)
-            formatted = Formattable.Format(formatted, $"{{{{{message.ReturnArgument}}}}}", " => ");
+            formatted = Formattable.FormatAtEnd(formatted, $"{{{{{message.ReturnArgument}}}}}", " => ");
 
         return formatted;
     }

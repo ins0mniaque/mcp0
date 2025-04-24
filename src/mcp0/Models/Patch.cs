@@ -32,6 +32,6 @@ internal sealed record Patch
         if (patch == Remove)
             return null;
 
-        return Formattable.Format(patch.Name, patch.Description, " # ");
+        return Formattable.FormatAtEnd(patch.Name, patch.Description, " # ");
     }
 }

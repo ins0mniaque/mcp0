@@ -35,6 +35,6 @@ internal sealed record Resource
         if (resource.MimeType is not null)
             return null;
 
-        return Formattable.Format(ResourceUriConverter.Convert(resource.Uri), resource.Description, " # ");
+        return Formattable.FormatAtEnd(ResourceUriConverter.Convert(resource.Uri), resource.Description, " # ");
     }
 }
