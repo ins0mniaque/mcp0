@@ -17,10 +17,12 @@ internal abstract class KeyedListConverter<T> : JsonConverter<List<T>>
         {
             var list = new List<T>();
 
+            reader.Read();
             while (reader.TokenType is not JsonTokenType.EndArray)
             {
-                reader.Read();
                 list.Add(reader.Deserialize(JsonTypeInfo));
+
+                reader.Read();
             }
 
             return list;
@@ -36,8 +38,8 @@ internal abstract class KeyedListConverter<T> : JsonConverter<List<T>>
                 var propertyName = reader.GetPropertyName();
 
                 reader.Read();
-                var element = reader.Deserialize(JsonTypeInfo);
 
+                var element = reader.Deserialize(JsonTypeInfo);
                 SetKey(element, propertyName);
                 list.Add(element);
 
