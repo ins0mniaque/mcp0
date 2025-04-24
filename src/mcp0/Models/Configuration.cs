@@ -26,11 +26,19 @@ internal sealed partial record Configuration
 
     public void Merge(Configuration configuration)
     {
-        Servers = Collection.Merge(Servers, configuration.Servers);
-        Prompts = Collection.Merge(Prompts, configuration.Prompts);
-        Resources = Collection.Merge(Resources, configuration.Resources);
-        Tools = Collection.Merge(Tools, configuration.Tools);
-        Patch = Collection.Merge(Patch, configuration.Patch);
+        Servers = Merge(Servers, configuration.Servers);
+        Prompts = Merge(Prompts, configuration.Prompts);
+        Resources = Merge(Resources, configuration.Resources);
+        Tools = Merge(Tools, configuration.Tools);
+        Patch = Merge(Patch, configuration.Patch);
+    }
+
+    public static Configuration Parse(string[]? servers)
+    {
+        return new()
+        {
+            Servers = servers?.Select(Server.Parse).ToList()
+        };
     }
 
     public static async Task<Configuration> Load(string[] paths, CancellationToken cancellationToken)
@@ -58,5 +66,26 @@ internal sealed partial record Configuration
             throw new InvalidOperationException("Configuration is empty");
 
         return configuration;
+    }
+
+    private static Dictionary<string, T>? Merge<T>(Dictionary<string, T>? dictionary, Dictionary<string, T>? with)
+    {
+        if (with is null) return dictionary;
+        if (dictionary is null) return with;
+
+        foreach (var entry in with)
+            dictionary[entry.Key] = entry.Value;
+
+        return dictionary;
+    }
+
+    private static List<T>? Merge<T>(List<T>? list, List<T>? with)
+    {
+        if (with is null) return list;
+        if (list is null) return with;
+
+        list.AddRange(with);
+
+        return list;
     }
 }
