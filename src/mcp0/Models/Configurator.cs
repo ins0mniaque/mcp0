@@ -58,7 +58,8 @@ internal static class Configurator
                     throw new McpException($"Unknown prompt: {request.Params?.Name}");
 
                 var arguments = request.Params?.Arguments ?? ImmutableDictionary<string, JsonElement>.Empty;
-                var messages = await prompt.Template.Render(request.Server, arguments, cancellationToken);
+                var progressToken = request.Params?.Meta?.ProgressToken;
+                var messages = await prompt.Template.Render(request.Server, arguments, progressToken, cancellationToken);
 
                 return new GetPromptResult { Messages = messages };
             }

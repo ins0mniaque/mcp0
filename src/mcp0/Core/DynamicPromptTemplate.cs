@@ -1,3 +1,4 @@
+using ModelContextProtocol.Protocol.Messages;
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 
@@ -5,16 +6,17 @@ namespace mcp0.Core;
 
 internal sealed class DynamicPromptTemplate(Models.Prompt prompt)
 {
-    public Task<List<PromptMessage>> Render<T>(IMcpServer server, IReadOnlyDictionary<string, T> arguments, CancellationToken cancellationToken)
+    public Task<List<PromptMessage>> Render<T>(IMcpServer server, IReadOnlyDictionary<string, T> arguments, ProgressToken? progressToken, CancellationToken cancellationToken)
     {
         return Render(server,
                       arguments.ToDictionary(static entry => entry.Key,
                                              static entry => entry.Value?.ToString(),
                                              StringComparer.Ordinal),
+                      progressToken,
                       cancellationToken);
     }
 
-    private async Task<List<PromptMessage>> Render(IMcpServer server, Dictionary<string, string?> arguments, CancellationToken cancellationToken)
+    private async Task<List<PromptMessage>> Render(IMcpServer server, Dictionary<string, string?> arguments, ProgressToken? progressToken, CancellationToken cancellationToken)
     {
         FormatArguments(arguments);
 
@@ -48,7 +50,8 @@ internal sealed class DynamicPromptTemplate(Models.Prompt prompt)
                 SystemPrompt = message.Options?.SystemPrompt ?? prompt.Options?.SystemPrompt,
                 MaxTokens = message.Options?.MaxTokens ?? prompt.Options?.MaxTokens ?? -1,
                 StopSequences = message.Options?.StopSequences ?? prompt.Options?.StopSequences,
-                Temperature = message.Options?.Temperature ?? prompt.Options?.Temperature
+                Temperature = message.Options?.Temperature ?? prompt.Options?.Temperature,
+                Meta = progressToken is null ? null : new() { ProgressToken = progressToken }
             };
 
             var result = await server.RequestSamplingAsync(request, cancellationToken);

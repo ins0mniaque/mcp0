@@ -91,7 +91,7 @@ public sealed class DynamicPromptTests
         {
             ["argument"] = "value",
             ["optional"] = "option"
-        }, CancellationToken.None);
+        }, null, CancellationToken.None);
 
         var expected =
         """
@@ -123,7 +123,7 @@ public sealed class DynamicPromptTests
         var actual = await new DynamicPromptTemplate(prompt).Render(server, new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["document"] = document
-        }, CancellationToken.None);
+        }, null, CancellationToken.None);
 
         Assert.AreEqual(6, actual.Count);
         Assert.AreEqual(Role.User, actual[0].Role);
