@@ -7,6 +7,8 @@ namespace mcp0.Models;
 
 internal sealed record Resource
 {
+    public string Name { get; set; } = string.Empty;
+
     [JsonConverter(typeof(ResourceUriConverter))]
     public required Uri Uri { get; init; }
     public string? MimeType { get; init; }
@@ -23,11 +25,15 @@ internal sealed record Resource
         if (text.Length is 0)
             return null;
 
+        var name = Formattable.ParseAtStart(ref text, ": ", Format.FormattableNameChars);
+        if (text.Length is 0)
+            return null;
+
         var description = Formattable.ParseAtEnd(ref text, " #");
         if (text.Length is 0 || ResourceUriConverter.TryConvert(text) is not { } uri)
             return null;
 
-        return new() { Uri = uri, Description = description };
+        return new() { Name = name ?? string.Empty, Uri = uri, Description = description };
     }
 
     public static string? TryFormat(Resource resource)
@@ -35,6 +41,11 @@ internal sealed record Resource
         if (resource.MimeType is not null)
             return null;
 
-        return Formattable.FormatAtEnd(ResourceUriConverter.Convert(resource.Uri), resource.Description, " # ");
+        if (resource.Name.AsSpan().ContainsAnyExcept(Format.FormattableNameChars))
+            return null;
+
+        var formatted = Formattable.FormatAtStart(ResourceUriConverter.Convert(resource.Uri), resource.Name, ": ");
+
+        return Formattable.FormatAtEnd(formatted, resource.Description, " # ");
     }
 }

@@ -17,7 +17,7 @@ public sealed class DynamicPromptTests
     public void ParsesArgumentCorrectly()
     {
         var prompt = new Models.Prompt { Messages = [new() { Template = "{{argument}}" }] };
-        var arguments = new DynamicPrompt(string.Empty, prompt).Prompt.Arguments;
+        var arguments = new DynamicPrompt(prompt).Prompt.Arguments;
         var expected = new PromptArgument { Name = "argument", Description = null, Required = true };
 
         Assert.IsNotNull(arguments);
@@ -29,7 +29,7 @@ public sealed class DynamicPromptTests
     public void ParsesRequiredCorrectly()
     {
         var prompt = new Models.Prompt { Messages = [new() { Template = "{{argument?}}" }] };
-        var arguments = new DynamicPrompt(string.Empty, prompt).Prompt.Arguments;
+        var arguments = new DynamicPrompt(prompt).Prompt.Arguments;
         var expected = new PromptArgument { Name = "argument", Description = null };
 
         Assert.IsNotNull(arguments);
@@ -41,7 +41,7 @@ public sealed class DynamicPromptTests
     public void ParsesDescriptionCorrectly()
     {
         var prompt = new Models.Prompt { Messages = [new() { Template = "{{argument#desc}}" }] };
-        var arguments = new DynamicPrompt(string.Empty, prompt).Prompt.Arguments;
+        var arguments = new DynamicPrompt(prompt).Prompt.Arguments;
         var expected = new PromptArgument { Name = "argument", Description = "desc", Required = true };
 
         Assert.IsNotNull(arguments);
@@ -59,7 +59,7 @@ public sealed class DynamicPromptTests
         """;
 
         var prompt = new Models.Prompt { Messages = [new() { Template = template }] };
-        var arguments = new DynamicPrompt(string.Empty, prompt).Prompt.Arguments;
+        var arguments = new DynamicPrompt(prompt).Prompt.Arguments;
         var expected = new PromptArgument[]
         {
             new() { Name = "argument", Description = null, Required = true },

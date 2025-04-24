@@ -15,12 +15,12 @@ internal sealed partial class UriResource
 
     private static readonly FileExtensionContentTypeProvider mimeTypeProvider = new();
 
-    public UriResource(string name, Models.Resource resource)
+    public UriResource(Models.Resource resource)
     {
         Uri = resource.Uri;
         Resource = new()
         {
-            Name = name,
+            Name = resource.Name,
             Description = resource.Description,
             Uri = resource.Uri.AbsoluteUri,
             MimeType = resource.MimeType ?? (mimeTypeProvider.TryGetContentType(resource.Uri.AbsoluteUri, out var mimeType) ? mimeType : null)

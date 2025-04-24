@@ -37,20 +37,20 @@ internal sealed class NewCommand : CancellableCommand
     {
         return new()
         {
-            Prompts = new(StringComparer.Ordinal)
-            {
-                ["prompt"] = new() { Messages = [new() { Template = "This is a prompt." }] },
-                ["argument"] = new() { Messages = [new() { Template = "This is a prompt with an {{argument}}." }] },
-                ["optional"] = new() { Messages = [new() { Template = "This is a prompt with an optional {{argument?}}." }] },
-                ["described"] = new() { Messages = [new() { Template = "This is a prompt with a described optional {{argument?#Argument description}}." }] }
-            },
-            Resources = new(StringComparer.Ordinal)
-            {
-                ["file"] = new() { Uri = new Uri(Posix.ExpandPath("~/file.txt"), UriKind.Absolute) },
-                ["image"] = new() { Uri = new Uri("/path/to/image.png", UriKind.Absolute), Description = "Description for resource" },
-                ["random-cat"] = new() { Uri = new Uri("https://cataas.com/cat", UriKind.Absolute), Description = "Downloads a random cat picture" },
-                ["data-uri"] = new() { Uri = new Uri("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==", UriKind.Absolute) }
-            },
+            Prompts =
+            [
+                new() { Name = "prompt", Messages = [new() { Template = "This is a prompt." }] },
+                new() { Name = "argument", Messages = [new() { Template = "This is a prompt with an {{argument}}." }] },
+                new() { Name = "optional", Messages = [new() { Template = "This is a prompt with an optional {{argument?}}." }] },
+                new() { Name = "described", Messages = [new() { Template = "This is a prompt with a described optional {{argument?#Argument description}}." }] }
+            ],
+            Resources =
+            [
+                new() { Name = "file", Uri = new Uri(Posix.ExpandPath("~/file.txt"), UriKind.Absolute) },
+                new() { Name = "image", Uri = new Uri("/path/to/image.png", UriKind.Absolute), Description = "Description for resource" },
+                new() { Name = "random-cat", Uri = new Uri("https://cataas.com/cat", UriKind.Absolute), Description = "Downloads a random cat picture" },
+                new() { Name = "data-uri", Uri = new Uri("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==", UriKind.Absolute) }
+            ],
             Tools =
             [
                 new() { Name = "ping", Command = "ping -c 1 {{host}}" },

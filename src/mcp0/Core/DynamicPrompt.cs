@@ -4,11 +4,11 @@ namespace mcp0.Core;
 
 internal sealed class DynamicPrompt
 {
-    public DynamicPrompt(string name, Models.Prompt prompt)
+    public DynamicPrompt(Models.Prompt prompt)
     {
         Prompt = new()
         {
-            Name = name,
+            Name = prompt.Name,
             Description = prompt.Description,
             Arguments = ParseArguments(prompt)
         };

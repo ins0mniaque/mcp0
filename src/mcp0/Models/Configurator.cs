@@ -40,8 +40,8 @@ internal static class Configurator
             return null;
 
         var prompts = configuration.Prompts.ToDictionary(
-            static entry => entry.Key,
-            static entry => new DynamicPrompt(entry.Key, entry.Value),
+            static prompt => prompt.Name,
+            static prompt => new DynamicPrompt(prompt),
             StringComparer.Ordinal);
 
         var listPromptsResult = new ListPromptsResult
@@ -72,7 +72,7 @@ internal static class Configurator
             return null;
 
         var resources = configuration.Resources
-            .Select(entry => new UriResource(entry.Key, entry.Value))
+            .Select(resource => new UriResource(resource))
             .ToDictionary(static resource => resource.Resource.Uri, StringComparer.Ordinal);
 
         var listResourcesResult = new ListResourcesResult

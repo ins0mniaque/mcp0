@@ -24,13 +24,17 @@ internal abstract partial class ProxyCommand : CancellableCommand
     protected ProxyCommand(string name, string? description = null) : base(name, description)
     {
         AddOption(ServerOption);
+        AddOption(PromptOption);
+        AddOption(ResourceOption);
         AddOption(ToolOption);
         AddOption(NoReloadOption);
         AddArgument(PathsArgument);
     }
 
     private static Option<string[]> ServerOption { get; } = new("--server", "Additional MCP server command or URI to add to the MCP server");
-    private static Option<string[]> ToolOption { get; } = new("--tool", "Additional MCP server tools to add to the MCP server");
+    private static Option<string[]> PromptOption { get; } = new("--prompt", "Additional MCP server prompt to add to the MCP server");
+    private static Option<string[]> ResourceOption { get; } = new("--resource", "Additional MCP server resource to add to the MCP server");
+    private static Option<string[]> ToolOption { get; } = new("--tool", "Additional MCP server tool to add to the MCP server");
     private static Option<bool> NoReloadOption { get; } = new("--no-reload", "Do not reload when context configuration files change");
 
     private static Argument<string[]> PathsArgument { get; } = new("files", "The configuration files to build an MCP server from")
@@ -47,6 +51,8 @@ internal abstract partial class ProxyCommand : CancellableCommand
     {
         var paths = PathsArgument.GetValue(context);
         var servers = ServerOption.GetValue(context);
+        var prompts = PromptOption.GetValue(context);
+        var resources = ResourceOption.GetValue(context);
         var tools = ToolOption.GetValue(context);
         var noReload = NoReloadOption.GetValue(context);
 
@@ -66,7 +72,7 @@ internal abstract partial class ProxyCommand : CancellableCommand
 
         var configuration = await Configuration.Load(paths, cancellationToken);
 
-        configuration.Merge(Configuration.Parse(servers, tools));
+        configuration.Merge(Configuration.Parse(servers, prompts, resources, tools));
 
         var clientTransports = configuration.ToClientTransports().ToList();
         var loggerFactory = serviceProvider.GetService<ILoggerFactory>();

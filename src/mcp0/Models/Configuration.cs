@@ -13,10 +13,10 @@ internal sealed partial record Configuration
     public List<Server>? Servers { get; set; }
 
     [UnorderedEquality]
-    public Dictionary<string, Prompt>? Prompts { get; set; }
+    public List<Prompt>? Prompts { get; set; }
 
     [UnorderedEquality]
-    public Dictionary<string, Resource>? Resources { get; set; }
+    public List<Resource>? Resources { get; set; }
 
     [UnorderedEquality]
     public List<Tool>? Tools { get; set; }
@@ -33,11 +33,13 @@ internal sealed partial record Configuration
         Patch = Merge(Patch, configuration.Patch);
     }
 
-    public static Configuration Parse(string[]? servers, string[]? tools)
+    public static Configuration Parse(string[]? servers, string[]? prompts, string[]? resources, string[]? tools)
     {
         return new()
         {
             Servers = servers?.Select(Server.Parse).ToList(),
+            Prompts = prompts?.Select(Prompt.Parse).ToList(),
+            Resources = resources?.Select(Resource.Parse).ToList(),
             Tools = tools?.Select(Tool.Parse).ToList()
         };
     }
