@@ -22,6 +22,7 @@ internal sealed class ServerConverter : JsonConverter<Server>
         while (true)
         {
             reader.Read();
+
             propertyName = reader.GetPropertyName();
             if (!IsServerProperty(propertyName))
                 break;

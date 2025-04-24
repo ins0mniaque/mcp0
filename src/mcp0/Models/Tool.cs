@@ -39,4 +39,12 @@ internal sealed record Tool
 
         return Formattable.FormatAtEnd(formatted, tool.Description, " # ");
     }
+
+    public static void Validate(Tool tool)
+    {
+        if (!string.IsNullOrWhiteSpace(tool.Name))
+            return;
+
+        throw new FormatException($"Missing name for tool: {tool.Command}");
+    }
 }

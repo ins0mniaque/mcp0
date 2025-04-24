@@ -33,6 +33,14 @@ internal sealed partial record Configuration
         Patch = Merge(Patch, configuration.Patch);
     }
 
+    public void Validate()
+    {
+        Servers?.ForEach(Server.Validate);
+        Prompts?.ForEach(Prompt.Validate);
+        Resources?.ForEach(Resource.Validate);
+        Tools?.ForEach(Tool.Validate);
+    }
+
     public static Configuration Parse(string[]? servers, string[]? prompts, string[]? resources, string[]? tools)
     {
         return new()

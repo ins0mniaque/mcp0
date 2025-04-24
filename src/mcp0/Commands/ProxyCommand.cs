@@ -73,6 +73,7 @@ internal abstract partial class ProxyCommand : CancellableCommand
         var configuration = await Configuration.Load(paths, cancellationToken);
 
         configuration.Merge(Configuration.Parse(servers, prompts, resources, tools));
+        configuration.Validate();
 
         var clientTransports = configuration.ToClientTransports().ToList();
         var loggerFactory = serviceProvider.GetService<ILoggerFactory>();

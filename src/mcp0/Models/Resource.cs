@@ -48,4 +48,12 @@ internal sealed record Resource
 
         return Formattable.FormatAtEnd(formatted, resource.Description, " # ");
     }
+
+    public static void Validate(Resource resource)
+    {
+        if (!string.IsNullOrWhiteSpace(resource.Name))
+            return;
+
+        throw new FormatException($"Missing name for resource: {resource.Uri}");
+    }
 }

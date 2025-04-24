@@ -39,4 +39,16 @@ internal sealed record Prompt
 
         return Formattable.FormatAtStart(formatted, prompt.Name, ": ");
     }
+
+    public static void Validate(Prompt prompt)
+    {
+        if (!string.IsNullOrWhiteSpace(prompt.Name))
+            return;
+
+        var description = prompt.Description;
+        if (description is null && prompt.Messages.Length is not 0)
+            description = prompt.Messages[0].Template;
+
+        throw new FormatException($"Missing name for prompt: {description}");
+    }
 }

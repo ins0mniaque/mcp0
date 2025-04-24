@@ -27,6 +27,12 @@ internal abstract record Server
         SseServer sseServer => SseServer.TryFormat(sseServer),
         _ => null
     };
+
+    public static void Validate(Server server)
+    {
+        if (string.IsNullOrWhiteSpace(server.Name))
+            server.Name = null;
+    }
 }
 
 [Equatable]
