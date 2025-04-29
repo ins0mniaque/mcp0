@@ -50,7 +50,7 @@ internal static class OpenApiTools
             ["post"] = new()
             {
                 Description = tool.Description,
-                Summary = tool.Description,
+                Summary = tool.Name,
                 OperationId = tool.Name,
                 RequestBody = new()
                 {
