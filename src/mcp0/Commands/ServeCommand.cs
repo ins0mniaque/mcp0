@@ -78,6 +78,7 @@ internal sealed class ServeCommand : ProxyCommand
         var mcp = app.MapMcp();
         var openApi = app.MapMcpOpenApi(proxy);
         var openApiTools = app.MapMcpOpenApiTools(proxy);
+        var scalar = app.MapScalar("tools");
 
         if (apiKey is not null)
         {
@@ -86,6 +87,7 @@ internal sealed class ServeCommand : ProxyCommand
             mcp.AddEndpointFilter(authorization);
             openApi.AddEndpointFilter(authorization);
             openApiTools.AddEndpointFilter(authorization);
+            scalar.AddEndpointFilter(authorization);
         }
 
         await app.RunAsync();
