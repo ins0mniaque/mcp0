@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Security.Cryptography.X509Certificates;
 
 using mcp0.Mcp;
+using mcp0.OpenApi;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -74,9 +75,18 @@ internal sealed class ServeCommand : ProxyCommand
                   .WithHeaders(HeaderNames.Accept, HeaderNames.ContentType, HeaderNames.Origin,
                                HeaderNames.Authorization, AuthorizationEndpointFilter.ApiKeyHeaderName));
 
-        var endpoints = app.MapMcp();
+        var mcp = app.MapMcp();
+        var openApi = app.MapMcpOpenApi(proxy);
+        var openApiTools = app.MapMcpOpenApiTools(proxy);
+
         if (apiKey is not null)
-            endpoints.AddEndpointFilter(new AuthorizationEndpointFilter(apiKey));
+        {
+            var authorization = new AuthorizationEndpointFilter(apiKey);
+
+            mcp.AddEndpointFilter(authorization);
+            openApi.AddEndpointFilter(authorization);
+            openApiTools.AddEndpointFilter(authorization);
+        }
 
         await app.RunAsync();
     }
