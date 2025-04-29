@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Net.Mime;
 using System.Text.Json;
 
 using mcp0.Mcp;
@@ -56,25 +57,25 @@ internal static class McpOpenApiExtensions
     {
         if (content.Data is { } data)
         {
-            httpResponse.ContentType = content.MimeType ?? "application/octet-stream";
+            httpResponse.ContentType = content.MimeType ?? MediaTypeNames.Application.Octet;
 
             await httpResponse.Body.WriteAsync(Convert.FromBase64String(data), cancellationToken);
         }
         else if (content.Text is { } text)
         {
-            httpResponse.ContentType = content.MimeType ?? "text/plain";
+            httpResponse.ContentType = content.MimeType ?? MediaTypeNames.Text.Plain;
 
             await httpResponse.WriteAsync(text, cancellationToken);
         }
         else if (content.Resource is BlobResourceContents blobResource)
         {
-            httpResponse.ContentType ??= blobResource.MimeType ?? "application/octet-stream";
+            httpResponse.ContentType ??= blobResource.MimeType ?? MediaTypeNames.Application.Octet;
 
             await httpResponse.Body.WriteAsync(Convert.FromBase64String(blobResource.Blob), cancellationToken);
         }
         else if (content.Resource is TextResourceContents textResource)
         {
-            httpResponse.ContentType ??= textResource.MimeType ?? "text/plain";
+            httpResponse.ContentType ??= textResource.MimeType ?? MediaTypeNames.Text.Plain;
 
             await httpResponse.WriteAsync(textResource.Text, cancellationToken);
         }

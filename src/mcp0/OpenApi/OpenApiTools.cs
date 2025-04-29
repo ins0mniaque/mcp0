@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -57,7 +58,7 @@ internal static class OpenApiTools
                     Required = true,
                     Content = new(StringComparer.Ordinal)
                     {
-                        ["application/json"] = new() { Schema = tool.InputSchema }
+                        [MediaTypeNames.Application.Json] = new() { Schema = tool.InputSchema }
                     }
                 },
                 Responses = new(StringComparer.Ordinal)
@@ -67,7 +68,7 @@ internal static class OpenApiTools
                         Description = "Successful Response",
                         Content = new(StringComparer.Ordinal)
                         {
-                            ["application/json"] = new() { Schema = unknownSchema }
+                            [MediaTypeNames.Application.Json] = new() { Schema = unknownSchema }
                         }
                     },
                     ["422"] = new()
@@ -75,7 +76,7 @@ internal static class OpenApiTools
                         Description = "Validation Error",
                         Content = new(StringComparer.Ordinal)
                         {
-                            ["application/json"] = new() { Schema = unknownSchema }
+                            [MediaTypeNames.Application.Json] = new() { Schema = unknownSchema }
                         }
                     },
                     ["500"] = new()
@@ -83,7 +84,7 @@ internal static class OpenApiTools
                         Description = "Error Response",
                         Content = new(StringComparer.Ordinal)
                         {
-                            ["application/json"] = new() { Schema = unknownSchema }
+                            [MediaTypeNames.Application.Json] = new() { Schema = unknownSchema }
                         }
                     }
                 }

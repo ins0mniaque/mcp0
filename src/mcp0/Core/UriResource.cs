@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using System.Text.RegularExpressions;
 
 using Microsoft.AspNetCore.StaticFiles;
@@ -76,7 +77,7 @@ internal sealed partial class UriResource
             {
                 Uri = Resource.Uri,
                 Blob = Convert.ToBase64String(data),
-                MimeType = mimetype ?? Resource.MimeType ?? "application/octet-stream"
+                MimeType = mimetype ?? Resource.MimeType ?? MediaTypeNames.Application.Octet
             };
         }
 
@@ -89,7 +90,7 @@ internal sealed partial class UriResource
         {
             Uri = Resource.Uri,
             Text = text,
-            MimeType = mimetype ?? Resource.MimeType ?? "text/plain"
+            MimeType = mimetype ?? Resource.MimeType ?? MediaTypeNames.Text.Plain
         };
     }
 }
